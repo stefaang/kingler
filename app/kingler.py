@@ -9,7 +9,7 @@ app = Flask(__name__)
 #    'db':'kingler',
 #    'host': xx
 #    'port':27017
-}
+#}
 #app.config.from_pyfile('kingler.cfg')
 #db.init_app(app)
 
