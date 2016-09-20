@@ -1,8 +1,16 @@
 {
-  "name": "Heroku start - Kingler",
-  "description": "Heroku with flask",
-  "image": "heroku/python",
-  "repository": "https://github.com/stefaang/kingler",
-  "keywords": ["python", "flask", "leaflet"],
-  "addons": [ ]
+  "name": "kingler",
+  "description": "flask and geolocation test",
+  "scripts": {
+  },
+  "env": {
+  },
+  "formation": {
+  },
+  "addons": [
+
+  ],
+  "buildpacks": [
+
+  ]
 }
