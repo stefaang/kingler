@@ -1,3 +1,3 @@
-web: gunicorn app.wsgi:app --log-file helpmeout.log
+web: gunicorn app.wsgi:app --log-file -
 
 
