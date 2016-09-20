@@ -1,0 +1,16 @@
+{
+  "name": "kingler",
+  "description": "flask and geolocation test",
+  "scripts": {
+  },
+  "env": {
+  },
+  "formation": {
+  },
+  "addons": [
+
+  ],
+  "buildpacks": [
+
+  ]
+}
