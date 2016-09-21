@@ -19,9 +19,9 @@ def show_main():
          return redirect(url_for('show_map'))
     return render_template('index.html')
 
-@app.route('/gmap.html')
+@app.route('/mapme.html')
 def show_map():
-    return render_template('gmap.html')
+    return render_template('mapme.html')
 
 
 if __name__ == '__main__':
