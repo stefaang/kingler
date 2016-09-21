@@ -27,7 +27,7 @@
       function initMap() {
         var map = new google.maps.Map(document.getElementById('map'), {
           center: {lat: 70, lng: 3.644},
-          zoom: 10
+          zoom: 12
         });
         var infoWindow = new google.maps.InfoWindow({map: map});
 
@@ -57,6 +57,8 @@
       }
       
       function getFreeGeoIP(map, infoWindow) {
+        // use jquery ajax call to lookup the geolocation based on your ipaddress
+        // max 10k requests per hour
           $.getJSON("https://freegeoip.net/json/", 
                 function (json) {                   
                     console.log(json);
