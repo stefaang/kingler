@@ -2,13 +2,20 @@
 <html>
 <head>
     <title>Battle Royale Map</title>
+    <meta charset="utf-8" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />
-   
-    <script src="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- get Leaflet, the map library -->
+    <!-- link rel="stylesheet" href="static/css/leaflet.css" /-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />  
+    <!-- script src="static/js/leaflet.js"></script>
+    
+    <!-- get Leaflet easy buttons -->
+    <link rel="stylesheet" href="static/css/easy-button.css"/>
+    
+    <!-- get Leaflet awesome markers -->
+    <link rel="stylesheet" href="static/css/leaflet.awesome-markers.css">
 
     <style>
         body {
@@ -23,24 +30,76 @@
 <body>
     <div id="map"></div>
 
+    <!-- font awesome hell yeah-->
+    <script src="https://use.fontawesome.com/697ebb27cd.js"></script>
+
+    <script src="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
+    <script src="static/js/easy-button.js"></script>    
+    <script src="static/js/leaflet.awesome-markers.js"></script>
+    
+    <!-- jquery for ajax support -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    
+    
+
     <script>
         // create map
-        var map = L.map('map');
+        var map = L.map('map',
+            {
+               dragging: false,     // disable dragging the map
+               touchZoom: false,    // disable zooming on mobile
+               // scrollWheelZoom: false,   // but not on PC
+               doubleClickZoom: 'center',   // zoom on center, wherever you click                
+            }
+        );
         
         // create tiles with colors
-        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
+        //L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
+        //    maxZoom: 18,
+        //    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+        //        '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+        //        'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+        //    id: 'mapbox.streets'
+        //}).addTo(map);
+        
+        // tiles alternative
+        L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
             maxZoom: 18,
-            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-                '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-                'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-            id: 'mapbox.streets'
-        }).addTo(map);
+            id: 'carto.light'
+        }).addTo(map);        
 
+
+        // Prepare markers
+        L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
+    
         // create marker for protagonist
+        var redIcon = L.AwesomeMarkers.icon({
+            icon: 'paw',
+            markerColor: 'red'
+        })
+        
         var memarker = L.marker(
-            [70, 3.5],
-            {  }
+            [51, 3.73],
+            {icon: redIcon}
         ).addTo(map);
+        // put a respawn dummy
+        L.marker(
+            [51, 3.74],
+            {icon: redIcon}
+        ).addTo(map);
+        
+        map.setView([51, 3.7], 14);
+        
+        var manymarkers = []
+        
+        // add the star button
+        var htmlStar = L.easyButton( 'fa-star', function(){
+            map.setView([51, 3.73], 14);
+            for (var i = 0; i < manymarkers.length; i++) {
+                console.log("Marker at " + manymarkers[i].latlng);
+            }
+        }).addTo(map);
         
         // prepare location callback functions
         function onLocationFound(e) {
@@ -54,6 +113,7 @@
 
         function onLocationError(e) {
             console.log("Sorry no location found");
+            map.setView([51, 3.73], 14);
             getFreeGeoIP();
             // alert(e.message);
         }
@@ -71,9 +131,15 @@
                     memarker.bindPopup("You are somewhere here").openPopup();
                     //L.marker(pos).addTo(map).bindPopup("You are somewhere here").openPopup();
                     // update the map
-                    map.setView(pos, 8);
+                    map.setView(pos, 10);
                 }
           );
+        }
+        
+        function addMarker(e) {
+            console.log("Adding a marker at %s" % e.latlng);
+            var marker = L.marker(e.latlng).addTo(map);
+            manymarkers.push(marker);
         }
         
         // connect location events to callback functions
@@ -81,7 +147,7 @@
         map.on('locationerror', onLocationError);
         
         // now locate the user
-        map.locate({setView: true, maxZoom: 16});
+        //map.locate({setView: true, maxZoom: 16});
     </script>
 </body>
 </html>
