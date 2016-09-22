@@ -75,32 +75,56 @@
     
         // create marker for protagonist
         var redIcon = L.AwesomeMarkers.icon({
-            icon: 'paw',
+            icon: 'user-secret',
             markerColor: 'red'
         })
+        var blueIcon = L.AwesomeMarkers.icon({
+            icon: 'paw',
+            markerColor: 'blue'
+        })
+        var yellowIcon = L.AwesomeMarkers.icon({
+            icon: 'bolt',
+            markerColor: 'yellow'
+        })
         
+        // set default position
+        var defaultPos = L.latLng(51.1, 3.73);
+        // put your head there
         var memarker = L.marker(
-            [51, 3.73],
+            defaultPos,
             {icon: redIcon}
         ).addTo(map);
+
         // put a respawn dummy
         L.marker(
-            [51, 3.74],
-            {icon: redIcon}
+            [51.2, 3.74],
+            {icon: blueIcon}
+        ).addTo(map);
+
+        // put another respawn dummy
+        L.marker(
+            [51.05, 3.71],
+            {icon: yellowIcon}
         ).addTo(map);
         
-        map.setView([51, 3.7], 14);
+        var manymarkers = [];
         
-        var manymarkers = []
-        
-        // add the star button
-        var htmlStar = L.easyButton( 'fa-star', function(){
-            map.setView([51, 3.73], 14);
+        // add button that searches your location
+        L.easyButton( 'fa-crosshairs', function(){            
+            locate({setView: true, maxZoom: 16});
             for (var i = 0; i < manymarkers.length; i++) {
                 console.log("Marker at " + manymarkers[i].latlng);
             }
         }).addTo(map);
         
+        // add button that goes to
+        L.easyButton( 'fa-coffee', function(){            
+            map.setView([51.1, 3.72], 13);
+            for (var i = 0; i < manymarkers.length; i++) {
+                console.log("Marker at " + manymarkers[i].latlng);
+            }
+        }).addTo(map);
+                
         // prepare location callback functions
         function onLocationFound(e) {
             console.log("Found your location hurray");
@@ -113,7 +137,7 @@
 
         function onLocationError(e) {
             console.log("Sorry no location found");
-            map.setView([51, 3.73], 14);
+            map.setView([51, 3.73], 13);
             getFreeGeoIP();
             // alert(e.message);
         }
@@ -141,6 +165,7 @@
             var marker = L.marker(e.latlng).addTo(map);
             manymarkers.push(marker);
         }
+        map.on('click', addMarker);
         
         // connect location events to callback functions
         map.on('locationfound', onLocationFound);
@@ -148,6 +173,8 @@
         
         // now locate the user
         //map.locate({setView: true, maxZoom: 16});
+        map.setView([51.1, 3.72], 13);
+        
     </script>
 </body>
 </html>
