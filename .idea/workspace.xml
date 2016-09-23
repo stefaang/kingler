@@ -1,36 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="4c3cbc39-8d90-42e1-8b88-945c0532123d" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/Procfile" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app.json" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/kingler.cfg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/kingler.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/model.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/css/easy-button.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/css/images/markers-matte.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/css/images/markers-matte@2x.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/css/images/markers-plain.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/css/images/markers-shadow.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/css/images/markers-shadow@2x.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/css/images/markers-soft.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/css/images/markers-soft@2x.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/css/leaflet.awesome-markers.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/css/leaflet.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/js/easy-button.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/js/leaflet.awesome-markers.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/js/leaflet.awesome-markers.min.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/static/js/leaflet.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/templates/gmap.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/templates/index.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/templates/mapme.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/wsgi.py" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/requirements.txt" afterPath="$PROJECT_DIR$/requirements.txt" />
-    </list>
+    <list default="true" id="4c3cbc39-8d90-42e1-8b88-945c0532123d" name="Default" comment="" />
     <ignored path="kingler.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path=".idea/dataSources.local.xml" />
@@ -89,8 +60,8 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="256" />
-    <option name="y" value="171" />
+    <option name="x" value="290" />
+    <option name="y" value="148" />
     <option name="width" value="1448" />
     <option name="height" value="460" />
   </component>
@@ -395,7 +366,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="256" y="171" width="1448" height="460" extended-state="0" />
+    <frame x="290" y="148" width="1448" height="460" extended-state="0" />
     <editor active="false" />
     <layout>
       <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2417127" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
