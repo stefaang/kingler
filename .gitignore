@@ -2,11 +2,11 @@
 __pycache__/
 *.py[cod]
 
+# PyCharm
+.idea/
+
 # C extensions
 *.so
-
-# pycharm idea
-.idea/
 
 # Distribution / packaging
 .Python
