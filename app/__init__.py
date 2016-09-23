@@ -1,1 +1,0 @@
-from kingler import app
