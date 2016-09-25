@@ -1,6 +1,7 @@
 import os
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
+import geoalchemy2
 
 from app import app, db
 

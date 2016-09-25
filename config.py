@@ -1,4 +1,5 @@
 import os
+import geoalchemy2
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
