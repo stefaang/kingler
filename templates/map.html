@@ -78,12 +78,7 @@
 
         // Prepare markers to use FontAwesome
         L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
-    
-        // create marker for protagonist
-        var redIcon = L.AwesomeMarkers.icon({icon: 'plane', markerColor: 'red'})
-        var blueIcon = L.AwesomeMarkers.icon({icon: 'paw', markerColor: 'blue'})
-        var orangeIcon = L.AwesomeMarkers.icon({icon: 'bolt',  markerColor: 'orange'})
-        
+
         // set default position
         var defaultPos = L.latLng(50.98, 3.755);
 
@@ -191,7 +186,13 @@
         // now locate the user
         //map.locate({setView: true, maxZoom: 16});
         map.setView(defaultPos, 13);
-        
+
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition()
+
+        }
+
+
     </script>
 </body>
 </html>
