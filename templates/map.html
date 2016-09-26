@@ -88,13 +88,14 @@
                 // create the central main marker
                 var memarker = L.marker([{{ racer.x }}, {{ racer.y }}], {
                     icon: L.AwesomeMarkers.icon({icon: 'user-secret', markerColor: 'red'}),
-            {% else %}
+                    title: "{{ username }}",
+                {% else %}
                 // no need to save the others now
                 L.marker([{{ racer.x }}, {{ racer.y }}], {
                     icon: L.AwesomeMarkers.icon({icon: '{{ racer.name }}', markerColor: 'blue'}),
+                    title: "{{ racer.name }}",
             {% endif %}
-            draggable: true,
-            title: "{{ racer.name }}"
+                    draggable: true
         }).on('dragend', function(e) {
             var pos = e.target._latlng;
             var title = e.target.options.title;

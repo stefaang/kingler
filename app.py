@@ -21,21 +21,27 @@ from models import *
 def index():
     if 'username' in session:
         return 'Logged in as %s' % escape(session['username'])
-    return 'You are not logged in'
+    return '''
+        <p>You are not logged in
+        <p><a href="login">Login</a>
+    '''
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         session['username'] = request.form['username']
         safename = escape(session['username'])
-        session['racer'] = db.session.query(Racer).filter_by(name=safename.first()
-        if not session['racer']:
-            db.session.add(Racer(safename, 'POINT(0 0)'))
+        r = db.session.query(Racer).filter_by(name=safename).first()
+        if not r:
+            r = Racer(safename, 'POINT(0 0)')
+            db.session.add(r)
             db.session.commit()
-        return redirect(url_for('index'))
+            # session['racer'] = r
+        return redirect(url_for('show_map'))
     return '''
         <form action="" method="post">
             <p><input type=text name=username>
+            <p><input type=text name=usericon>
             <p><input type=submit value=Login>
         </form>
     '''
@@ -55,7 +61,7 @@ def show_map():
         for r in rquery:
             pos = to_shape(r.pos)
             racers.append({'name':r.name, 'x':pos.x, 'y': pos.y})
-        return render_template('map.html', racers=racers, user=escape(session['username']))
+        return render_template('map.html', racers=racers, username=escape(session['username']))
     else:
         return 'You are not logged in'
 
@@ -68,7 +74,7 @@ def move_marker():
         s = db.session
         try:
             #r = Racer('yolo', 'POINT(%s %s)' % (lat, lng))
-            r = s.query(Racer.name, ).filter_by(name=name).first()
+            r = s.query(Racer).filter_by(name=name).first()
             r.pos = 'POINT(%s %s)' % (lat, lng)
             s.commit()
             return "OKOK"
@@ -97,6 +103,11 @@ def add_marker():
     else:
         return "Post me some JSON plx"
 
+@app.route('/deletemarker', methods=['GET', 'POST'])
+def del_marker():
+    if request.method == 'POST':
+        pass
+    # TODO fill up
 
 
 @app.route('/<name>')
