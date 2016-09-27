@@ -93,14 +93,14 @@
         {% endif %}
     draggable: true
     }).on('dragend', function (e) {
-        var pos = e.target._latlng;
+        var pos = e.target.getLatLng();
         var title = e.target.options.title;
         mainRange.setLatLng(pos).setRadius(100);
         pushLocation(title, pos);
     }).addTo(map);
     {% endfor %}
 
-    var mainRange = L.circle(mainUserMarker._latlng, 100).addTo(map);
+    var mainRange = L.circle(mainUserMarker.getLatLng(), 100).addTo(map);
 
     var manymarkers = [];
 
@@ -117,7 +117,7 @@
 
     // add button that goes to
     L.easyButton('fa-coffee', function () {
-        map.setView(mainUserMarker._latlng, 13);
+        map.setView(mainUserMarker.getLatLng(), 13);
         for (var i = 0; i < manymarkers.length; i++) {
             console.log("Marker at " + manymarkers[i].latlng);
         }
@@ -221,9 +221,10 @@
                         }
                         return temp;
                     }
-
+                    var newCoords = JSON.stringify(cloneAsObject(crd))
                     var data = JSON.stringify(cloneAsObject(pos));
-                    if (data != prevCoords) {
+                    // do not compare with data as the timestamp changes.......
+                    if (newCoords != prevCoords) {
                         console.log("WatchPos " + crd.latitude + " " + crd.longitude);
                         console.log("Pushing " + data);
                         if (!$.isEmptyObject(data)) {
@@ -234,7 +235,7 @@
                         }
                     }
                     // update previous coordinates
-                    prevCoords = data;
+                    prevCoords = newCoords;
                 },
                 function error(err) {
                     //
