@@ -137,12 +137,12 @@
 
     ///////////////////////
     // Server Side Events (flask_sse)
-{#    var source = new EventSource("{{ url_for('sse.stream') }}");#}
-{#    source.addEventListener('myevent', function (e) {#}
-{#        var data = JSON.parse(e.data);#}
-{#        // handle event#}
-{#        mainUserMarker.bindPopup(data['message']).openPopup()#}
-{#    }, false);#}
+    {#    var source = new EventSource("{{ url_for('sse.stream') }}");#}
+    {#    source.addEventListener('myevent', function (e) {#}
+    {#        var data = JSON.parse(e.data);#}
+    {#        // handle event#}
+    {#        mainUserMarker.bindPopup(data['message']).openPopup()#}
+    {#    }, false);#}
 
 
     /////////////////////
@@ -210,21 +210,21 @@
                     var timestamp = pos.timestamp;
                     var crd = pos.coords;
                     // if the player moved, update to the server.
-                    if (crd != prevCoords) {
-                        console.log("WatchPos " + crd.latitude + " " + crd.longitude);
-                        function cloneAsObject(obj) {
-                            if (obj === null || !(obj instanceof Object)) {
-                                return obj;
-                            }
-                            var temp = (obj instanceof Array) ? [] : {};
-                            // ReSharper disable once MissingHasOwnPropertyInForeach
-                            for (var key in obj) {
-                                temp[key] = cloneAsObject(obj[key]);
-                            }
-                            return temp;
+                    function cloneAsObject(obj) {
+                        if (obj === null || !(obj instanceof Object)) {
+                            return obj;
                         }
+                        var temp = (obj instanceof Array) ? [] : {};
+                        // ReSharper disable once MissingHasOwnPropertyInForeach
+                        for (var key in obj) {
+                            temp[key] = cloneAsObject(obj[key]);
+                        }
+                        return temp;
+                    }
 
-                        var data = JSON.stringify(cloneAsObject(pos));
+                    var data = JSON.stringify(cloneAsObject(pos));
+                    if (data != prevCoords) {
+                        console.log("WatchPos " + crd.latitude + " " + crd.longitude);
                         console.log("Pushing " + data);
                         if (!$.isEmptyObject(data)) {
                             $.post('/addpos',
@@ -234,8 +234,8 @@
                         }
                     }
                     // update previous coordinates
-                    prevCoords = crd;
-                    },
+                    prevCoords = data;
+                },
                 function error(err) {
                     //
                 }, options
