@@ -197,6 +197,8 @@
     //map.locate({setView: true, maxZoom: 16});
     map.setView(defaultPos, 13);
 
+    var prevCoords = 0;
+
     if (navigator.geolocation) {
         var options = {
             enableHighAccuracy: false,
@@ -205,30 +207,35 @@
         };
         navigator.geolocation.watchPosition(
                 function success(pos) {
-
                     var timestamp = pos.timestamp;
                     var crd = pos.coords;
-                    console.log("WatchPos " + crd.latitude + " " + crd.longitude);
-                    function cloneAsObject(obj) {
-                        if (obj === null || !(obj instanceof Object)) {
-                            return obj;
+                    // if the player moved, update to the server.
+                    if (crd != prevCoords) {
+                        console.log("WatchPos " + crd.latitude + " " + crd.longitude);
+                        function cloneAsObject(obj) {
+                            if (obj === null || !(obj instanceof Object)) {
+                                return obj;
+                            }
+                            var temp = (obj instanceof Array) ? [] : {};
+                            // ReSharper disable once MissingHasOwnPropertyInForeach
+                            for (var key in obj) {
+                                temp[key] = cloneAsObject(obj[key]);
+                            }
+                            return temp;
                         }
-                        var temp = (obj instanceof Array) ? [] : {};
-                        // ReSharper disable once MissingHasOwnPropertyInForeach
-                        for (var key in obj) {
-                            temp[key] = cloneAsObject(obj[key]);
-                        }
-                        return temp;
-                    }
 
-                    var data = JSON.stringify(cloneAsObject(pos));
-                    console.log("Pushing " + data);
-                    if (!$.isEmptyObject(data)) {
-                        $.post('/addpos',
-                                data, function (){},
-                                'application/json');
+                        var data = JSON.stringify(cloneAsObject(pos));
+                        console.log("Pushing " + data);
+                        if (!$.isEmptyObject(data)) {
+                            $.post('/addpos',
+                                    data, function () {
+                                    },
+                                    'application/json');
+                        }
                     }
-                },
+                    // update previous coordinates
+                    prevCoords = crd;
+                    },
                 function error(err) {
                     //
                 }, options
