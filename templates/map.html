@@ -118,9 +118,7 @@
     // add button that goes to
     L.easyButton('fa-coffee', function () {
         map.setView(mainUserMarker.getLatLng(), 13);
-        for (var i = 0; i < manymarkers.length; i++) {
-            console.log("Marker at " + manymarkers[i].latlng);
-        }
+        L.polyline({{ positions }}).addTo(map);
     }).addTo(map);
 
     // send location info to server

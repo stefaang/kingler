@@ -60,7 +60,15 @@ def show_map():
         for r in rquery:
             pos = shape.to_shape(r.pos)
             racers.append({'name':r.name, 'x':pos.x, 'y': pos.y})
-        return render_template('map.html', racers=racers, username=escape(session['username']))
+
+        positions = (shape.to_shape(pos) for pos, in db.session.query(Position.pos).filter_by(name=session['username']))
+        # pos in query is tuple with 1 element..
+        positions = [[pos.x, pos.y] for pos in positions]
+        app.logger.info(json.dumps(positions))
+        return render_template('map.html',
+                               racers=racers,
+                               username=escape(session['username']),
+                               positions=positions)
     else:
         return 'You are not logged in'
 
