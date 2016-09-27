@@ -1,200 +1,219 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Battle Royale Map</title>
-    <meta charset="utf-8" />
-
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Battle Royale Map</title>
 
     <!-- get Leaflet, the map library -->
     <!-- link rel="stylesheet" href="static/css/leaflet.css" /-->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />  
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.css">
     <!-- script src="static/js/leaflet.js"></script>
     
     <!-- get Leaflet easy buttons -->
-    <link rel="stylesheet" href="static/css/easy-button.css"/>
-    
+    <link rel="stylesheet" href="static/css/easy-button.css">
+
     <!-- get Leaflet awesome markers -->
     <link rel="stylesheet" href="static/css/leaflet.awesome-markers.css">
-
-    <!-- font awesome hell yeah-->
-    <script src="https://use.fontawesome.com/697ebb27cd.js"></script>
-
-    <script src="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
-    <script src="static/js/easy-button.js"></script>
-    <script src="static/js/leaflet.awesome-markers.js"></script>
-
-    <!-- jquery for ajax support -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-
 
     <style>
         body {
             padding: 0;
             margin: 0;
         }
+
         html, body, #map {
             height: 100%;
         }
     </style>
 </head>
 <body>
-    <div id="map"></div>
+<div id="map"></div>
 
+<!-- font awesome hell yeah-->
+<script src="https://use.fontawesome.com/697ebb27cd.js"></script>
 
-    
+<script src="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
+<script src="static/js/easy-button.js"></script>
+<script src="static/js/leaflet.awesome-markers.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 
-    <script>
-        // create map
-        var map = L.map('map',
+<script>
+    // create map
+    var map = L.map('map',
             {
-               dragging: false,     // disable dragging the map
-               touchZoom: false,    // disable zooming on mobile
-               // scrollWheelZoom: false,   // but not on PC
-               doubleClickZoom: 'center',   // zoom on center, wherever you click                
+                dragging: false,     // disable dragging the map
+                touchZoom: false,    // disable zooming on mobile
+                // scrollWheelZoom: false,   // but not on PC
+                doubleClickZoom: false,   // zoom on center, wherever you click
             }
-        );
-        
-        // create tiles with colors
-        // L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
-        //    maxZoom: 18,
-        //    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-        //        '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-        //        'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-        //    id: 'mapbox.streets'
-        //}).addTo(map);
-        
-        // tiles alternative
+    );
 
-        L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            maxZoom: 18,
-            id: 'carto.light'
-        }).addTo(map);        
+    // create tiles with colors
+    // L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
+    //    maxZoom: 18,
+    //    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+    //        '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+    //        'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+    //    id: 'mapbox.streets'
+    //}).addTo(map);
+
+    // tiles alternative
+
+    L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        maxZoom: 18,
+        id: 'carto.light'
+    }).addTo(map);
 
 
-        //////////////////////
-        //  MARKERS
+    //////////////////////
+    //  MARKERS
 
-        // Prepare markers to use FontAwesome
-        L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
+    // Prepare markers to use FontAwesome
+    L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
 
-        // set default position
-        var defaultPos = L.latLng(50.98, 3.755);
+    // set default position
+    var defaultPos = L.latLng(50.98, 3.755);
 
-        // put database markers
-        {% for racer in racers %}
-            {% if racer.name == 'memarker' %}
-                // create the central main marker
-                var memarker = L.marker([{{ racer.x }}, {{ racer.y }}], {
-                    icon: L.AwesomeMarkers.icon({icon: 'user-secret', markerColor: 'red'}),
-                    title: "{{ username }}",
-                {% else %}
-                // no need to save the others now
-                L.marker([{{ racer.x }}, {{ racer.y }}], {
-                    icon: L.AwesomeMarkers.icon({icon: '{{ racer.name }}', markerColor: 'blue'}),
-                    title: "{{ racer.name }}",
-            {% endif %}
-                    draggable: true
-        }).on('dragend', function(e) {
-            var pos = e.target._latlng;
-            var title = e.target.options.title;
-            pushLocation(title, pos);
-        })
-        .addTo(map);
-        {% endfor %}
+    // put database markers
+    {% for racer in racers %}
+        {% if racer.name == username %}
+            // create the central main marker
+            var mainUserMarker = L.marker([{{ racer.x }}, {{ racer.y }}], {
+            icon: L.AwesomeMarkers.icon({icon: 'user-secret', markerColor: 'red'}),
+            title: "{{ username }}",
+            {% else %}
+            // no need to save the others now
+            L.marker([{{ racer.x }}, {{ racer.y }}], {
+            icon: L.AwesomeMarkers.icon({icon: '{{ racer.name }}', markerColor: 'blue'}),
+            title: "{{ racer.name }}",
+        {% endif %}
+            draggable: true
+    }).on('dragend', function (e) {
+        var pos = e.target._latlng;
+        var title = e.target.options.title;
+        mainRange.setLatLng(pos).setRadius(100);
+        pushLocation(title, pos);
+    }).addTo(map);
+    {% endfor %}
 
-        var manymarkers = [];
+    var mainRange = L.circle(mainUserMarker._latlng, 100).addTo(map);
 
-        ////////////////////////
-        //  BUTTONS
+    var manymarkers = [];
 
-        // add button that searches your location
-        L.easyButton( 'fa-crosshairs', function(){            
-            map.locate({setView: true, maxZoom: 16});
-            for (var i = 0; i < manymarkers.length; i++) {
-                console.log("Marker at " + manymarkers[i].latlng);
-            }
-        }).addTo(map);
-        
-        // add button that goes to
-        L.easyButton( 'fa-coffee', function(){            
-            map.setView(defaultPos, 13);
-            for (var i = 0; i < manymarkers.length; i++) {
-                console.log("Marker at " + manymarkers[i].latlng);
-            }
-        }).addTo(map);
+    ////////////////////////
+    //  BUTTONS
 
-        function pushLocation(title, pos) {
-            var data = title+' '+pos.lat+' '+pos.lng;
-            console.log("Stop Drag at "+pos+".. now post this: "+data);
-            $.post('moveit',
-                    data,
-                    function (r) {
-                        console.log('Post Drag success! '+r)
-                    },
-                    'text');
+    // add button that searches your location
+    L.easyButton('fa-crosshairs', function () {
+        map.locate({setView: true, maxZoom: 16});
+        for (var i = 0; i < manymarkers.length; i++) {
+            console.log("Marker at " + manymarkers[i].latlng);
         }
+    }).addTo(map);
 
-        // prepare location callback functions
-        function onLocationFound(e) {
-            console.log("Found your location hurray");
-            var radius = e.accuracy / 2;
-            pushLocation('memarker', e.latlng);
-            memarker.setLatLng(e.latlng).bindPopup("You are within " + radius + " meters from this point").openPopup();
-
-            L.circle(e.latlng, radius).addTo(map);
+    // add button that goes to
+    L.easyButton('fa-coffee', function () {
+        map.setView(mainUserMarker._latlng, 13);
+        for (var i = 0; i < manymarkers.length; i++) {
+            console.log("Marker at " + manymarkers[i].latlng);
         }
+    }).addTo(map);
 
-        function onLocationError(e) {
-            console.log("Sorry no location found");
-            map.setView(defaultPos, 13);
-            getFreeGeoIP();
-            // alert(e.message);
-        }
-        
-        function getFreeGeoIP() {
-          // use jquery ajax call to lookup the geolocation based on your ipaddress
-          // max 10k requests per hour
-          $.getJSON("https://freegeoip.net/json/", 
+    // send location info to server
+    function pushLocation(title, pos) {
+        var data = title + ' ' + pos.lat + ' ' + pos.lng;
+        console.log("Stop Drag at " + pos + ".. now post this: " + data);
+        $.post('moveit',
+                data,
+                function (r) {
+                    console.log('Post Drag success! ' + r)
+                },
+                'text');
+    }
+
+    ///////////////////////
+    // Server Side Events (flask_sse)
+    var source = new EventSource("{{ url_for('sse.stream') }}");
+    source.addEventListener('myevent', function (e) {
+        var data = JSON.parse(e.data);
+        // handle event
+        mainUserMarker.bindPopup(data['message']).openPopup()
+    }, false);
+
+
+    /////////////////////
+    // prepare location callback functions
+    function onLocationFound(e) {
+        console.log("Found your location hurray");
+        var radius = e.accuracy / 2;
+        pushLocation("{{ username }}", e.latlng);
+        mainUserMarker.setLatLng(e.latlng).bindPopup("You are within " + radius + " meters from this point").openPopup();
+        mainRange.setLatLng(e.latlng).setRadius(radius);
+    }
+
+    function onLocationError(e) {
+        console.log("Sorry no location found");
+        map.setView(defaultPos, 13);
+        getFreeGeoIP();
+        // alert(e.message);
+    }
+
+    function getFreeGeoIP() {
+        // use jquery ajax call to lookup the geolocation based on your ipaddress
+        // max 10k requests per hour
+        $.getJSON("https://freegeoip.net/json/",
                 // when AJAX call is successful, run the following function
-                function (json) {                   
+                function (json) {
                     console.log(json);
-                    var pos = L.latLng(json.latitude,json.longitude);
+                    var pos = L.latLng(json.latitude, json.longitude);
                     // add a marker on the location of the resolved GeoIP
-                    memarker.setLatLng(pos);
-                    console.log("putting a location marker and circle");                    
-                    L.circle(pos, 40).addTo(map);
-                    memarker.bindPopup("You are somewhere here").openPopup();
+                    mainUserMarker.setLatLng(pos);
+                    console.log("putting a location marker and circle");
+                    mainRange.setRadius(40).setLatLng(pos);
+                    mainUserMarker.bindPopup("You are somewhere here").openPopup();
                     //L.marker(pos).addTo(map).bindPopup("You are somewhere here").openPopup();
                     // update the map
                     map.setView(pos, 10);
                 }
-          );
-        }
-        
-        function addMarker(e) {
-            console.log("Adding a marker at %s" % e.latlng);
-            var marker = L.marker(e.latlng).addTo(map);
-            manymarkers.push(marker);
-        }
-        //map.on('click', addMarker);
-        
-        // connect location events to callback functions
-        map.on('locationfound', onLocationFound);
-        map.on('locationerror', onLocationError);
-        
-        // now locate the user
-        //map.locate({setView: true, maxZoom: 16});
-        map.setView(defaultPos, 13);
+        );
+    }
 
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition()
+    function addMarker(e) {
+        console.log("Adding a marker at %s" % e.latlng);
+        var marker = L.marker(e.latlng).addTo(map);
+        manymarkers.push(marker);
+    }
+    //map.on('click', addMarker);
 
-        }
+    // connect location events to callback functions
+    map.on('locationfound', onLocationFound);
+    map.on('locationerror', onLocationError);
 
+    // now locate the user
+    //map.locate({setView: true, maxZoom: 16});
+    map.setView(defaultPos, 13);
 
-    </script>
+    if (navigator.geolocation) {
+        var options = {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 0
+        };
+        navigator.geolocation.watchPosition(
+                function success(pos) {
+                    //var crd = pos.coords;
+                    console.log("WatchPos " + pos.lat + " " + pos.lng);
+                },
+                function error(err) {
+                    //
+                }, options
+        )
+
+    }
+</script>
 </body>
 </html>
-

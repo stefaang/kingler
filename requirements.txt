@@ -12,3 +12,5 @@ flask-sqlalchemy==2.1
 flask-migrate==1.8.0
 geoalchemy2==0.3
 #shapely==1.5.17
+
+flask-sse

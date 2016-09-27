@@ -9,6 +9,7 @@ class Config(object):
     CSRF_ENABLED = True
     SECRET_KEY = 'wiehoudternietvanwortels??!?'
     SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
+    REDIS_URL = os.environ['REDIS_URL']
 
 
 class ProductionConfig(Config):

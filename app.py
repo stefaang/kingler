@@ -2,29 +2,34 @@ import os
 import json
 from flask import Flask, session, redirect, url_for, escape, request, render_template
 from flask_sqlalchemy import SQLAlchemy
-from geoalchemy2 import func
-from geoalchemy2.shape import to_shape
+
+from geoalchemy2 import func, shape
+
+from flask_sse import sse
+
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# now import the models
 from models import *
 
+app.register_blueprint(sse, url_prefix='/stream')
+
+class GeoBackend(object):
+    pass
 
 
-
-
+@app.route('/send')
+def send_message():
+    sse.publish({"message": "Hello!"}, type='greeting')
+    return "Message sent!"
 
 @app.route('/')
 def index():
-    if 'username' in session:
-        return 'Logged in as %s' % escape(session['username'])
-    return '''
-        <p>You are not logged in
-        <p><a href="login">Login</a>
-    '''
+    return render_template('index.html', session=session)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -38,13 +43,7 @@ def login():
             db.session.commit()
             # session['racer'] = r
         return redirect(url_for('show_map'))
-    return '''
-        <form action="" method="post">
-            <p><input type=text name=username>
-            <p><input type=text name=usericon>
-            <p><input type=submit value=Login>
-        </form>
-    '''
+    return render_template('login.html', error='')
 
 @app.route('/logout')
 def logout():
@@ -59,7 +58,7 @@ def show_map():
         rquery = db.session.query(Racer)
         racers = []
         for r in rquery:
-            pos = to_shape(r.pos)
+            pos = shape.to_shape(r.pos)
             racers.append({'name':r.name, 'x':pos.x, 'y': pos.y})
         return render_template('map.html', racers=racers, username=escape(session['username']))
     else:
