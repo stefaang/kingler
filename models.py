@@ -1,4 +1,5 @@
 from app import db
+from datetime import datetime
 import geoalchemy2
 
 class Person(db.Model):
@@ -28,6 +29,23 @@ class Racer(db.Model):
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
 
+
+class Position(db.Model):
+    __tablename__ = 'position'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String())
+    pos = db.Column(geoalchemy2.Geometry('POINT'))
+    accuracy = db.Column(db.Integer)
+    time = db.Column(db.DateTime)
+
+    def __init__(self, name, pos, acc=0):
+        self.name = name
+        self.pos = pos
+        self.time = datetime.now()
+        self.accuracy = acc
+
+    def __repr__(self):
+        return '<{} {} {} {}>'.format(self.time, self.name, self.pos, self.accuracy)
 
 class Zone(db.Model):
     __tablename__ = 'zone'

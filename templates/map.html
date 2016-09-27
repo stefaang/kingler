@@ -91,7 +91,7 @@
             icon: L.AwesomeMarkers.icon({icon: '{{ racer.name }}', markerColor: 'blue'}),
             title: "{{ racer.name }}",
         {% endif %}
-            draggable: true
+    draggable: true
     }).on('dragend', function (e) {
         var pos = e.target._latlng;
         var title = e.target.options.title;
@@ -137,12 +137,12 @@
 
     ///////////////////////
     // Server Side Events (flask_sse)
-    var source = new EventSource("{{ url_for('sse.stream') }}");
-    source.addEventListener('myevent', function (e) {
-        var data = JSON.parse(e.data);
-        // handle event
-        mainUserMarker.bindPopup(data['message']).openPopup()
-    }, false);
+{#    var source = new EventSource("{{ url_for('sse.stream') }}");#}
+{#    source.addEventListener('myevent', function (e) {#}
+{#        var data = JSON.parse(e.data);#}
+{#        // handle event#}
+{#        mainUserMarker.bindPopup(data['message']).openPopup()#}
+{#    }, false);#}
 
 
     /////////////////////
@@ -158,7 +158,7 @@
     function onLocationError(e) {
         console.log("Sorry no location found");
         map.setView(defaultPos, 13);
-        getFreeGeoIP();
+        //getFreeGeoIP();
         // alert(e.message);
     }
 
@@ -205,14 +205,34 @@
         };
         navigator.geolocation.watchPosition(
                 function success(pos) {
-                    //var crd = pos.coords;
-                    console.log("WatchPos " + pos.lat + " " + pos.lng);
+
+                    var timestamp = pos.timestamp;
+                    var crd = pos.coords;
+                    console.log("WatchPos " + crd.latitude + " " + crd.longitude);
+                    function cloneAsObject(obj) {
+                        if (obj === null || !(obj instanceof Object)) {
+                            return obj;
+                        }
+                        var temp = (obj instanceof Array) ? [] : {};
+                        // ReSharper disable once MissingHasOwnPropertyInForeach
+                        for (var key in obj) {
+                            temp[key] = cloneAsObject(obj[key]);
+                        }
+                        return temp;
+                    }
+
+                    var data = JSON.stringify(cloneAsObject(pos));
+                    console.log("Pushing " + data);
+                    if (!$.isEmptyObject(data)) {
+                        $.post('/addpos',
+                                data, function (){},
+                                'application/json');
+                    }
                 },
                 function error(err) {
                     //
                 }, options
         )
-
     }
 </script>
 </body>

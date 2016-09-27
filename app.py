@@ -108,6 +108,31 @@ def del_marker():
         pass
     # TODO fill up
 
+@app.route('/addpos', methods=['GET', 'POST'])
+def add_position():
+    if request.method == 'POST' and 'username' in session:
+        errors = []
+        try:
+            data = request.get_json(force=True)
+            # data = json.dumps(request.get_data())
+            app.logger.info("addpos %s",data)
+            name = session['username']
+            lat = data['coords']['latitude']
+            lng = data['coords']['longitude']
+            acc = data['coords']['accuracy']
+            pos = Position(name, 'POINT(%s %s)' % (lat, lng), acc)
+            db.session.add(pos)
+            db.session.commit()
+            app.logger.info("successfully added %s", pos)
+            return "OK"
+        except Exception, e:
+            errors.append(e)
+            app.logger.exception("Failed to add position %s",e)
+            return "Fail awwww "+e.message
+    else:
+        return "ehhh"
+
+
 
 @app.route('/<name>')
 def hello_name(name):
