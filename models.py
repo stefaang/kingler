@@ -1,8 +1,11 @@
 from app import db
 from datetime import datetime
 import geoalchemy2
+from sqlalchemy.ext.declarative import declarative_base
 
-class Person(db.Model):
+Base = declarative_base()
+
+class Person(Base):
     __tablename__ = 'persons'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -15,7 +18,7 @@ class Person(db.Model):
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
 
-class Racer(db.Model):
+class Racer(Base):
     __tablename__ = 'racer'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -30,7 +33,7 @@ class Racer(db.Model):
         return '<id {} {}>'.format(self.id, self.name)
 
 
-class Position(db.Model):
+class Position(Base):
     __tablename__ = 'position'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String())
@@ -47,7 +50,7 @@ class Position(db.Model):
     def __repr__(self):
         return '<{} {} {} {}>'.format(self.time, self.name, self.pos, self.accuracy)
 
-class Zone(db.Model):
+class Zone(Base):
     __tablename__ = 'zone'
 
     id = db.Column(db.Integer, primary_key=True)
