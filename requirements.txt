@@ -11,6 +11,7 @@ psycopg2==2.6.1
 flask-sqlalchemy==2.1
 flask-migrate==1.8.0
 geoalchemy2==0.3
-#shapely==1.5.17
+shapely==1.5.17
 
-flask-sse
+flask-sse==0.2.1
+flask-sockets==0.2.1
