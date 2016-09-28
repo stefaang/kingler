@@ -13,5 +13,6 @@ flask-migrate==1.8.0
 geoalchemy2==0.3
 shapely==1.5.17
 
-flask-sse==0.2.1
+#flask-sse==0.2.1
 flask-sockets==0.2.1
+redis

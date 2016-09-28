@@ -5,27 +5,94 @@ from flask_sqlalchemy import SQLAlchemy
 
 from geoalchemy2 import func, shape
 
-from flask_sse import sse
-
+# from flask_sse import sse
+from flask_sockets import Sockets
+import gevent
+import redis
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+sockets = Sockets(app)
+redis = redis.from_url(app.config['REDIS_URL'])
+
 # now import the models
 from models import *
 
-app.register_blueprint(sse, url_prefix='/stream')
+# app.register_blueprint(sse, url_prefix='/stream')
+
+
 
 class GeoBackend(object):
-    pass
+    """Interface for registering and updating WebSocket clients."""
+
+    def __init__(self):
+        self.clients = list()
+        self.pubsub = redis.pubsub()
+        self.pubsub.subscribe(app.config['REDIS_CHAN'])
+
+    def __iter_data(self):
+        for message in self.pubsub.listen():
+            data = message.get('data')
+            if message['type'] == 'message':
+                app.logger.info(u'Sending message: {}'.format(data))
+                yield data
+
+    def register(self, client):
+        """Register a WebSocket connection for Redis updates."""
+        self.clients.append(client)
+
+    def send(self, client, data):
+        """Send given data to the registered client.
+        Automatically discards invalid connections."""
+        try:
+            client.send(data)
+        except Exception:
+            self.clients.remove(client)
+
+    def run(self):
+        """Listens for new messages in Redis, and sends them to clients."""
+        for data in self.__iter_data():
+            for client in self.clients:
+                gevent.spawn(self.send, client, data)
+
+    def start(self):
+        """Maintains Redis subscription in the background."""
+        gevent.spawn(self.run)
+
+gbe = GeoBackend()
+gbe.start()
+
+@sockets.route('/submit')
+def inbox(ws):
+    """Receives incoming chat messages, inserts them into Redis."""
+    while not ws.closed:
+        # Sleep to prevent *constant* context-switches.
+        gevent.sleep(0.1)
+        message = ws.receive()
+
+        if message:
+            app.logger.info(u'Inserting message: {}'.format(message))
+            redis.publish(app.config['REDIS_CHAN'], message)
+
+@sockets.route('/receive')
+def outbox(ws):
+    """Sends outgoing chat messages, via `GeoBackend`."""
+    gbe.register(ws)
+
+    while not ws.closed:
+        # Context switch while `GeoBackend.start` is running in the background.
+        gevent.sleep(0.1)
 
 
-@app.route('/send')
-def send_message():
-    sse.publish({"message": "Hello!"}, type='greeting')
-    return "Message sent!"
+
+
+# @app.route('/send')
+# def send_message():
+#     sse.publish({"message": "Hello!"}, type='greeting')
+#     return "Message sent!"
 
 @app.route('/')
 def index():
@@ -54,21 +121,24 @@ def logout():
 @app.route('/map')
 def show_map():
     if 'username' in session:
-        # get points from db
+        # get Racers
         rquery = db.session.query(Racer)
+        # todo: only show nearby Racers
         racers = []
         for r in rquery:
             pos = shape.to_shape(r.pos)
-            racers.append({'name':r.name, 'x':pos.x, 'y': pos.y})
-
+            if r.name == session['username']:
+                racers.append({'name':r.name, 'lat':pos.x, 'lng': pos.y, 'icon': 'user-secret', 'color': 'red'})
+            else:
+                racers.append({'name': r.name, 'lat': pos.x, 'lng': pos.y, 'icon': 'bug', 'color': 'blue'})
+        # get recent positions of main User
         positions = (shape.to_shape(pos) for pos, in db.session.query(Position.pos).filter_by(name=session['username']))
         # pos in query is tuple with 1 element..
         positions = [[pos.x, pos.y] for pos in positions]
-        app.logger.info(json.dumps(positions))
-        return render_template('map.html',
-                               racers=racers,
-                               username=escape(session['username']),
-                               positions=positions)
+
+        # prepare dict object
+        data = {'positions':positions, 'racers':racers, 'username':session['username']}
+        return render_template('map.html', flaskData=data)
     else:
         return 'You are not logged in'
 
@@ -140,6 +210,24 @@ def add_position():
     else:
         return "ehhh"
 
+@app.route('/<name>/admin')
+def show_admin_map(name):
+    # get points from db
+    rquery = db.session.query(Racer)
+    racers = []
+    for r in rquery:
+        pos = shape.to_shape(r.pos)
+        racers.append({'name': r.name, 'x': pos.x, 'y': pos.y})
+
+    positions = (shape.to_shape(pos) for pos, in
+                 db.session.query(Position.pos).filter_by(name=name))
+    # pos in query is tuple with 1 element..
+    positions = [[pos.x, pos.y] for pos in positions]
+    # app.logger.info(json.dumps(positions))
+    return render_template('admin.html',
+                           racers=racers,
+                           username=name,
+                           positions=positions)
 
 
 @app.route('/<name>')

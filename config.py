@@ -10,6 +10,7 @@ class Config(object):
     SECRET_KEY = 'wiehoudternietvanwortels??!?'
     SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
     REDIS_URL = os.environ['REDIS_URL']
+    REDIS_CHAN = 'chat'
 
 
 class ProductionConfig(Config):
