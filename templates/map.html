@@ -112,12 +112,16 @@
             }
             //storeLocation(title, pos);
             pushMarkerLocation(e.target);
+        }).on('click', function (e) {
+            e.target.unbindPopup();
+            e.target.bindPopup(e.target.options.title).openPopup();
         }).addTo(map);
         markers[racer.name] = marker;
     }
 
     // bind to main Racer
     var mainUserMarker = markers[flaskData.username];
+    mainUserMarker.setLatLng(mainUserMarker.getLatLng()); // put on top
     var mainRange = L.circle(mainUserMarker.getLatLng(), 100).addTo(map);
     console.log("Markers ready");
 
@@ -185,6 +189,7 @@
         console.log("Found your location hurray");
         var radius = e.accuracy / 2;
         storeLocation(flaskData.username, e.latlng);
+        mainUserMarker.unbindPopup();
         mainUserMarker.setLatLng(e.latlng).bindPopup("You are within " + radius + " meters from this point").openPopup();
         mainRange.setLatLng(e.latlng).setRadius(radius);
         pushMarkerLocation(mainUserMarker);
@@ -222,8 +227,8 @@
 
     // now locate the user
     //map.locate({setView: true, maxZoom: 16});
-    console.log("Leaflet location callbacks ready.. setView to defaultPos");
-    map.setView(defaultPos, 13);
+    console.log("Leaflet location callbacks ready.. setView to main marker");
+    map.setView(mainUserMarker.getLatLng(), 12);
 
 
     inbox.onmessage = function(message) {
