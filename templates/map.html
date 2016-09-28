@@ -40,14 +40,9 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 
 <script>
-    var flaskRawData = {{ flaskData|tojson|safe }};
-    console.log(flaskRawData);
-    console.log(JSON.stringify(flaskRawData));
-    var flaskData = flaskRawData;
-    console.log(flaskData.racers);
+    var flaskData = {{ flaskData|tojson|safe }};
+    console.log(flaskData);
     console.log(flaskData.racers[0]);
-    //var flaskData = JSON.parse(flaskRawData);
-    //console.log(flaskData);
 
     // Support TLS-specific URLs, when appropriate.
     if (window.location.protocol == "https:") {
@@ -58,6 +53,7 @@
 
     var inbox = new ReconnectingWebSocket(ws_scheme + location.host + "/receive");
     var outbox = new ReconnectingWebSocket(ws_scheme + location.host + "/submit");
+    console.log("Websockets ready");
 
     // create map
     var map = L.map('map',
@@ -85,6 +81,7 @@
         maxZoom: 18,
         id: 'carto.light'
     }).addTo(map);
+    console.log("Leaflet Map ready");
 
 
     //////////////////////
@@ -109,7 +106,10 @@
         }).on('dragend', function (e) {
             var pos = e.target.getLatLng();
             var title = e.target.options.title;
-            mainRange.setLatLng(pos).setRadius(100);
+            if (title == flaskData.username){
+                mainRange.setLatLng(pos);
+                mainUserTrack.push(pos);
+            }
             //storeLocation(title, pos);
             pushMarkerLocation(e.target);
         }).addTo(map);
@@ -119,7 +119,12 @@
     // bind to main Racer
     var mainUserMarker = markers[flaskData.username];
     var mainRange = L.circle(mainUserMarker.getLatLng(), 100).addTo(map);
+    console.log("Markers ready");
 
+    function centerView() {
+        mainRange.setLatLng(pos).setRadius(100);
+        map.setView(mainUserMarker.getLatLng());
+    }
 
     function pushMainLocation (){
         var data = JSON.stringify({user:flaskData.username, pos: mainUserMarker.getLatLng()});
@@ -127,91 +132,87 @@
         outbox.send(data);
     }
 
-    function pushMarkerLocation (m){
-        var data = JSON.stringify({user:m.options.title, pos: m.getLatLng()});
+    function pushMarkerLocation (marker){
+{#        console.log('Try push '+marker)#}
+        var data = JSON.stringify({user:marker.options.title, pos: marker.getLatLng()});
         console.log('Outbox: '+data);
         outbox.send(data);
     }
+
 
     ////////////////////////
     //  BUTTONS
 
     // add button that searches your location
     L.easyButton('fa-crosshairs', function () {
+        console.log("Use Leaflet Location")
         map.locate({setView: true, maxZoom: 16});
     }).addTo(map);
 
     // add button that recenters
     L.easyButton('fa-coffee', function () {
         map.setView(mainUserMarker.getLatLng(), 13);
-        L.polyline({{ positions }}).addTo(map);
     }).addTo(map);
 
     // add button that sends your location
-    L.easyButton('fa-star', pushMainLocation).addTo(map);
+    L.easyButton('fa-star', storeMainLocation).addTo(map);
 
-    // add button that goes to
+    // this buttons shows your track
+    var mainUserTrack = [];
+    var mainUserTrackPolyLine = L.polyline(mainUserMarker.getLatLng()).addTo(map);
     L.easyButton('fa-bolt', function () {
-
+        mainUserTrackPolyLine.setLatLngs(mainUserTrack);
     }).addTo(map);
-
+    console.log("AwesomeButtons ready");
 
     // send location info to server
     function storeLocation(title, pos) {
         var data = title + ' ' + pos.lat + ' ' + pos.lng;
-        console.log("Stop Drag at " + pos + ".. now post this: " + data);
-        $.post('moveit',
-                data,
-                function (r) {
-                    console.log('Post Drag success! ' + r)
-                },
-                'text');
+        console.log("Storing this: " + data);
+        $.post('moveit', data,
+                function () {
+                    console.log('storeLocation succes')
+                }, 'application/text');
     }
 
-    ///////////////////////
-    // Server Side Events (flask_sse)
-    {#    var source = new EventSource("{{ url_for('sse.stream') }}");#}
-    {#    source.addEventListener('myevent', function (e) {#}
-    {#        var data = JSON.parse(e.data);#}
-    {#        // handle event#}
-    {#        mainUserMarker.bindPopup(data['message']).openPopup()#}
-    {#    }, false);#}
-
+    function storeMainLocation() {
+        storeLocation(flaskData.username, mainUserMarker.getLatLng());
+    }
 
     /////////////////////
-    // prepare location callback functions
+    // prepare leaflet map.locate callback functions
     function onLocationFound(e) {
         console.log("Found your location hurray");
         var radius = e.accuracy / 2;
         storeLocation(flaskData.username, e.latlng);
         mainUserMarker.setLatLng(e.latlng).bindPopup("You are within " + radius + " meters from this point").openPopup();
         mainRange.setLatLng(e.latlng).setRadius(radius);
+        pushMarkerLocation(mainUserMarker);
     }
 
     function onLocationError(e) {
         console.log("Sorry no location found");
-        map.setView(defaultPos, 13);
-        //getFreeGeoIP();
+        //map.setView(defaultPos, 13);
+        setFreeGeoIP();
         // alert(e.message);
     }
 
-    function getFreeGeoIP() {
+    function setFreeGeoIP() {
         // use jquery ajax call to lookup the geolocation based on your ipaddress
         // max 10k requests per hour
         $.getJSON("https://freegeoip.net/json/",
-                // when AJAX call is successful, run the following function
-                function (json) {
-                    console.log(json);
-                    var pos = L.latLng(json.latitude, json.longitude);
-                    // add a marker on the location of the resolved GeoIP
-                    mainUserMarker.setLatLng(pos);
-                    console.log("putting a location marker and circle");
-                    mainRange.setRadius(40).setLatLng(pos);
-                    mainUserMarker.bindPopup("You are somewhere here").openPopup();
-                    //L.marker(pos).addTo(map).bindPopup("You are somewhere here").openPopup();
-                    // update the map
-                    map.setView(pos, 10);
-                }
+            // when AJAX call is successful, run the following function
+            function (json) {
+                console.log("FreeGeoIP - "+json);
+                console.log("FreeGeoIP setting mainMarker location");
+                var pos = L.latLng(json.latitude, json.longitude);
+                // add a marker on the location of the resolved GeoIP
+                mainUserMarker.setLatLng(pos).bindPopup("You are somewhere here").openPopup();
+                mainRange.setRadius(40).setLatLng(pos);
+                pushMarkerLocation(mainUserMarker);
+                // update the map
+                map.setView(pos, 12);
+            }
         );
     }
 
@@ -221,19 +222,20 @@
 
     // now locate the user
     //map.locate({setView: true, maxZoom: 16});
+    console.log("Leaflet location callbacks ready.. setView to defaultPos");
     map.setView(defaultPos, 13);
 
 
     inbox.onmessage = function(message) {
         var data = JSON.parse(message.data);
         console.log("Inbox received: "+data);
-        console.log("try unpack..: "+data.user+" "+L.latLng(data.pos));
+        console.log("Inbox unpack..: "+data.user+" "+L.latLng(data.pos));
         var marker = markers[data.user];
         if (marker) {
             marker.setLatLng(L.latLng(data.pos));
         }
     }
-
+    console.log("Inbox is listening...")
 
 
     ////////////////////
@@ -269,7 +271,25 @@
                 var newCoords = JSON.stringify(cloneAsObject(crd))
                 var data = JSON.stringify(cloneAsObject(pos));
                 // do not compare with data as the timestamp changes.......
-                if ((newCoords != prevCoords) && (newTime > prevTime + 5000) && pushReady) {
+
+                // fast visual feedback over websockets every 500 ms
+                if ((newCoords != prevCoords) && (newTime > prevTime + 500)){
+
+                    //console.log("Lets make a push1 ");
+                    var latLng = L.latLng(crd.latitude, crd.longitude);
+                    //console.log("Lets make a push2 "+latLng);
+
+                    mainUserTrack.push(latLng);
+                    //console.log("Lets make a push3");
+                    mainUserMarker.setLatLng(latLng);
+                    mainRange.setLatLng(latLng).setRadius(crd.accuracy/2);
+                    //console.log("Lets make a push4");
+                    pushMarkerLocation(mainUserMarker);
+                    //console.log("Lets make a push5");
+
+                }
+                // store position every 30 sec in the big db
+                if ((newCoords != prevCoords) && (newTime > prevTime + 30000) && pushReady) {
                     console.log("WatchPos " + crd.latitude + " " + crd.longitude);
                     console.log("Pushing " + data);
                     if (!$.isEmptyObject(data)) {
@@ -289,6 +309,7 @@
                 //
             }, options
         )
+        console.log("HTML5 Geolocation tracking ready");
     }
 </script>
 </body>

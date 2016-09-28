@@ -37,7 +37,7 @@ class GeoBackend(object):
         for message in self.pubsub.listen():
             data = message.get('data')
             if message['type'] == 'message':
-                app.logger.info(u'Sending message: {}'.format(data))
+                # app.logger.info(u'Sending message: {}'.format(data))
                 yield data
 
     def register(self, client):
@@ -74,7 +74,7 @@ def inbox(ws):
         message = ws.receive()
 
         if message:
-            app.logger.info(u'Inserting message: {}'.format(message))
+            # app.logger.info(u'Inserting message: {}'.format(message))
             redis.publish(app.config['REDIS_CHAN'], message)
 
 @sockets.route('/receive')
@@ -193,7 +193,7 @@ def add_position():
         try:
             data = request.get_json(force=True)
             # data = json.dumps(request.get_data())
-            app.logger.info("addpos %s",data)
+            # app.logger.info("addpos %s",data)
             name = session['username']
             lat = data['coords']['latitude']
             lng = data['coords']['longitude']
