@@ -101,6 +101,8 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        if not request.form['username']:
+            return render_template('login.html', error='You must fill in a Username')
         session['username'] = request.form['username']
         safename = escape(session['username'])
         r = db.session.query(Racer).filter_by(name=safename).first()
