@@ -114,6 +114,7 @@ def login():
             db.session.add(r)
             db.session.commit()
             # session['racer'] = r
+
         return redirect(url_for('show_map'))
     return render_template('login.html', error='')
 
@@ -133,7 +134,7 @@ def show_map():
         for r in rquery:
             pos = shape.to_shape(r.pos)
             if r.name == session['username']:
-                racers.append({'name':r.name, 'lat':pos.x, 'lng': pos.y, 'icon': 'user-secret', 'color': 'red'})
+                racers.append({'name':r.name, 'lat':pos.x, 'lng': pos.y, 'icon': 'user-secret', 'color': session['color']})
             else:
                 racers.append({'name': r.name, 'lat': pos.x, 'lng': pos.y, 'icon': 'bug', 'color': 'blue'})
         # get recent positions of main User
