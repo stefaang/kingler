@@ -1,14 +1,18 @@
 {% extends "layout.html" %}
 {% block body %}
-  <h1>LoginPLX</h1>
+  <h2>Pick a name and color</h2>
   {% if error %}<p class="error"><strong>Error:</strong> {{ error }}{% endif %}
   <form action="login" method="post">
     <dl>
       <dt>Username:
-      <dd><input type="text" name="username">
-      <dt>Password:
-      <dd><input type="password" name="password">
-      <dd><input type="submit" value="Login">
+        <dd><input type="text" name="username">
+{#      <dt>Password:#}
+{#      <dd><input type="password" name="password">#}
+      <dt>Color:
+        <dd><input type="radio" name="color" value="orange" checked>
+        <dd><input type="radio" name="color" value="red">
+        <dd><input type="radio" name="color" value="blue">
+        <dd><input type="submit" value="Login">
     </dl>
   </form>
 {% endblock %}

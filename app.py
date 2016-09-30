@@ -103,11 +103,14 @@ def login():
     if request.method == 'POST':
         if not request.form['username']:
             return render_template('login.html', error='You must fill in a Username')
-        session['username'] = request.form['username']
-        safename = escape(session['username'])
-        r = db.session.query(Racer).filter_by(name=safename).first()
+        if not request.form['username'].isalnum():
+            return render_template('login.html', error='Only use letters and numbers in your Username')
+        username = session['username'] = escape(request.form['username'])
+        session['color'] = request.form['color']
+
+        r = db.session.query(Racer).filter_by(name=username).first()
         if not r:
-            r = Racer(safename, 'POINT(0 0)')
+            r = Racer(username, 'POINT(51 3.7)')
             db.session.add(r)
             db.session.commit()
             # session['racer'] = r

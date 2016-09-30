@@ -1,9 +1,9 @@
 {% extends "layout.html" %}
 {% block body %}
-    <h1>Hello, index!</h1>
+    <h1>Welcome to da party!</h1>
     {% if 'username' in session %}
         <p>You are logged in!
-        <p><a href="{{ url_for('show_map') }}">Enter the arena of Battle Royale!</a>
+        <p><a href="{{ url_for('show_map') }}">I want to eat NOMs!</a>
         <p><a href="{{ url_for('logout') }}">Logout</a>
     {% else %}
         <p>You are not logged in
