@@ -106,15 +106,17 @@ def login():
         if not request.form['username'].isalnum():
             return render_template('login.html', error='Only use letters and numbers in your Username')
         username = session['username'] = escape(request.form['username'])
-        session['color'] = request.form['color']
+        color = session['color'] = request.form['color']
 
         r = db.session.query(Racer).filter_by(name=username).first()
         if not r:
-            r = Racer(username, 'POINT(51 3.7)')
+            r = Racer(username, 'POINT(51 3.7)', color)
             db.session.add(r)
             db.session.commit()
             # session['racer'] = r
-
+        else:
+            r.color = color
+            db.session.commit()
         return redirect(url_for('show_map'))
     return render_template('login.html', error='')
 
@@ -134,8 +136,10 @@ def show_map():
         for r in rquery:
             pos = shape.to_shape(r.pos)
             if r.name == session['username']:
-                racers.append({'name':r.name, 'lat':pos.x, 'lng': pos.y, 'icon': 'user-secret', 'color': session['color']})
+                color = session.get('color', 'black')
+                racers.append({'name':r.name, 'lat':pos.x, 'lng': pos.y, 'icon': 'user-secret', 'color': color})
             else:
+                # todo: add color from DB
                 racers.append({'name': r.name, 'lat': pos.x, 'lng': pos.y, 'icon': 'bug', 'color': 'blue'})
         # get recent positions of main User
         positions = (shape.to_shape(pos) for pos, in db.session.query(Position.pos).filter_by(name=session['username']))

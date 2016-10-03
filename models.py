@@ -22,11 +22,15 @@ class Racer(db.Model):
     name = db.Column(db.String)
     pos = db.Column(geoalchemy2.Geometry('POINT'))
     color = db.Column(db.String)
+    icon = db.Column(db.String)
+    date_created = db.Column(db.DateTime)
 
-    def __init__(self, name, pos, color="orange"):
+    def __init__(self, name, pos, color="orange", icon="bug"):
         self.name = name
         self.pos = pos
         self.color = color
+        self.icon = icon
+        self.date_created = datetime.now()
 
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
