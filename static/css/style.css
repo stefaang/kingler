@@ -20,11 +20,10 @@ body {
   text-align: center;
 }
 
-.container .img{
-    width:100%;
-    max-width:636px;
+.container .img {
+    max-width: 100%;
+    height: auto;
 }
-
 
 #map {
   height: 100%;
