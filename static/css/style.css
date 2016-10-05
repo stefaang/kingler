@@ -25,6 +25,11 @@ body {
     height: auto;
 }
 
+.container .radio {
+  text-align: left;
+  align: left;
+}
+
 #map {
   height: 100%;
 }

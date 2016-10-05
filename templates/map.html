@@ -204,7 +204,7 @@
         var query = 'http://www.overpass-api.de/api/interpreter?' +
                 'data=[out:json][timeout:10];' +
                 '(way(around:'+range+','+pos.lat+','+pos.lng+');>;);' +
-                'out body;';
+                'out;';
         console.log(query);
         $.getJSON(query, function(data) {
             var d = cloneAsObject(data);
