@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Battle Royale Map</title>
+    <title>Pacman Party Map</title>
 
     <!-- get Leaflet, the map library -->
     <!-- link rel="stylesheet" href="static/css/leaflet.css" /-->
@@ -43,6 +43,20 @@
     var flaskData = {{ flaskData|tojson|safe }};
     console.log(flaskData);
     console.log(flaskData.racers[0]);
+
+    // helper to handle objects
+    function cloneAsObject(obj) {
+        if (obj === null || !(obj instanceof Object)) {
+            return obj;
+        }
+        var temp = (obj instanceof Array) ? [] : {};
+        // ReSharper disable once MissingHasOwnPropertyInForeach
+        for (var key in obj) {
+            temp[key] = cloneAsObject(obj[key]);
+        }
+        return temp;
+    }
+
 
     // Support TLS-specific URLs, when appropriate.
     if (window.location.protocol == "https:") {
@@ -123,12 +137,11 @@
     var mainUserMarker = markers[flaskData.username];
     mainUserMarker.setLatLng(mainUserMarker.getLatLng()); // put on top
     var mainRange = L.circle(mainUserMarker.getLatLng(), 100).addTo(map);
+    mainUserMarker.on('move', function(e) {
+        mainRange.setLatLng(e.latlng);
+    })
     console.log("Markers ready");
 
-    function centerView() {
-        mainRange.setLatLng(pos).setRadius(100);
-        map.setView(mainUserMarker.getLatLng());
-    }
 
     function pushMainLocation (){
         var data = JSON.stringify({user:flaskData.username, pos: mainUserMarker.getLatLng()});
@@ -148,15 +161,108 @@
     //  BUTTONS
 
     // add button that searches your location
-    L.easyButton('fa-crosshairs', function () {
-        console.log("Use Leaflet Location")
-        map.locate({setView: true, maxZoom: 16});
-    }).addTo(map);
+    L.easyButton({
+        states : [
+            {
+                stateName: 'disabled',
+                icon: 'fa-crosshairs',
+                onClick: function (control) {
+                    console.log("Start using Leaflet Location");
+                    map.locate({
+                        watch: true,                // keep tracking
+                        enableHighAccuracy: true,   // enable GPS
+                        setView: true,              // center the viewport
+                        maxZoom: 17,                // zoom to 15 max
+                        timeout: 30000
+                    });
+                    control.state('enabled');
+                }
+            },
+            {
+                stateName: 'enabled',
+                icon: 'fa-times',
+                onClick: function (control) {
+                    console.log("Stop using Leaflet Location");
+                    map.stopLocate();
+                    control.state('disabled');
+                }
+            }
+        ]}).addTo(map);
 
     // add button that recenters
+    var nomNodes = {};
+    var nomWays = {};
+    var plotNomNodeCounter = 0;
+    var plotNomNodes = [];
+    var plotNomLastPos = mainUserMarker.getLatLng();
+    var noms = L.featureGroup([]).addTo(map);
+    var nomIcon = L.AwesomeMarkers.icon({icon:'diamond', markerColor:'orange'});
+
     L.easyButton('fa-coffee', function () {
-        map.setView(mainUserMarker.getLatLng(), 13);
+        var range = 80;
+        var pos = mainUserMarker.getLatLng();
+        var query = 'http://www.overpass-api.de/api/interpreter?' +
+                'data=[out:json][timeout:10];' +
+                '(way(around:'+range+','+pos.lat+','+pos.lng+');>;);' +
+                'out body;';
+        console.log(query);
+        $.getJSON(query, function(data) {
+            var d = cloneAsObject(data);
+            var nodes = d.elements;
+            console.log('Coffee got '+ nodes.length + ' nodes');
+            for (var i=0 ; i < nodes.length; i++) {
+                var node = nodes[i];
+
+                if (node.type == 'node') {
+                    var pos = L.latLng([node.lat, node.lon]);
+                    nomNodes[node.id] = pos;
+                } else if (node.type == 'way'){
+                    console.log('Coffee got a way!');
+                    var waynodes = cloneAsObject(node['nodes']);
+                    var wayarray = [];
+                    for (var j=0; j < waynodes.length; j++) {
+                        // get the node with this id
+                        nodeID = waynodes[j];
+                        nd = nomNodes[nodeID];
+                        wayarray.push(nd);
+                        plotNomNodes.push(nodeID);
+                    }
+                    nomWays[node.id] = wayarray;
+                }
+            }
+            plotNomLastPos = mainUserMarker.getLatLng();
+            console.log('COFFEE end - '+plotNomNodes);
+                // most nodes come in order, so this spreads the noms a bit
+{#                if (prevPos.distanceTo(newPos) > 50) {#}
+{#                    if (i < 10){#}
+{#                        console.log('Point distance '+prevPos.distanceTo(newPos)+" - "+newPos);#}
+{#                    }#}
+{#                    noms.addLayer(L.marker(newPos, {icon:nomIcon}));#}
+{#                    prevPos = newPos;#}
+{#                }#}
+{#            }#}
+            //console.log('overpass return '+j);
+        });
     }).addTo(map);
+
+    function addNomNode() {
+        console.log('yawn '+plotNomNodeCounter+" "+plotNomNodes.length);
+        if (plotNomNodeCounter < plotNomNodes.length) {
+            var nodeID = plotNomNodes[plotNomNodeCounter];
+            var pos = nomNodes[nodeID];
+            if (pos.distanceTo(plotNomLastPos) > 50) {
+                noms.addLayer(L.marker(pos, {icon: nomIcon}));
+                plotNomLastPos = pos;
+                console.log('Put NOM at ' + pos);
+            } else {
+                console.log('Skip NOM at ' + pos);
+            }
+            plotNomNodeCounter++;
+        }
+    }
+
+    var nomTimer = setInterval(addNomNode, 600);
+
 
     // add button that sends your location
     L.easyButton('fa-star', storeMainLocation).addTo(map);
@@ -183,20 +289,33 @@
         storeLocation(flaskData.username, mainUserMarker.getLatLng());
     }
 
+
+
+    var prevMainPos = 0;
+    var prevTime = 0;
+    var pushReady = true;
     /////////////////////
     // prepare leaflet map.locate callback functions
     function onLocationFound(e) {
-        console.log("Found your location hurray");
+        //console.log("Found your location hurray");
+
         var radius = e.accuracy / 2;
-        storeLocation(flaskData.username, e.latlng);
-        mainUserMarker.unbindPopup();
-        mainUserMarker.setLatLng(e.latlng).bindPopup("You are within " + radius + " meters from this point").openPopup();
-        mainRange.setLatLng(e.latlng).setRadius(radius);
-        pushMarkerLocation(mainUserMarker);
+        //storeLocation(flaskData.username, e.latlng);
+        //mainUserMarker.unbindPopup();
+        mainUserMarker.setLatLng(e.latlng);
+                //.bindPopup("You are within " + radius + " meters from this point").openPopup();
+        mainRange.setRadius(radius);
+        if (e.latlng == prevMainPos && e.timestamp < prevTime + 30000){
+            return
+        } else {
+            pushMainLocation();
+            prevMainPos = e.latlng;
+            prevTime = e.timestamp;
+        }
     }
 
     function onLocationError(e) {
-        console.log("Sorry no location found");
+        // console.log("Sorry no location found");
         //map.setView(defaultPos, 13);
         setFreeGeoIP();
         // alert(e.message);
@@ -213,7 +332,7 @@
                 var pos = L.latLng(json.latitude, json.longitude);
                 // add a marker on the location of the resolved GeoIP
                 mainUserMarker.setLatLng(pos).bindPopup("You are somewhere here").openPopup();
-                mainRange.setRadius(40).setLatLng(pos);
+                mainRange.setRadius(40);
                 pushMarkerLocation(mainUserMarker);
                 // update the map
                 map.setView(pos, 12);
@@ -225,11 +344,18 @@
     map.on('locationfound', onLocationFound);
     map.on('locationerror', onLocationError);
 
-    // now locate the user
-    //map.locate({setView: true, maxZoom: 16});
     console.log("Leaflet location callbacks ready.. setView to main marker");
     map.setView(mainUserMarker.getLatLng(), 12);
 
+    {# HOME: 50.9829401,3.7375336, 15 #}
+
+    // now locate the user
+{#    map.locate({#}
+{#        watch: true,                // keep tracking#}
+{#        enableHighAccuracy: true,   // enable GPS#}
+{#        setView: true,              // center the viewport#}
+{#        maxZoom: 16                 // zoom to 15 max#}
+{#    });#}
 
     inbox.onmessage = function(message) {
         var data = JSON.parse(message.data);
@@ -240,26 +366,11 @@
             marker.setLatLng(L.latLng(data.pos));
         }
     }
-    console.log("Inbox is listening...")
+    console.log("Inbox is listening...");
 
 
     ////////////////////
-    // geolocation
-    var prevCoords = 0;
-    var prevTime = 0;
-    var pushReady = true;
-    // help function
-    function cloneAsObject(obj) {
-        if (obj === null || !(obj instanceof Object)) {
-            return obj;
-        }
-        var temp = (obj instanceof Array) ? [] : {};
-        // ReSharper disable once MissingHasOwnPropertyInForeach
-        for (var key in obj) {
-            temp[key] = cloneAsObject(obj[key]);
-        }
-        return temp;
-    }
+    // geolocation    // help function
 
     if (navigator.geolocation) {
         var options = {
@@ -267,56 +378,59 @@
             timeout: 15000,
             maximumAge: 200,
         };
-        navigator.geolocation.watchPosition(
-            function success(pos) {
-                var newTime = pos.timestamp;
-                var crd = pos.coords;
-                // if the player moved, update to the server.
-
-                var newCoords = JSON.stringify(cloneAsObject(crd))
-                var data = JSON.stringify(cloneAsObject(pos));
-                // do not compare with data as the timestamp changes.......
-
-
-
-                // fast visual feedback over websockets every 500 ms
-                if ((newCoords != prevCoords) && (newTime > prevTime + 500)){
-
-                    //console.log("Lets make a push1 ");
-                    var latLng = L.latLng(crd.latitude, crd.longitude);
-                    //console.log("Lets make a push2 "+latLng);
-
-                    mainUserTrack.push(latLng);
-                    //console.log("Lets make a push3");
-                    mainUserMarker.setLatLng(latLng);
-                    mainRange.setLatLng(latLng).setRadius(crd.accuracy/2);
-                    //console.log("Lets make a push4");
-                    pushMarkerLocation(mainUserMarker);
-                    //console.log("Lets make a push5");
-
-                }
-                // store position every 30 sec in the big db
-                if ((newCoords != prevCoords) && (newTime > prevTime + 30000) && pushReady) {
-                    console.log("WatchPos " + crd.latitude + " " + crd.longitude);
-                    console.log("Pushing " + data);
-                    if (!$.isEmptyObject(data)) {
-                        pushReady = false;
-                        $.post('/addpos', data)
-                                .always(function () {
-                                    pushReady = true;
-                                });
-                    }
-                    // update previous coordinates
-                    prevCoords = newCoords;
-                    prevTime = newTime;
-                }
-
-            },
-            function error(err) {
-                //
-            }, options
-        )
-        console.log("HTML5 Geolocation tracking ready");
+{#        navigator.geolocation.watchPosition(#}
+{#            function success(pos) {#}
+{#                var newTime = pos.timestamp;#}
+{#                var crd = pos.coords;#}
+{#                // if the player moved, update to the server.#}
+{##}
+{#                var newCoords = JSON.stringify(cloneAsObject(crd))#}
+{#                var data = JSON.stringify(cloneAsObject(pos));#}
+{#                // do not compare with data as the timestamp changes.......#}
+{##}
+{##}
+{##}
+{#                // fast visual feedback over websockets every 500 ms#}
+{#                if ((newCoords != prevCoords) && (newTime > prevTime + 500)){#}
+{##}
+{#                    //console.log("Lets make a push1 ");#}
+{#                    var latLng = L.latLng(crd.latitude, crd.longitude);#}
+{#                    //console.log("Lets make a push2 "+latLng);#}
+{##}
+{#                    mainUserTrack.push(latLng);#}
+{#                    //console.log("Lets make a push3");#}
+{#                    mainUserMarker.setLatLng(latLng);#}
+{#                    //mainRange.setLatLng(latLng)#}
+{#                    mainRange.setRadius(crd.accuracy/2);#}
+{#                    //console.log("Lets make a push4");#}
+{#                    pushMarkerLocation(mainUserMarker);#}
+{#                    //console.log("Lets make a push5");#}
+{##}
+{#                }#}
+{#                // store position every 30 sec in the big db#}
+{#                if ((newCoords != prevCoords) && (newTime > prevTime + 30000) && pushReady) {#}
+{#                    console.log("WatchPos " + crd.latitude + " " + crd.longitude);#}
+{#                    console.log("Pushing " + data);#}
+{#                    if (!$.isEmptyObject(data)) {#}
+{#                        pushReady = false;#}
+{#                        $.post('/addpos', data)#}
+{#                                .always(function () {#}
+{#                                    pushReady = true;#}
+{#                                });#}
+{#                    }#}
+{#                    // update previous coordinates#}
+{#                    prevCoords = newCoords;#}
+{#                    prevTime = newTime;#}
+{#                }#}
+{##}
+{#            },#}
+{#            function error(err) {#}
+{#                //#}
+{#            }, options#}
+{#        );#}
+        // uncomment to disable HTML5 tracking
+{#        navigator.geolocation.clearWatch();#}
+        // console.log("HTML5 Geolocation tracking ready");
     }
 </script>
 </body>

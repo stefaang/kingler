@@ -1,12 +1,20 @@
 {% extends "layout.html" %}
 {% block body %}
-    <h1>Welcome to da party!</h1>
+    <div style='position:relative'>
+        <iframe src='https://gfycat.com/ifr/SpecificAromaticAmericanrobin' frameborder='0' scrolling='no' width='640' height='365' allowfullscreen></iframe>
+    </div>
+    <h2>Welcome to da party!</h2>
     {% if 'username' in session %}
-        <p>You are logged in!
-        <p><a href="{{ url_for('show_map') }}">I want to eat NOMs!</a>
-        <p><a href="{{ url_for('logout') }}">Logout</a>
+        <p class="bs-component">
+            <a href="{{ url_for('show_map') }}" class="btn btn-primary">Single Player</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-primary">Multi Player</a>
+        </p>
+        <p class="bs-component">
+            <a href="{{ url_for('logout') }}" class="btn btn-default">Logout</a>
+        </p>
     {% else %}
-        <p>You are not logged in
-        <p><a href="login">Login</a>
+        <p class="bs-component">
+            <a href="login" class="btn btn-primary">Login</a>
+        </p>
     {% endif %}
 {% endblock %}
