@@ -350,7 +350,6 @@
     map.setView(mainUserMarker.getLatLng(), 12);
 
     {# HOME: 50.9829401,3.7375336, 15 #}
-
     // now locate the user
 {#    map.locate({#}
 {#        watch: true,                // keep tracking#}
@@ -368,8 +367,6 @@
             marker.setLatLng(L.latLng(data.pos));
         }
     })
-    console.log("Inbox is listening...");
-
 
     ////////////////////
     // geolocation    // help function

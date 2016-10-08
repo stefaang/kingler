@@ -41,6 +41,7 @@ def on_leave(data):
     leave_room(room)
     send('%s has left the room.' % username, room=room)
 
+
 @app.route('/')
 def index():
     return render_template('index.html', session=session)
