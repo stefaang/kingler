@@ -6,7 +6,7 @@ class Person(db.Model):
     __tablename__ = 'persons'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String())
+    name = db.Column(db.String)
     #pos = db.Column(db.)
 
     def __init__(self, name):
@@ -19,12 +19,18 @@ class Racer(db.Model):
     __tablename__ = 'racer'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String())
+    name = db.Column(db.String)
     pos = db.Column(geoalchemy2.Geometry('POINT'))
+    color = db.Column(db.String)
+    icon = db.Column(db.String)
+    date_created = db.Column(db.DateTime)
 
-    def __init__(self, name, pos):
+    def __init__(self, name, pos, color="orange", icon="bug"):
         self.name = name
         self.pos = pos
+        self.color = color
+        self.icon = icon
+        self.date_created = datetime.now()
 
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
@@ -33,7 +39,7 @@ class Racer(db.Model):
 class Position(db.Model):
     __tablename__ = 'position'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String())
+    name = db.Column(db.String)
     pos = db.Column(geoalchemy2.Geometry('POINT'))
     accuracy = db.Column(db.Integer)
     time = db.Column(db.DateTime)
@@ -51,7 +57,7 @@ class Zone(db.Model):
     __tablename__ = 'zone'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String())
+    name = db.Column(db.String)
     geom = db.Column(geoalchemy2.Geometry('POINT'))
 
     def __init__(self, name, geom):
