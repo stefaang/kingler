@@ -1,0 +1,190 @@
+.pok001, .pok002, .pok003, .pok004, .pok005, .pok006, .pok007, .pok008, .pok009, .pok010, 
+.pok011, .pok012, .pok013, .pok014, .pok015, .pok016, .pok017, .pok018, .pok019, .pok020, 
+.pok021, .pok022, .pok023, .pok024, .pok025, .pok026, .pok027, .pok028, .pok029, .pok030, 
+.pok031, .pok032, .pok033, .pok034, .pok035, .pok036, .pok037, .pok038, .pok039, .pok040, 
+.pok041, .pok042, .pok043, .pok044, .pok045, .pok046, .pok047, .pok048, .pok049, .pok050, 
+.pok051, .pok052, .pok053, .pok054, .pok055, .pok056, .pok057, .pok058, .pok059, .pok060, 
+.pok061, .pok062, .pok063, .pok064, .pok065, .pok066, .pok067, .pok068, .pok069, .pok070, 
+.pok071, .pok072, .pok073, .pok074, .pok075, .pok076, .pok077, .pok078, .pok079, .pok080, 
+.pok081, .pok082, .pok083, .pok084, .pok085, .pok086, .pok087, .pok088, .pok089, .pok090, 
+.pok091, .pok092, .pok093, .pok094, .pok095, .pok096, .pok097, .pok098, .pok099, .pok100, 
+.pok101, .pok102, .pok103, .pok104, .pok105, .pok106, .pok107, .pok108, .pok109, .pok110, 
+.pok111, .pok112, .pok113, .pok114, .pok115, .pok116, .pok117, .pok118, .pok119, .pok120, 
+.pok121, .pok122, .pok123, .pok124, .pok125, .pok126, .pok127, .pok128, .pok129, .pok130, 
+.pok131, .pok132, .pok133, .pok134, .pok135, .pok136, .pok137, .pok138, .pok139, .pok140, 
+.pok141, .pok142, .pok143, .pok144, .pok145, .pok146, .pok147, .pok148, .pok149, .pok150, 
+.pok151, .pok152, .pok153, .pok154, .pok155, .pok156, .pok157, .pok158, .pok159, .pok160, 
+.pok161, .pok162, .pok163, .pok164, .pok165, .pok166, .pok167, .pok168, .pok169 {
+    width: 80px;
+    height: 80px;
+    background-image: url('images/pokesprites.png');
+}
+
+.pok001 {background-position:     0px     0px;}
+.pok002 {background-position:   -80px     0px;}
+.pok003 {background-position:  -160px     0px;}
+.pok004 {background-position:  -240px     0px;}
+.pok005 {background-position:  -320px     0px;}
+.pok006 {background-position:  -400px     0px;}
+.pok007 {background-position:  -480px     0px;}
+.pok008 {background-position:  -560px     0px;}
+.pok009 {background-position:  -640px     0px;}
+.pok010 {background-position:  -720px     0px;}
+.pok011 {background-position:  -800px     0px;}
+.pok012 {background-position:  -880px     0px;}
+.pok013 {background-position:  -960px     0px;}
+.pok014 {background-position: -1040px     0px;}
+.pok015 {background-position: -1120px     0px;}
+.pok016 {background-position: -1200px     0px;}
+.pok017 {background-position: -1280px     0px;}
+.pok018 {background-position: -1360px     0px;}
+.pok019 {background-position: -1440px     0px;}
+.pok020 {background-position: -1520px     0px;}
+.pok021 {background-position: -1600px     0px;}
+.pok022 {background-position: -1680px     0px;}
+.pok023 {background-position: -1760px     0px;}
+.pok024 {background-position: -1840px     0px;}
+.pok025 {background-position: -1920px     0px;}
+.pok026 {background-position: -2000px     0px;}
+.pok027 {background-position: -2080px     0px;}
+.pok028 {background-position: -2160px     0px;}
+.pok029 {background-position:     0px   -80px;}
+.pok030 {background-position:   -80px   -80px;}
+.pok031 {background-position:  -160px   -80px;}
+.pok032 {background-position:  -240px   -80px;}
+.pok033 {background-position:  -320px   -80px;}
+.pok034 {background-position:  -400px   -80px;}
+.pok035 {background-position:  -480px   -80px;}
+.pok036 {background-position:  -560px   -80px;}
+.pok037 {background-position:  -640px   -80px;}
+.pok038 {background-position:  -720px   -80px;}
+.pok039 {background-position:  -800px   -80px;}
+.pok040 {background-position:  -880px   -80px;}
+.pok041 {background-position:  -960px   -80px;}
+.pok042 {background-position: -1040px   -80px;}
+.pok043 {background-position: -1120px   -80px;}
+.pok044 {background-position: -1200px   -80px;}
+.pok045 {background-position: -1280px   -80px;}
+.pok046 {background-position: -1360px   -80px;}
+.pok047 {background-position: -1440px   -80px;}
+.pok048 {background-position: -1520px   -80px;}
+.pok049 {background-position: -1600px   -80px;}
+.pok050 {background-position: -1680px   -80px;}
+.pok051 {background-position: -1760px   -80px;}
+.pok052 {background-position: -1840px   -80px;}
+.pok053 {background-position: -1920px   -80px;}
+.pok054 {background-position: -2000px   -80px;}
+.pok055 {background-position: -2080px   -80px;}
+.pok056 {background-position: -2160px   -80px;}
+.pok057 {background-position:     0px  -160px;}
+.pok058 {background-position:   -80px  -160px;}
+.pok059 {background-position:  -160px  -160px;}
+.pok060 {background-position:  -240px  -160px;}
+.pok061 {background-position:  -320px  -160px;}
+.pok062 {background-position:  -400px  -160px;}
+.pok063 {background-position:  -480px  -160px;}
+.pok064 {background-position:  -560px  -160px;}
+.pok065 {background-position:  -640px  -160px;}
+.pok066 {background-position:  -720px  -160px;}
+.pok067 {background-position:  -800px  -160px;}
+.pok068 {background-position:  -880px  -160px;}
+.pok069 {background-position:  -960px  -160px;}
+.pok070 {background-position: -1040px  -160px;}
+.pok071 {background-position: -1120px  -160px;}
+.pok072 {background-position: -1200px  -160px;}
+.pok073 {background-position: -1280px  -160px;}
+.pok074 {background-position: -1360px  -160px;}
+.pok075 {background-position: -1440px  -160px;}
+.pok076 {background-position: -1520px  -160px;}
+.pok077 {background-position: -1600px  -160px;}
+.pok078 {background-position: -1680px  -160px;}
+.pok079 {background-position: -1760px  -160px;}
+.pok080 {background-position: -1840px  -160px;}
+.pok081 {background-position: -1920px  -160px;}
+.pok082 {background-position: -2000px  -160px;}
+.pok083 {background-position: -2080px  -160px;}
+.pok084 {background-position: -2160px  -160px;}
+.pok085 {background-position:     0px  -240px;}
+.pok086 {background-position:   -80px  -240px;}
+.pok087 {background-position:  -160px  -240px;}
+.pok088 {background-position:  -240px  -240px;}
+.pok089 {background-position:  -320px  -240px;}
+.pok090 {background-position:  -400px  -240px;}
+.pok091 {background-position:  -480px  -240px;}
+.pok092 {background-position:  -560px  -240px;}
+.pok093 {background-position:  -640px  -240px;}
+.pok094 {background-position:  -720px  -240px;}
+.pok095 {background-position:  -800px  -240px;}
+.pok096 {background-position:  -880px  -240px;}
+.pok097 {background-position:  -960px  -240px;}
+.pok098 {background-position: -1040px  -240px;}
+.pok099 {background-position: -1120px  -240px;}
+.pok100 {background-position: -1200px  -240px;}
+.pok101 {background-position: -1280px  -240px;}
+.pok102 {background-position: -1360px  -240px;}
+.pok103 {background-position: -1440px  -240px;}
+.pok104 {background-position: -1520px  -240px;}
+.pok105 {background-position: -1600px  -240px;}
+.pok106 {background-position: -1680px  -240px;}
+.pok107 {background-position: -1760px  -240px;}
+.pok108 {background-position: -1840px  -240px;}
+.pok109 {background-position: -1920px  -240px;}
+.pok110 {background-position: -2000px  -240px;}
+.pok111 {background-position: -2080px  -240px;}
+.pok112 {background-position: -2160px  -240px;}
+.pok113 {background-position:     0px  -320px;}
+.pok114 {background-position:   -80px  -320px;}
+.pok115 {background-position:  -160px  -320px;}
+.pok116 {background-position:  -240px  -320px;}
+.pok117 {background-position:  -320px  -320px;}
+.pok118 {background-position:  -400px  -320px;}
+.pok119 {background-position:  -480px  -320px;}
+.pok120 {background-position:  -560px  -320px;}
+.pok121 {background-position:  -640px  -320px;}
+.pok122 {background-position:  -720px  -320px;}
+.pok123 {background-position:  -800px  -320px;}
+.pok124 {background-position:  -880px  -320px;}
+.pok125 {background-position:  -960px  -320px;}
+.pok126 {background-position: -1040px  -320px;}
+.pok127 {background-position: -1120px  -320px;}
+.pok128 {background-position: -1200px  -320px;}
+.pok129 {background-position: -1280px  -320px;}
+.pok130 {background-position: -1360px  -320px;}
+.pok131 {background-position: -1440px  -320px;}
+.pok132 {background-position: -1520px  -320px;}
+.pok133 {background-position: -1600px  -320px;}
+.pok134 {background-position: -1680px  -320px;}
+.pok135 {background-position: -1760px  -320px;}
+.pok136 {background-position: -1840px  -320px;}
+.pok137 {background-position: -1920px  -320px;}
+.pok138 {background-position: -2000px  -320px;}
+.pok139 {background-position: -2080px  -320px;}
+.pok140 {background-position: -2160px  -320px;}
+.pok141 {background-position:     0px  -400px;}
+.pok142 {background-position:   -80px  -400px;}
+.pok143 {background-position:  -160px  -400px;}
+.pok144 {background-position:  -240px  -400px;}
+.pok145 {background-position:  -320px  -400px;}
+.pok146 {background-position:  -400px  -400px;}
+.pok147 {background-position:  -480px  -400px;}
+.pok148 {background-position:  -560px  -400px;}
+.pok149 {background-position:  -640px  -400px;}
+.pok150 {background-position:  -720px  -400px;}
+.pok151 {background-position:  -800px  -400px;}
+.pok152 {background-position:  -880px  -400px;}
+.pok153 {background-position:  -960px  -400px;}
+.pok154 {background-position: -1040px  -400px;}
+.pok155 {background-position: -1120px  -400px;}
+.pok156 {background-position: -1200px  -400px;}
+.pok157 {background-position: -1280px  -400px;}
+.pok158 {background-position: -1360px  -400px;}
+.pok159 {background-position: -1440px  -400px;}
+.pok160 {background-position: -1520px  -400px;}
+.pok161 {background-position: -1600px  -400px;}
+.pok162 {background-position: -1680px  -400px;}
+.pok163 {background-position: -1760px  -400px;}
+.pok164 {background-position: -1840px  -400px;}
+.pok165 {background-position: -1920px  -400px;}
+.pok166 {background-position: -2000px  -400px;}
+.pok167 {background-position: -2080px  -400px;}
+.pok168 {background-position: -2160px  -400px;}

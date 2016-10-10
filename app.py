@@ -5,10 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 from geoalchemy2 import func, shape
 
-# from flask_sse import sse
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
-import gevent
-import redis
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])

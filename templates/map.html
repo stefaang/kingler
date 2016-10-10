@@ -17,6 +17,8 @@
     <!-- get Leaflet awesome markers -->
     <link rel="stylesheet" href="static/css/leaflet.awesome-markers.css">
 
+    <!-- pokemon fantasy -->
+    <link rel="stylesheet" href="static/css/sprites.css">
     <style>
         body {
             padding: 0;
@@ -117,7 +119,8 @@
         var racer = flaskData.racers[i];
         console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng)
         var marker = L.marker([racer.lat, racer.lng], {
-            icon: L.AwesomeMarkers.icon({icon: racer.icon, markerColor: racer.color}),
+{#            icon: L.AwesomeMarkers.icon({icon: racer.icon, markerColor: racer.color}),#}
+            icon: L.divIcon({className: "pok001", html:'<div class="pok001"></div>', iconAnchor:[40,40]}),
             title: racer.name,
             draggable: true
         }).on('dragend', function (e) {
@@ -201,7 +204,7 @@
     var nomIcon = L.AwesomeMarkers.icon({icon:'diamond', markerColor:'orange'});
 
     L.easyButton('fa-coffee', function () {
-        var range = 80;
+        var range = 180;
         var pos = mainUserMarker.getLatLng();
         var query = 'https://overpass-api.de/api/interpreter?' +
                 'data=[out:json][timeout:10];' +
@@ -248,14 +251,24 @@
     }).addTo(map);
 
     function addNomNode() {
+        var nomNodeReady = false;
         // console.log('yawn '+plotNomNodeCounter+" "+plotNomNodes.length);
-        if (plotNomNodeCounter < plotNomNodes.length) {
+        while (!nomNodeReady && plotNomNodeCounter < plotNomNodes.length) {
             var nodeID = plotNomNodes[plotNomNodeCounter];
             var pos = nomNodes[nodeID];
-            if (pos.distanceTo(plotNomLastPos) > 50) {
-                noms.addLayer(L.marker(pos, {icon: nomIcon}));
+            if (pos.distanceTo(plotNomLastPos) > 30) {
+                pokIndex = 'pok'+("00"+(noms.getLayers().length+1)).slice(-3);
+{#                noms.addLayer(L.marker(pos, {icon: nomIcon}));#}
+                noms.addLayer(L.marker(pos,
+                        {icon: L.divIcon({
+                            className: pokIndex,
+{#                            html:'<div class="'+pokIndex+'"></div>', #}
+                            html: pokIndex,
+                            iconAnchor:[40,40]})}
+                ));
+                nomNodeReady = true;
                 plotNomLastPos = pos;
-                console.log('Put NOM at ' + pos);
+                console.log('Put NOM at ' + pos+ ' ' + pokIndex);
             } else {
                 console.log('Skip NOM at ' + pos);
             }
@@ -263,7 +276,7 @@
         }
     }
 
-    var nomTimer = setInterval(addNomNode, 600);
+    var nomTimer = setInterval(addNomNode, 300);
 
 
     // add button that sends your location
