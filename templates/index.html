@@ -7,15 +7,15 @@
     <h2>Welcome to da party!</h2>
     {% if 'username' in session %}
         <p class="bs-component">
-            <a href="show_map" class="btn btn-primary btn-lg">Single Player</a>
-            <a href="logout" class="btn btn-primary btn-lg">Multi Player</a>
+            <a href="{{ url_for(show_map) }}" class="btn btn-primary btn-lg">Single Player</a>
+            <a href="{{ url_for(logout) }}" class="btn btn-primary btn-lg">Multi Player</a>
         </p>
         <p class="bs-component">
-            <a href="logout" class="btn btn-default btn-lg">Logout</a>
+            <a href="{{ url_for(logout) }}" class="btn btn-default btn-lg">Logout</a>
         </p>
     {% else %}
         <p class="bs-component">
-            <a href="login" class="btn btn-primary btn-lg">Login</a>
+            <a href="{{ url_for(login) }}" class="btn btn-primary btn-lg">Login</a>
         </p>
     {% endif %}
 {% endblock %}

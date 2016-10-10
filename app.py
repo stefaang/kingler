@@ -72,7 +72,7 @@ def login():
 def logout():
     # remove the username from the session if it's there
     session.pop('username', None)
-    return redirect('index')
+    return redirect(url_for('index'))
 
 @app.route('/map')
 def show_map():
