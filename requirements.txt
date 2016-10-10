@@ -3,7 +3,6 @@ Jinja2==2.8
 MarkupSafe==0.23
 Werkzeug==0.11.11
 argparse==1.2.1
-gunicorn==19.4.5
 itsdangerous==0.24
 wsgiref==0.1.2
 
@@ -13,6 +12,7 @@ flask-migrate==1.8.0
 geoalchemy2==0.3
 shapely==1.5.17
 
-#flask-sse==0.2.1
-flask-sockets==0.2.1
+eventlet
+flask-socketio==2.7.1
 redis
+gunicorn==18.0

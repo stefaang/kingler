@@ -63,8 +63,6 @@ def login():
         else:
             r.color = color
             db.session.commit()
-        app.logger.info('should we get {}'.format('show_map'))
-        app.logger.info('should we get {}'.format(url_for('show_map')))
         return redirect(url_for('show_map'))
     return render_template('login.html', error='')
 
@@ -72,7 +70,7 @@ def login():
 def logout():
     # remove the username from the session if it's there
     session.pop('username', None)
-    return redirect(url_for('index'))
+    return redirect('/')
 
 @app.route('/map')
 def show_map():

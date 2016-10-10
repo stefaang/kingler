@@ -59,6 +59,9 @@
         return temp;
     }
 
+    // enable vibration support
+    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+
 
     // Support TLS-specific URLs, when appropriate.
     if (window.location.protocol == "https:") {
@@ -77,8 +80,8 @@
     // create map
     var map = L.map('map',
             {
-                dragging: false,     // disable dragging the map
-                touchZoom: false,    // disable zooming on mobile
+{#                dragging: false,     // disable dragging the map#}
+{#                touchZoom: false,    // disable zooming on mobile#}
                 // scrollWheelZoom: false,   // but not on PC
                 doubleClickZoom: false,   // zoom on center, wherever you click
             }
@@ -119,10 +122,11 @@
         var racer = flaskData.racers[i];
         console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng)
         var marker = L.marker([racer.lat, racer.lng], {
-{#            icon: L.AwesomeMarkers.icon({icon: racer.icon, markerColor: racer.color}),#}
-            icon: L.divIcon({className: "pok001", html:'<div class="pok001"></div>', iconAnchor:[40,40]}),
+            icon: L.AwesomeMarkers.icon({icon: racer.icon, markerColor: racer.color}),
+{#            icon: L.divIcon({className: "pok001", html:'<div class="pok001"></div>', iconAnchor:[40,40]}),#}
             title: racer.name,
-            draggable: true
+            draggable: true,
+            zIndexOffset: 100
         }).on('dragend', function (e) {
             var pos = e.target.getLatLng();
             var title = e.target.options.title;
@@ -141,7 +145,7 @@
 
     // bind to main Racer
     var mainUserMarker = markers[flaskData.username];
-    mainUserMarker.setLatLng(mainUserMarker.getLatLng()); // put on top
+    mainUserMarker.setZIndexOffset(200); // put on top
     var mainRange = L.circle(mainUserMarker.getLatLng(), 100).addTo(map);
     mainUserMarker.on('move', function(e) {
         mainRange.setLatLng(e.latlng);
@@ -172,12 +176,14 @@
                 stateName: 'disabled',
                 icon: 'fa-crosshairs',
                 onClick: function (control) {
+                    mainUserMarker.bindPopup("Enabled Locator").openPopup();
+
                     console.log("Start using Leaflet Location");
                     map.locate({
                         watch: true,                // keep tracking
                         enableHighAccuracy: true,   // enable GPS
                         setView: true,              // center the viewport
-                        maxZoom: 17,                // zoom to 15 max
+{#                        maxZoom: 17,                // zoom to 15 max#}
                         timeout: 30000
                     });
                     control.state('enabled');
@@ -187,6 +193,8 @@
                 stateName: 'enabled',
                 icon: 'fa-times',
                 onClick: function (control) {
+                    mainUserMarker.bindPopup("Disabled Locator").openPopup();
+
                     console.log("Stop using Leaflet Location");
                     map.stopLocate();
                     control.state('disabled');
@@ -194,7 +202,8 @@
             }
         ]}).addTo(map);
 
-    // add button that recenters
+    // add the pokebomber button
+    // this should end up in
     var nomNodes = {};
     var nomWays = {};
     var plotNomNodeCounter = 0;
@@ -204,8 +213,10 @@
     var nomIcon = L.AwesomeMarkers.icon({icon:'diamond', markerColor:'orange'});
 
     L.easyButton('fa-coffee', function () {
-        var range = 160;
+        var range = 220;
         var pos = mainUserMarker.getLatLng();
+        mainUserMarker.bindPopup("Drop da pokebomb!").openPopup();
+
         var query = 'https://overpass-api.de/api/interpreter?' +
                 'data=[out:json][timeout:10];' +
                 '(way(around:'+range+','+pos.lat+','+pos.lng+');>;);' +
@@ -237,56 +248,78 @@
             }
             plotNomLastPos = mainUserMarker.getLatLng();
             console.log('COFFEE end - '+plotNomNodes);
-                // most nodes come in order, so this spreads the noms a bit
-{#                if (prevPos.distanceTo(newPos) > 50) {#}
-{#                    if (i < 10){#}
-{#                        console.log('Point distance '+prevPos.distanceTo(newPos)+" - "+newPos);#}
-{#                    }#}
-{#                    noms.addLayer(L.marker(newPos, {icon:nomIcon}));#}
-{#                    prevPos = newPos;#}
-{#                }#}
-{#            }#}
-            //console.log('overpass return '+j);
         });
     }).addTo(map);
 
-    function addNomNode() {
+    function isValidNom(pos){
         var minRange = 80;
-        var maxRange = 300;
+        var maxRange = 500;
+
+        if (pos == null)
+            return false;
+        // too far away
+        if (pos.distanceTo(mainUserMarker.getLatLng()) > maxRange)
+            return false;
+        // too close to other existing noms
+        if (noms.getLayers().some( function (layer, i){
+            //console.log('Distance '+pos+' to '+layer.getLatLng()+' is '+pos.distanceTo(layer.getLatLng()));
+            return pos.distanceTo(layer.getLatLng()) < minRange;
+        }))
+            return false;
+        return true;
+    }
+
+    function getRandomInt(min, max) {
+       return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function addNomNode() {
         var nomNodeReady = false;
         // console.log('yawn '+plotNomNodeCounter+" "+plotNomNodes.length);
         while (!nomNodeReady && plotNomNodeCounter < plotNomNodes.length) {
             var nodeID = plotNomNodes[plotNomNodeCounter];
             var pos = nomNodes[nodeID];
-            // make sure the new point is not too close to the points we already have
-            while (plotNomNodeCounter < plotNomNodes.length && noms.getLayers().some( function (layer, i){
-                nodeID = plotNomNodes[plotNomNodeCounter];
-                pos = nomNodes[nodeID];
-                if (pos == null) return false;
-                console.log('Distance '+pos+' to '+layer.getLatLng()+' is '+pos.distanceTo(layer.getLatLng()));
-                return pos.distanceTo(layer.getLatLng()) < minRange || pos.distanceTo(mainUserMarker.getLatLng()) > maxRange;
-            })) {
-                plotNomNodeCounter++
+            // make sure the new point is not too close to the points we already have / nor too far
+            while (plotNomNodeCounter < plotNomNodes.length && !isValidNom(pos)) {
                 console.log('Skip NOM nr ' + plotNomNodeCounter);
-            }
+                // get next nomNode
+                nodeID = plotNomNodes[++plotNomNodeCounter];
+                pos = nomNodes[nodeID];
+                }
             if (!pos)
-                break
+                break;
             // the current point is not too close to the current noms
-            pokIndex = 'pok'+("00"+(noms.getLayers().length+1)).slice(-3);
+{#            pokIndex = 'pok'+("00"+(noms.getLayers().length+1)).slice(-3);#}
+            pokIndex = 'pok pok'+('00'+(getRandomInt(1,151))).slice(-3);
 {#          noms.addLayer(L.marker(pos, {icon: nomIcon}));#}
             noms.addLayer(L.marker(pos,
-                    {icon: L.divIcon({
+                    {title : pokIndex,
+                     icon: L.divIcon({
                         className: pokIndex,
-                        html: '<div class="'+pokIndex+'"></div>',
+                        html: '<div class="' + pokIndex + '"></div>',
                         iconAnchor: [40,40]})}
             ));
             nomNodeReady = true;
             plotNomLastPos = pos;
             console.log('Put NOM at ' + pos+ ' ' + pokIndex);
+            if (navigator.vibrate) {
+                // vibration API supported
+                // vibrate once
+                navigator.vibrate([100]);
+            }
         }
         plotNomNodeCounter++;
-
     }
+
+    mainUserMarker.on('move', function (e) {
+        pos = e.latlng
+        // update the noms
+        if (noms != null) {
+            noms.eachLayer( function (nom) {
+                $(nom.options.title).removeClass('faraway').addClass('nearby');
+            })
+        }
+    })
 
     var nomTimer = setInterval(addNomNode, 300);
 
@@ -299,6 +332,12 @@
     var mainUserTrackPolyLine = L.polyline(mainUserMarker.getLatLng()).addTo(map);
     L.easyButton('fa-bolt', function () {
         mainUserTrackPolyLine.setLatLngs(mainUserTrack);
+        mainUserMarker.bindPopup("Show track of this session").openPopup();
+        if (navigator.vibrate) {
+            // vibration API supported
+            // vibrate twice
+            navigator.vibrate([100, 100, 100]);
+        }
     }).addTo(map);
     console.log("AwesomeButtons ready");
 
@@ -312,17 +351,18 @@
                 }, 'application/text');
     }
 
+    var dummychecked = true;
     function storeMainLocation() {
         storeLocation(flaskData.username, mainUserMarker.getLatLng());
     }
 
 
+    /////////////////////
+    // prepare leaflet map.locate callback functions
 
     var prevMainPos = 0;
     var prevTime = 0;
     var pushReady = true;
-    /////////////////////
-    // prepare leaflet map.locate callback functions
     function onLocationFound(e) {
         //console.log("Found your location hurray");
 
@@ -331,8 +371,9 @@
         //mainUserMarker.unbindPopup();
         mainUserMarker.setLatLng(e.latlng);
                 //.bindPopup("You are within " + radius + " meters from this point").openPopup();
+        mainUserTrack.push(e.latlng);
         mainRange.setRadius(radius);
-        if (e.latlng == prevMainPos && e.timestamp < prevTime + 30000){
+        if (e.latlng == prevMainPos || e.timestamp < prevTime + 5000){
             return
         } else {
             pushMainLocation();
