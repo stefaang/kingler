@@ -204,7 +204,7 @@
     var nomIcon = L.AwesomeMarkers.icon({icon:'diamond', markerColor:'orange'});
 
     L.easyButton('fa-coffee', function () {
-        var range = 180;
+        var range = 160;
         var pos = mainUserMarker.getLatLng();
         var query = 'https://overpass-api.de/api/interpreter?' +
                 'data=[out:json][timeout:10];' +
@@ -251,29 +251,41 @@
     }).addTo(map);
 
     function addNomNode() {
+        var minRange = 80;
+        var maxRange = 300;
         var nomNodeReady = false;
         // console.log('yawn '+plotNomNodeCounter+" "+plotNomNodes.length);
         while (!nomNodeReady && plotNomNodeCounter < plotNomNodes.length) {
             var nodeID = plotNomNodes[plotNomNodeCounter];
             var pos = nomNodes[nodeID];
-            if (pos.distanceTo(plotNomLastPos) > 30) {
-                pokIndex = 'pok'+("00"+(noms.getLayers().length+1)).slice(-3);
-{#                noms.addLayer(L.marker(pos, {icon: nomIcon}));#}
-                noms.addLayer(L.marker(pos,
-                        {icon: L.divIcon({
-                            className: pokIndex,
-{#                            html:'<div class="'+pokIndex+'"></div>', #}
-                            html: pokIndex,
-                            iconAnchor:[40,40]})}
-                ));
-                nomNodeReady = true;
-                plotNomLastPos = pos;
-                console.log('Put NOM at ' + pos+ ' ' + pokIndex);
-            } else {
-                console.log('Skip NOM at ' + pos);
+            // make sure the new point is not too close to the points we already have
+            while (plotNomNodeCounter < plotNomNodes.length && noms.getLayers().some( function (layer, i){
+                nodeID = plotNomNodes[plotNomNodeCounter];
+                pos = nomNodes[nodeID];
+                if (pos == null) return false;
+                console.log('Distance '+pos+' to '+layer.getLatLng()+' is '+pos.distanceTo(layer.getLatLng()));
+                return pos.distanceTo(layer.getLatLng()) < minRange || pos.distanceTo(mainUserMarker.getLatLng()) > maxRange;
+            })) {
+                plotNomNodeCounter++
+                console.log('Skip NOM nr ' + plotNomNodeCounter);
             }
-            plotNomNodeCounter++;
+            if (!pos)
+                break
+            // the current point is not too close to the current noms
+            pokIndex = 'pok'+("00"+(noms.getLayers().length+1)).slice(-3);
+{#          noms.addLayer(L.marker(pos, {icon: nomIcon}));#}
+            noms.addLayer(L.marker(pos,
+                    {icon: L.divIcon({
+                        className: pokIndex,
+                        html: '<div class="'+pokIndex+'"></div>',
+                        iconAnchor: [40,40]})}
+            ));
+            nomNodeReady = true;
+            plotNomLastPos = pos;
+            console.log('Put NOM at ' + pos+ ' ' + pokIndex);
         }
+        plotNomNodeCounter++;
+
     }
 
     var nomTimer = setInterval(addNomNode, 300);

@@ -63,6 +63,8 @@ def login():
         else:
             r.color = color
             db.session.commit()
+        app.logger.info('should we get {}'.format('show_map'))
+        app.logger.info('should we get {}'.format(url_for('show_map')))
         return redirect(url_for('show_map'))
     return render_template('login.html', error='')
 
@@ -70,7 +72,7 @@ def login():
 def logout():
     # remove the username from the session if it's there
     session.pop('username', None)
-    return redirect(url_for('index'))
+    return redirect('index')
 
 @app.route('/map')
 def show_map():
@@ -82,11 +84,13 @@ def show_map():
         for r in rquery:
             pos = shape.to_shape(r.pos)
             if r.name == session['username']:
+                # TODO fix color saving
                 color = session.get('color', 'black')
                 racers.append({'name':r.name, 'lat':pos.x, 'lng': pos.y, 'icon': 'user-secret', 'color': color})
             else:
-                # todo: add color from DB
-                racers.append({'name': r.name, 'lat': pos.x, 'lng': pos.y, 'icon': 'bug', 'color': 'blue'})
+                color = r.color
+                if not color: color = 'black'
+                racers.append({'name': r.name, 'lat': pos.x, 'lng': pos.y, 'icon': 'bug', 'color': color})
         # get recent positions of main User
         positions = (shape.to_shape(pos) for pos, in db.session.query(Position.pos).filter_by(name=session['username']))
         # pos in query is tuple with 1 element..
