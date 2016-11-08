@@ -1,13 +1,11 @@
 from app import db
 from datetime import datetime
-import geoalchemy2
+#import geoalchemy2
 
-class Person(db.Model):
+class Person(db.Document):
     __tablename__ = 'persons'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    #pos = db.Column(db.)
+    name = db.StringField()
 
     def __init__(self, name):
         self.name = name
@@ -15,34 +13,26 @@ class Person(db.Model):
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
 
-class Racer(db.Model):
+class Racer(db.Document):
     __tablename__ = 'racer'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    pos = db.Column(geoalchemy2.Geometry('POINT'))
-    color = db.Column(db.String)
-    icon = db.Column(db.String)
-    date_created = db.Column(db.DateTime)
-
-    def __init__(self, name, pos, color="orange", icon="bug"):
-        self.name = name
-        self.pos = pos
-        self.color = color
-        self.icon = icon
-        self.date_created = datetime.now()
+    name = db.StringField()
+    pos = db.PointField()
+    color = db.StringField(default='orange')
+    icon = db.StringField(default='bug')
+    date_created = db.DateTimeField
 
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
 
 
-class Position(db.Model):
+class Position(db.Document):
     __tablename__ = 'position'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    pos = db.Column(geoalchemy2.Geometry('POINT'))
-    accuracy = db.Column(db.Integer)
-    time = db.Column(db.DateTime)
+
+    name = db.StringField()
+    pos = db.PointField()
+    accuracy = db.IntField()
+    time = db.DateTimeField()
 
     def __init__(self, name, pos, acc=0):
         self.name = name
@@ -53,12 +43,11 @@ class Position(db.Model):
     def __repr__(self):
         return '<{} {} {} {}>'.format(self.time, self.name, self.pos, self.accuracy)
 
-class Zone(db.Model):
+class Zone(db.Document):
     __tablename__ = 'zone'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    geom = db.Column(geoalchemy2.Geometry('POINT'))
+    name = db.StringField()
+    geom = db.PolygonField()
 
     def __init__(self, name, geom):
         self.name = name

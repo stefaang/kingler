@@ -1,16 +1,14 @@
 import os
 import json
 from flask import Flask, session, redirect, url_for, escape, request, render_template
-from flask_sqlalchemy import SQLAlchemy
+from flask_mongoengine import MongoEngine
 
-from geoalchemy2 import func, shape
-
+#from shapely import wkt
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+db = MongoEngine(app)
 
 socketio = SocketIO(app, message_queue=app.config['REDIS_URL'])
 
@@ -47,6 +45,7 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+
         if not request.form['username']:
             return render_template('login.html', error='You must fill in a Username')
         if not request.form['username'].isalnum():
@@ -54,15 +53,15 @@ def login():
         username = session['username'] = escape(request.form['username'])
         color = session['color'] = request.form['color']
 
-        r = db.session.query(Racer).filter_by(name=username).first()
+        r = Racer.objects(name=username).first()
         if not r:
-            r = Racer(username, 'POINT(51 3.7)', color)
-            db.session.add(r)
-            db.session.commit()
+            # add a new Racer to the db
+            r = Racer(name=username, pos=[50, 3.7], color=color)
             # session['racer'] = r
         else:
+            # update the color attribute to the db
             r.color = color
-            db.session.commit()
+        r.save()
         return redirect(url_for('show_map'))
     return render_template('login.html', error='')
 
@@ -76,116 +75,100 @@ def logout():
 def show_map():
     if 'username' in session:
         # get Racers
-        rquery = db.session.query(Racer)
+        rquery = Racer.objects(pos__geo_within_box=[(49, 3), (52, 4)])[:100]
         # todo: only show nearby Racers
         racers = []
-        for r in rquery:
-            pos = shape.to_shape(r.pos)
-            if r.name == session['username']:
-                # TODO fix color saving
-                color = session.get('color', 'black')
-                racers.append({'name':r.name, 'lat':pos.x, 'lng': pos.y, 'icon': 'user-secret', 'color': color})
-            else:
-                color = r.color
-                if not color: color = 'black'
-                racers.append({'name': r.name, 'lat': pos.x, 'lng': pos.y, 'icon': 'bug', 'color': color})
-        # get recent positions of main User
-        positions = (shape.to_shape(pos) for pos, in db.session.query(Position.pos).filter_by(name=session['username']))
-        # pos in query is tuple with 1 element..
-        positions = [[pos.x, pos.y] for pos in positions]
+        try:
+            for r in rquery:
+                posx, posy = r.pos['coordinates']
+                app.logger.info("Put %s at pos: %s", r.name, r.pos)
+                if r.name == session['username']:
+                    # TODO fix color saving
+                    color = session.get('color', 'black')
+                    racers.append({'name':r.name, 'lat':posx, 'lng': posy, 'icon': 'user-secret', 'color': color})
+                else:
+                    color = r.color
+                    if not color: color = 'black'
+                    racers.append({'name': r.name, 'lat': posx, 'lng': posy, 'icon': 'bug', 'color': color})
+            # get recent positions of main User
+            # positions = (wkt.loads(pos) for pos, in Position.objects(name=session['username']))
+            # pos in query is tuple with 1 element..
+            # positions = [[pos['x'], pos['y']] for pos in positions]
+        except Exception, e:
+            # message to dev
+            app.logger.error("Failed to show map: %s" % repr(e))
+            # message to user
+            return "Failed to show map"
 
         # prepare dict object
-        data = {'positions':positions, 'racers':racers, 'username':session['username']}
+        data = {'racers':racers, 'username':session['username']}
         return render_template('map.html', flaskData=data)
     else:
         return 'You are not logged in'
 
-@app.route('/moveit', methods=['GET','POST'])
-def move_marker():
+#TODO: make a proper REST api /resource/id/action
+@app.route('/moveracer', methods=['GET','POST'])
+def move_racer():
+    """Moves a Racer in the persistent database"""
     if request.method == 'POST':
         errors = []
         # TODO clean this
         name, lat, lng = request.get_data().split()
-        s = db.session
         try:
             #r = Racer('yolo', 'POINT(%s %s)' % (lat, lng))
-            r = s.query(Racer).filter_by(name=name).first()
-            r.pos = 'POINT(%s %s)' % (lat, lng)
-            s.commit()
-            return "OKOK"
+            r = Racer.objects(name=name).first()
+            r.pos = (float(lat), float(lng))
+            r.save()
+            return "OK"
         except Exception, e:
             errors.append(e)
-            return "Fail awwww "+"\n"+e.message
+            app.logger.error("Failed to move racer: %s", repr(e))
+            return "Failed to move marker"
     else:
         return "Post me some JSON plx"
 
-@app.route('/addmarker', methods=['GET', 'POST'])
-def add_marker():
-    if request.method == 'POST':
-        errors = []
-        data = json.loads(request.get_json())
-        name = data['name']
-        lat = data['lat']
-        lng = data['lng']
-        try:
-            r = Racer(name, 'POINT(%s %s)' % (lat, lng))
-            db.session.add(r)
-            db.session.commit()
-            return "OKOK"
-        except Exception, e:
-            errors.append(e)
-            return "Fail awwww "+e.message
-    else:
-        return "Post me some JSON plx"
+@app.route('/addracer', methods=['POST'])
+def add_racer():
+    """ Post """
+    data = json.loads(request.get_json())
+    name = data['name']
+    lat = data['lat']
+    lng = data['lng']
+    try:
+        r = Racer(name=name, color='black')
+        r.pos = (float(lat), float(lng))
+        r.save()
+        return "OK"
+    except Exception, e:
+        app.logger.error("Failed to add racer: %s", repr(e))
+        return "Failed to add racer"
 
-@app.route('/deletemarker', methods=['GET', 'POST'])
-def del_marker():
+@app.route('/deleteracer', methods=['GET', 'POST'])
+def del_racer():
     if request.method == 'POST':
+        # TODO stub
         pass
-    # TODO fill up
 
 @app.route('/addpos', methods=['GET', 'POST'])
 def add_position():
     if request.method == 'POST' and 'username' in session:
-        errors = []
         try:
             data = request.get_json(force=True)
             # data = json.dumps(request.get_data())
             # app.logger.info("addpos %s",data)
             name = session['username']
-            lat = data['coords']['latitude']
-            lng = data['coords']['longitude']
-            acc = data['coords']['accuracy']
-            pos = Position(name, 'POINT(%s %s)' % (lat, lng), acc)
-            db.session.add(pos)
-            db.session.commit()
+            lat = float(data['coords']['latitude'])
+            lng = float(data['coords']['longitude'])
+            acc = float(data['coords']['accuracy'])
+            pos = Position(name, (lat, lng), acc)
+            pos.save()
             app.logger.info("successfully added %s", pos)
             return "OK"
         except Exception, e:
-            errors.append(e)
-            app.logger.exception("Failed to add position %s",e)
-            return "Fail awwww "+e.message
+            app.logger.exception("Failed to add position: %s", repr(e))
+            return "Failed to add position"
     else:
-        return "ehhh"
-
-@app.route('/<name>/admin')
-def show_admin_map(name):
-    # get points from db
-    rquery = db.session.query(Racer)
-    racers = []
-    for r in rquery:
-        pos = shape.to_shape(r.pos)
-        racers.append({'name': r.name, 'x': pos.x, 'y': pos.y})
-
-    positions = (shape.to_shape(pos) for pos, in
-                 db.session.query(Position.pos).filter_by(name=name))
-    # pos in query is tuple with 1 element..
-    positions = [[pos.x, pos.y] for pos in positions]
-    # app.logger.info(json.dumps(positions))
-    return render_template('admin.html',
-                           racers=racers,
-                           username=name,
-                           positions=positions)
+        return "Soz bro"
 
 
 @app.route('/<name>')

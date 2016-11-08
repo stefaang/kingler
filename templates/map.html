@@ -345,7 +345,7 @@
     function storeLocation(title, pos) {
         var data = title + ' ' + pos.lat + ' ' + pos.lng;
         console.log("Storing this: " + data);
-        $.post('moveit', data,
+        $.post('moveracer', data,
                 function () {
                     console.log('storeLocation succes')
                 }, 'application/text');
@@ -434,69 +434,6 @@
         }
     })
 
-    ////////////////////
-    // geolocation    // help function
-
-    if (navigator.geolocation) {
-        var options = {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 200,
-        };
-{#        navigator.geolocation.watchPosition(#}
-{#            function success(pos) {#}
-{#                var newTime = pos.timestamp;#}
-{#                var crd = pos.coords;#}
-{#                // if the player moved, update to the server.#}
-{##}
-{#                var newCoords = JSON.stringify(cloneAsObject(crd))#}
-{#                var data = JSON.stringify(cloneAsObject(pos));#}
-{#                // do not compare with data as the timestamp changes.......#}
-{##}
-{##}
-{##}
-{#                // fast visual feedback over websockets every 500 ms#}
-{#                if ((newCoords != prevCoords) && (newTime > prevTime + 500)){#}
-{##}
-{#                    //console.log("Lets make a push1 ");#}
-{#                    var latLng = L.latLng(crd.latitude, crd.longitude);#}
-{#                    //console.log("Lets make a push2 "+latLng);#}
-{##}
-{#                    mainUserTrack.push(latLng);#}
-{#                    //console.log("Lets make a push3");#}
-{#                    mainUserMarker.setLatLng(latLng);#}
-{#                    //mainRange.setLatLng(latLng)#}
-{#                    mainRange.setRadius(crd.accuracy/2);#}
-{#                    //console.log("Lets make a push4");#}
-{#                    pushMarkerLocation(mainUserMarker);#}
-{#                    //console.log("Lets make a push5");#}
-{##}
-{#                }#}
-{#                // store position every 30 sec in the big db#}
-{#                if ((newCoords != prevCoords) && (newTime > prevTime + 30000) && pushReady) {#}
-{#                    console.log("WatchPos " + crd.latitude + " " + crd.longitude);#}
-{#                    console.log("Pushing " + data);#}
-{#                    if (!$.isEmptyObject(data)) {#}
-{#                        pushReady = false;#}
-{#                        $.post('/addpos', data)#}
-{#                                .always(function () {#}
-{#                                    pushReady = true;#}
-{#                                });#}
-{#                    }#}
-{#                    // update previous coordinates#}
-{#                    prevCoords = newCoords;#}
-{#                    prevTime = newTime;#}
-{#                }#}
-{##}
-{#            },#}
-{#            function error(err) {#}
-{#                //#}
-{#            }, options#}
-{#        );#}
-        // uncomment to disable HTML5 tracking
-{#        navigator.geolocation.clearWatch();#}
-        // console.log("HTML5 Geolocation tracking ready");
-    }
 </script>
 </body>
 </html>

@@ -34,7 +34,7 @@
     /*-webkit-filter: drop-shadow(8px 8px 6px rgba(0.2,0.2,0.2,0.5));*/
 /*}*/
 
-.pok:hover {
+.pok:hover .pok:active {
     -webkit-filter: drop-shadow(8px 8px 6px rgba(0,0,0,0.5));
 }
 

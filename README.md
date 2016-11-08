@@ -11,7 +11,7 @@ How to run this?
 
 - Get these packages
 ```
-sudo apt-get install python27 python-virtualenv redis
+sudo apt-get install python27 python-virtualenv redis libgeos-dev
 ```
 - Setup Virtual environment
 ```

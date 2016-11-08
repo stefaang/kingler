@@ -8,7 +8,12 @@ class Config(object):
     TESTING = False
     CSRF_ENABLED = True
     SECRET_KEY = 'wiehoudternietvanwortels??!?'
-    SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
+    #SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
+    #SQLALCHEMY_TRACK_MODIFICATIONS = False
+    MONGODB_SETTINGS = {
+        'db': '',
+        # 'host': os.environ['MONGODB_URL']
+    }
     REDIS_URL = os.environ['REDIS_URL']
     REDIS_CHAN = 'chat'
 

@@ -7,9 +7,10 @@ itsdangerous==0.24
 wsgiref==0.1.2
 
 psycopg2==2.6.1
-flask-sqlalchemy==2.1
-flask-migrate==1.8.0
-geoalchemy2==0.3
+#flask-sqlalchemy==2.1
+#flask-migrate==1.8.0
+#geoalchemy2==0.3
+flask-mongoengine
 shapely==1.5.17
 
 eventlet
