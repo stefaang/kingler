@@ -69,7 +69,7 @@ def login():
 def logout():
     # remove the username from the session if it's there
     session.pop('username', None)
-    return redirect('/')
+    return redirect(url_for('index'))
 
 @app.route('/map')
 def show_map():
@@ -87,7 +87,6 @@ def show_map():
                 posx, posy = r.pos['coordinates']
                 app.logger.info("Put ally %s at pos: %s", r.name, r.pos)
                 if r.name == session['username']:
-                    # TODO fix color saving
                     color = session.get('color', 'black')
                     # TODO: convert to GeoJSON
                     racers.append({'name':r.name, 'lat':posx, 'lng': posy, 'icon': 'user-secret', 'color': color})
@@ -98,7 +97,7 @@ def show_map():
 
             # get the nearby Racers of the other teams within range of 300 m
             rquery = Racer.objects(pos__near=mainracer.pos['coordinates'],
-                                   pos__max_distance=10000,
+                                   pos__max_distance=300,
                                    color__ne=mainracer.color)[:1000]     # not equals operator
             for r in rquery:
                 posx, posy = r.pos['coordinates']
@@ -194,4 +193,4 @@ def hello_name(name):
 
 
 if __name__ == '__main__':
-    app.run()
+    socketio.run()

@@ -183,7 +183,7 @@
                         watch: true,                // keep tracking
                         enableHighAccuracy: true,   // enable GPS
                         setView: true,              // center the viewport
-{#                        maxZoom: 17,                // zoom to 15 max#}
+                        maxZoom: 17,                // zoom to 15 max
                         timeout: 30000
                     });
                     control.state('enabled');
@@ -451,7 +451,7 @@
                 mainRange.setRadius(40);
                 pushMarkerLocation(mainUserMarker);
                 // update the map
-                map.setView(pos, 12);
+                map.setView(pos, 14);
             }
         );
     }
@@ -461,7 +461,7 @@
     map.on('locationerror', onLocationError);
 
     console.log("Leaflet location callbacks ready.. setView to main marker");
-    map.setView(mainUserMarker.getLatLng(), 12);
+    map.setView(mainUserMarker.getLatLng(), 14);
 
     {# HOME: 50.9829401,3.7375336, 15 #}
     // now locate the user

@@ -27,7 +27,7 @@ export SECRET_KEY="whysosecret?"
 ```
 - Start the webserver (see Procfile for Heroku version)
 ```
-gin
+gunicorn app.app -k eventlet -w 1 -b 0.0.0.0:5000
 ```
 
 
