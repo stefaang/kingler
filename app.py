@@ -99,7 +99,7 @@ def show_map():
             # get the nearby Racers of the other teams within range of 300 m
             rquery = Racer.objects(pos__near=mainracer.pos['coordinates'],
                                    pos__max_distance=10000,
-                                   color_ne=mainracer.color)[:1000]     # not equals operator
+                                   color__ne=mainracer.color)[:1000]     # not equals operator
             for r in rquery:
                 posx, posy = r.pos['coordinates']
                 app.logger.info("Put enemy %s at pos: %s", r.name, r.pos)
