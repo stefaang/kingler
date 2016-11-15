@@ -26,7 +26,6 @@
     width: 80px;
     height: 80px;
     background-image: url('images/pokesprites.png');
-    -webkit-filter: drop-shadow(8px 8px 6px rgba(0,0,0,0.5)) blur(8px);
 	/*drop-shadow(12px 12px 7px rgba(0,0,0,0.5));*/
 }
 
@@ -34,7 +33,12 @@
     /*-webkit-filter: drop-shadow(8px 8px 6px rgba(0.2,0.2,0.2,0.5));*/
 /*}*/
 
-.pok:hover .pok:active {
+.pok .blurrypok {
+    -webkit-filter: drop-shadow(8px 8px 6px rgba(0,0,0,0.5)) blur(8px);
+}
+
+/*.pok:hover, .pok:active*/
+.pok .nearbypok {
     -webkit-filter: drop-shadow(8px 8px 6px rgba(0,0,0,0.5));
 }
 

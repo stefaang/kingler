@@ -11,7 +11,7 @@ How to run this?
 
 - Get these packages
 ```
-sudo apt-get install python27 python-virtualenv redis libgeos-dev
+sudo apt-get install python27 python-virtualenv python-dev build-essential redis libgeos-dev
 ```
 - Setup Virtual environment
 ```
@@ -23,12 +23,18 @@ pip install -r requirements.txt
 ```
 export APP_SETTINGS="config.DevelopmentConfig"
 export REDIS_URL="redis://localhost"
+export SECRET_KEY="whysosecret?"
 ```
 - Start the webserver (see Procfile for Heroku version)
+```
+gin
+```
+
 
 You may want to
 
 - Setup NGINX with SSL to support GeoLocation features on Chrome browser
+- Setup an init script in systemd
 
 TODO:
 

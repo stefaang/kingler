@@ -213,7 +213,7 @@
     var nomIcon = L.AwesomeMarkers.icon({icon:'diamond', markerColor:'orange'});
 
     L.easyButton('fa-coffee', function () {
-        var range = 220;
+        var range = 160;
         var pos = mainUserMarker.getLatLng();
         mainUserMarker.bindPopup("Drop da pokebomb!").openPopup();
 
@@ -233,7 +233,7 @@
                     var pos = L.latLng([node.lat, node.lon]);
                     nomNodes[node.id] = pos;
                 } else if (node.type == 'way'){
-                    console.log('Coffee got a way!');
+{#                    console.log('Coffee got a way!');#}
                     var waynodes = cloneAsObject(node['nodes']);
                     var wayarray = [];
                     for (var j=0; j < waynodes.length; j++) {
@@ -247,7 +247,7 @@
                 }
             }
             plotNomLastPos = mainUserMarker.getLatLng();
-            console.log('COFFEE end - '+plotNomNodes);
+{#            console.log('COFFEE end - '+plotNomNodes);#}
         });
     }).addTo(map);
 
@@ -273,6 +273,50 @@
        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
+
+    class PokeMarker extends L.marker {
+        constructor(pos, index){
+            // add a blurry marker that will become clear when you click it
+            var blurryClass = 'pok pok'+('00'+(index)).slice(-3)+' blurrypok';
+            var nearbyClass = 'pok pok'+('00'+(index)).slice(-3)+' nearbypok';
+            var blurryHTML = '<div class="' + blurryClass + '"></div>';
+            var clearHTML = '<div class="' + nearbyClass + '"></div>';
+            var icon = L.divIcon({
+                          className: blurryClass,
+                          html: blurryHTML,
+                          iconAnchor: [40,40]
+            });
+            super(pos, {
+                title: blurryClass,
+                icon: icon
+            });
+            this.icon = icon;
+            this.pokIndex = nearbyClass;
+            this.on('mousedown', function(e) {
+                this.options.zIndexOffset = 100;
+                console.log('MSDN '+this.icon.options.html);
+                console.log('MSDN '+this.icon.options.className);
+{#                this.icon.options.html = clearHTML;#}
+{#                this.icon.options.className = clearClass;#}
+                console.log($('.pok .pok'+('00'+(index)).slice(-3)));
+                $('.pok .pok'+('00'+(index)).slice(-3)).addClass('nearbypok').removeClass('blurrypok');
+                console.log($('.pok .pok'+('00'+(index)).slice(-3)));
+
+            }).on('mouseup', function(e) {
+                this.options.zIndexOffset = 10;
+                console.log('MSUP '+this.icon.options.html);
+                console.log('MSUP '+this.icon.options.className);
+                console.log($('.pok .pok'+('00'+(index)).slice(-3)));
+                $('.pok .pok'+('00'+(index)).slice(-3)).addClass('blurrypok').removeClass('nearbypok');
+                console.log($('.pok .pok'+('00'+(index)).slice(-3)));
+{#                this.icon.options.html = blurryHTML;#}
+{#                this.icon.options.className = blurryClass;#}
+            });
+
+        }
+
+    }
+
     function addNomNode() {
         var nomNodeReady = false;
         // console.log('yawn '+plotNomNodeCounter+" "+plotNomNodes.length);
@@ -292,12 +336,16 @@
 {#            pokIndex = 'pok'+("00"+(noms.getLayers().length+1)).slice(-3);#}
             pokIndex = 'pok pok'+('00'+(getRandomInt(1,151))).slice(-3);
 {#          noms.addLayer(L.marker(pos, {icon: nomIcon}));#}
-            noms.addLayer(L.marker(pos,
-                    {title : pokIndex,
-                     icon: L.divIcon({
-                        className: pokIndex,
-                        html: '<div class="' + pokIndex + '"></div>',
-                        iconAnchor: [40,40]})}
+            noms.addLayer( new PokeMarker(pos, getRandomInt(1,151)
+{#                    L.marker(pos,#}
+{#                    {title : pokIndex,#}
+{#                     icon: L.divIcon({#}
+{#                        className: pokIndex,#}
+{#                        html: '<div class="' + pokIndex + '"></div>',#}
+{#                        iconAnchor: [40,40]})}#}
+{#            ).on('mousedown', function(e) {#}
+{#                e.target.options.icon.addClass('nearbypok')#}
+{#                    }#}
             ));
             nomNodeReady = true;
             plotNomLastPos = pos;
