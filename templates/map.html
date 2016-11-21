@@ -118,11 +118,17 @@
     var markers = {};
     // put a marker for each Racer
 
-    for (var i = 0 ; i < flaskData.racers.length; i++) {
-        var racer = flaskData.racers[i];
+
+    function addRacerMarker(racer) {
         console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng)
+        if (! racer.color)
+            racer.color = 'black'
         var marker = L.marker([racer.lat, racer.lng], {
-            icon: L.AwesomeMarkers.icon({icon: racer.icon, markerColor: racer.color}),
+            icon: L.AwesomeMarkers.icon({
+                icon: racer.icon,
+                markerColor: racer.color,
+                extraClasses: "fa-4x"
+            }),
 {#            icon: L.divIcon({className: "pok001", html:'<div class="pok001"></div>', iconAnchor:[40,40]}),#}
             title: racer.name,
             draggable: true,
@@ -143,6 +149,11 @@
         markers[racer.name] = marker;
     }
 
+    for (var i = 0 ; i < flaskData.racers.length; i++) {
+        var racer = flaskData.racers[i];
+        addRacerMarker(racer);
+    }
+
     // bind to main Racer
     var mainUserMarker = markers[flaskData.username];
     mainUserMarker.setZIndexOffset(200); // put on top
@@ -154,13 +165,12 @@
 
 
     function pushMainLocation (){
-        var data = JSON.stringify({user:flaskData.username, pos: mainUserMarker.getLatLng()});
-        console.log('Outbox: '+data);
-        socket.emit('move marker', data);
+        pushMainLocation(mainUserMarker);
     }
 
     function pushMarkerLocation (marker){
-        var data = JSON.stringify({user:marker.options.title, pos: marker.getLatLng()});
+        var pos = marker.getLatLng()
+        var data = JSON.stringify({name:marker.options.title, lat: pos.lat, lng: pos.lng});
         console.log('Outbox: '+data);
         socket.emit('move marker', data);
     }
@@ -472,14 +482,36 @@
 {#        maxZoom: 16                 // zoom to 15 max#}
 {#    });#}
 
-    socket.on('marker moved', function(json) {
-        var data = JSON.parse(json);
-        console.log("Inbox received: "+json);
-        console.log("Inbox unpack..: "+data.user+" "+L.latLng(data.pos));
-        var marker = markers[data.user];
+    socket.on('marker moved', function(data) {
+        console.log("Inbox received:  MM");
+        console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
+        var marker = markers[data.name];
         if (marker) {
-            marker.setLatLng(L.latLng(data.pos));
+            marker.setLatLng(L.latLng(data.lat, data.lng));
         }
+    })
+
+    socket.on('marker added', function(data) {
+        console.log("Inbox received:  M+");
+        console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
+        var marker = markers[data.name];
+        if (!marker)
+            addRacerMarker(data);
+        else
+            console.log('.. but we already had that marker')
+    })
+
+    socket.on('marker removed', function(data) {
+        console.log("Inbox received:  M-");
+        console.log("Inbox unpack..: "+data.name);
+        var marker = markers[data.name];
+        if (marker) {
+            map.removeLayer(marker);
+            delete markers[data.name];
+        } else {
+            console.log('.. but we don\'t know that marker?')
+        }
+
     })
 
 </script>

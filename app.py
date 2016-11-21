@@ -1,10 +1,11 @@
 import os
 import json
+import time
 from flask import Flask, session, redirect, url_for, escape, request, render_template
 from flask_mongoengine import MongoEngine
 
 #from shapely import wkt
-from flask_socketio import SocketIO, send, emit, join_room, leave_room
+from flask_socketio import SocketIO, send, emit, join_room, leave_room, rooms
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
@@ -15,11 +16,68 @@ socketio = SocketIO(app, message_queue=app.config['REDIS_URL'])
 # now import the models
 from models import *
 
-# broadcast any user movement to all other users
+
+
+
+@socketio.on('connect')
+def handle_connect():
+    app.logger.info('New connection received: %s', session['username'])
+    # register the handler
+    join_room(str(session['username']))
+    app.logger.info('New conn rooms: %s', rooms())
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    app.logger.info('Disconnecting %s ...', session['username'])
+    leave_room(str(session['username']))
+
 @socketio.on('move marker')
-def handle_movemarker(json):
-    app.logger.info('received move marker: '+ str(json))
-    emit('marker moved', json, broadcast=True)
+def handle_movemarker(data):
+    """
+    - update the new marker position in db
+    - notify all markers in range of this change [both for old range and new range]
+    """
+    timestamp = time.time()
+    app.logger.info('received move marker: %s, %s', data, type(data))
+    # broadcast the new position to everybody?? room??
+    #emit('marker moved', data, broadcast=True)
+
+    # get the marker name and the new position from the json data
+    d = json.loads(data)
+    name = d.get('name')
+    lat, lng = float(d.get('lat', 0)), float(d.get('lng', 0))
+
+    # OPTIONAL: check if session user is allowed to move this marker!
+    # get the moving racer marker and update its position
+    movedracer = Racer.objects(name=name).first()
+    movedracer.pos = [lat, lng]
+    movedracer.save()
+    # TODO: what to do if we move a marker out of our range?
+    # the nearby racers of the marker should be updated too...
+
+    # now get the new nearby racers list
+    mainracer = session['racer'] = Racer.objects(name=session['username']).first()
+    #app.logger.debug('get nearby racers')
+    racers = mainracer.get_nearby_racers()
+    myself = mainracer.get_info()
+    #app.logger.debug('get nearby racers others: %s', racers)
+    # update the others' view
+    for racer in racers:
+        if len(racer) == 3:
+            #app.logger.debug('Move marker... %s', racer)
+            emit('marker moved', myself, room=racer['name'])
+            emit('marker moved', racer, room=myself['name'])
+        elif len(racer) == 5:
+            #app.logger.debug('Add marker... %s', racer)
+            emit('marker added', myself, room=racer['name'])
+            emit('marker added', racer, room=myself['name'])
+        elif len(racer) == 1:
+            #app.logger.debug('Remove marker... %s', racer)
+            emit('marker removed', myself, room=racer['name'])
+            emit('marker removed', racer, room=myself['name'])
+    duration = time.time() - timestamp
+    #app.logger.debug('move marker saved in %s ms', 1000*duration)
+    return "OK"
 
 # room support
 @socketio.on('join')
@@ -57,11 +115,12 @@ def login():
         if not r:
             # add a new Racer to the db
             r = Racer(name=username, pos=[50, 3.7], color=color)
-            # session['racer'] = r
         else:
             # update the color attribute to the db
             r.color = color
         r.save()
+        # keep track of the racer object in this session
+        session['racer'] = r
         return redirect(url_for('show_map'))
     return render_template('login.html', error='')
 
@@ -76,40 +135,15 @@ def show_map():
     if 'username' in session:
         racers = []
         try:
-            # get the main Racer
-            mainracer = Racer.objects(name=session['username']).first()
-
-            # get the nearby same team Racers within range of 10 km
-            rquery = Racer.objects(pos__near=mainracer.pos['coordinates'],
-                                   pos__max_distance=10000,
-                                   color=mainracer.color)[:1000]
-            for r in rquery:
-                posx, posy = r.pos['coordinates']
-                app.logger.info("Put ally %s at pos: %s", r.name, r.pos)
-                if r.name == session['username']:
-                    color = session.get('color', 'black')
-                    # TODO: convert to GeoJSON
-                    racers.append({'name':r.name, 'lat':posx, 'lng': posy, 'icon': 'user-secret', 'color': color})
-                else:
-                    color = r.color
-                    if not color: color = 'black'
-                    racers.append({'name': r.name, 'lat': posx, 'lng': posy, 'icon': 'bug', 'color': color})
-
-            # get the nearby Racers of the other teams within range of 300 m
-            rquery = Racer.objects(pos__near=mainracer.pos['coordinates'],
-                                   pos__max_distance=300,
-                                   color__ne=mainracer.color)[:1000]     # not equals operator
-            for r in rquery:
-                posx, posy = r.pos['coordinates']
-                app.logger.info("Put enemy %s at pos: %s", r.name, r.pos)
-                color = r.color
-                if not color: color = 'black'
-                racers.append({'name': r.name, 'lat': posx, 'lng': posy, 'icon': 'bug', 'color': color})
-
-            # get recent positions of main User
-            # positions = (wkt.loads(pos) for pos, in Position.objects(name=session['username']))
-            # pos in query is tuple with 1 element..
-            # positions = [[pos['x'], pos['y']] for pos in positions]
+            # get the main Racer.. you need to be logged in
+            session['racer'] = Racer.objects(name=session['username']).first()
+            mainracer = session['racer']
+            mainracer.clearNearby()   # in case it was not done on logout
+            app.logger.info('loaded %s, of type %s', mainracer, type(mainracer))
+            racers = mainracer.get_nearby_racers()
+            myself = mainracer.get_info()
+            racers = [myself] + racers
+            app.logger.info('loading... %s', racers)
         except Exception, e:
             # message to dev
             app.logger.error("Failed to show map: %s" % repr(e))
@@ -125,6 +159,7 @@ def show_map():
 #TODO: make a proper REST api /resource/id/action
 @app.route('/moveracer', methods=['GET','POST'])
 def move_racer():
+    # DEPRECATED
     """Moves a Racer in the persistent database"""
     if request.method == 'POST':
         errors = []
