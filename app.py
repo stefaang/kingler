@@ -38,7 +38,7 @@ def handle_movemarker(data):
     - notify all markers in range of this change [both for old range and new range]
     """
     timestamp = time.time()
-    app.logger.info('received move marker: %s, %s', data, type(data))
+    app.logger.info('received move marker: %s', data)
     # broadcast the new position to everybody?? room??
     #emit('marker moved', data, broadcast=True)
 
@@ -50,34 +50,50 @@ def handle_movemarker(data):
     # OPTIONAL: check if session user is allowed to move this marker!
     # get the moving racer marker and update its position
     movedracer = Racer.objects(name=name).first()
-    movedracer.pos = [lat, lng]
+    movedracer.pos = {"type": "Point", "coordinates": [lat,lng]}
     movedracer.save()
-    # TODO: what to do if we move a marker out of our range?
-    # the nearby racers of the marker should be updated too...
 
-    # now get the new nearby racers list
-    mainracer = session['racer'] = Racer.objects(name=session['username']).first()
-    #app.logger.debug('get nearby racers')
-    racers = mainracer.get_nearby_racers()
-    myself = mainracer.get_info()
-    #app.logger.debug('get nearby racers others: %s', racers)
+    # app.logger.debug('get nearby racers')
+    racers = movedracer.get_nearby_racers()
+    mr = movedracer.get_info()
+    # app.logger.debug('get nearby racers others: %s', racers)
     # update the others' view
     for racer in racers:
         if len(racer) == 3:
-            #app.logger.debug('Move marker... %s', racer)
-            emit('marker moved', myself, room=racer['name'])
-            emit('marker moved', racer, room=myself['name'])
+            # app.logger.debug('Move marker... %s', racer)
+            emit('marker moved', mr, room=racer['name'])
+            emit('marker moved', racer, room=mr['name'])
         elif len(racer) == 5:
-            #app.logger.debug('Add marker... %s', racer)
-            emit('marker added', myself, room=racer['name'])
-            emit('marker added', racer, room=myself['name'])
+            # app.logger.debug('Add marker... %s', racer)
+            emit('marker added', mr, room=racer['name'])
+            emit('marker added', racer, room=mr['name'])
         elif len(racer) == 1:
-            #app.logger.debug('Remove marker... %s', racer)
-            emit('marker removed', myself, room=racer['name'])
-            emit('marker removed', racer, room=myself['name'])
+            # app.logger.debug('Remove marker... %s', racer)
+            emit('marker removed', mr, room=racer['name'])
+            emit('marker removed', racer, room=mr['name'])
+
+    bombs = movedracer.get_new_bombs()
+    for bomb in bombs:
+        emit('bomb added', bomb, room=mr['name'])
+
     duration = time.time() - timestamp
-    #app.logger.debug('move marker saved in %s ms', 1000*duration)
-    return "OK"
+    app.logger.debug('move marker saved in %s ms', 1000*duration)
+    # return "OK"
+
+@socketio.on('add bomb')
+def handle_addbomb(data):
+    d = json.loads(data)
+    lat, lng = float(d.get('lat', 0)), float(d.get('lng', 0))
+    # add the bomb to the db
+    color = session['racer']['color']
+    bomb = Bomb(pos=(lat,lng), team=color)
+    bomb.save()
+    # alert nearby people
+    racers = bomb.get_nearby_racers()
+    for racer in racers:
+        d.update( {'team': color, 'id': str(bomb.id)})
+        emit('bomb added', d, room=racer)
+    # return 'OK'
 
 # room support
 @socketio.on('join')

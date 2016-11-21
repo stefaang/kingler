@@ -339,24 +339,11 @@
                 // get next nomNode
                 nodeID = plotNomNodes[++plotNomNodeCounter];
                 pos = nomNodes[nodeID];
-                }
+            }
             if (!pos)
                 break;
             // the current point is not too close to the current noms
-{#            pokIndex = 'pok'+("00"+(noms.getLayers().length+1)).slice(-3);#}
-            pokIndex = 'pok pok'+('00'+(getRandomInt(1,151))).slice(-3);
-{#          noms.addLayer(L.marker(pos, {icon: nomIcon}));#}
-            noms.addLayer( new PokeMarker(pos, getRandomInt(1,151)
-{#                    L.marker(pos,#}
-{#                    {title : pokIndex,#}
-{#                     icon: L.divIcon({#}
-{#                        className: pokIndex,#}
-{#                        html: '<div class="' + pokIndex + '"></div>',#}
-{#                        iconAnchor: [40,40]})}#}
-{#            ).on('mousedown', function(e) {#}
-{#                e.target.options.icon.addClass('nearbypok')#}
-{#                    }#}
-            ));
+            noms.addLayer( new PokeMarker(pos, getRandomInt(1,151)));
             nomNodeReady = true;
             plotNomLastPos = pos;
             console.log('Put NOM at ' + pos+ ' ' + pokIndex);
@@ -382,8 +369,69 @@
     var nomTimer = setInterval(addNomNode, 300);
 
 
-    // add button that sends your location
-    L.easyButton('fa-star', storeMainLocation).addTo(map);
+{#    // add button that sends your location#}
+{#    L.easyButton('fa-star', storeMainLocation).addTo(map);#}
+
+
+    ///////////////////////////////////
+    /// BOMBS AWAAAAY
+    //-------------------------------//
+
+    L.easyButton({
+        states : [
+            {
+                stateName: 'disabled',
+                icon: 'fa-bomb',
+                onClick: function (control) {
+                    mainUserMarker.bindPopup("Enabled Bomb Mode").openPopup();
+                    control.state('enabled');
+                    map.dragging.disable();
+                    map.once('click', function dropBomb(e) {
+                        console.log('Yooo mannn SUP')
+                        var pos = e.latlng;
+                        data = {lat: pos.lat, lng: pos.lng}
+                        console.log('Yooo mannn SUP')
+                        socket.emit('add bomb', JSON.stringify(data));
+                        control.state('disabled');
+                        map.dragging.enable();
+                    });
+                }
+            },
+            {
+                stateName: 'enabled',
+                icon: 'fa-times',
+                onClick: function (control) {
+                    mainUserMarker.bindPopup("Disabled Bomb Mode").openPopup();
+                    map.off('click');
+                    map.dragging.enable();
+                }
+            }
+        ]}).addTo(map);
+
+    socket.on('bomb added', function(json) {
+        console.log("Inbox received:  B+");
+        console.log("Inbox unpack..: "+json.lat+" "+json.lng);
+        var marker = markers[json.id];
+        if (!marker)
+            addBombMarker(json);
+        else
+            console.log('.. but we already had that marker')
+    })
+
+    function addBombMarker(json) {
+        var pos = [json.lat, json.lng]
+        var bomb = L.marker(pos, {
+            icon: L.AwesomeMarkers.icon({
+                icon: 'bomb',
+                markerColor: 'black'
+            })
+        }).addTo(map);
+        bomb.bindPopup("BOOM");
+        markers[json.id] = bomb;
+    }
+
+{#    //////////////////#}
+
 
     // this buttons shows your track
     var mainUserTrack = [];
@@ -471,7 +519,7 @@
     map.on('locationerror', onLocationError);
 
     console.log("Leaflet location callbacks ready.. setView to main marker");
-    map.setView(mainUserMarker.getLatLng(), 14);
+    map.setView(mainUserMarker.getLatLng(), 16);
 
     {# HOME: 50.9829401,3.7375336, 15 #}
     // now locate the user
