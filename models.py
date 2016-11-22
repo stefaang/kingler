@@ -72,6 +72,7 @@ class Racer(db.Document):
     def clearNearby(self):
         for other in self.nearby[:]:
             self.unsetnearby(other)
+        del self.nearbybombs[:]
 
     def get_info(self):
         lat, lng = self.pos['coordinates']
@@ -131,7 +132,7 @@ class Racer(db.Document):
         bombs = []
         def bombinfo(b):
             lat, lng = b.pos['coordinates']
-            return {'lat': lat, 'lng': lng, 'team': b.team, 'id': b.id}
+            return {'lat': lat, 'lng': lng, 'team': b.team, 'id': str(b.id)}
 
         abombs = Bomb.objects(pos__near=self.pos,
                               pos__max_distance=ALLIED_BOMB_RANGE,
