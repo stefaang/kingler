@@ -13,9 +13,9 @@ db = MongoEngine(app)
 
 socketio = SocketIO(app, message_queue=app.config['REDIS_URL'])
 
-# now import the models
+# now import the models and tasks
 from models import *
-
+from tasks import *
 
 
 

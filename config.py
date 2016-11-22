@@ -14,6 +14,10 @@ class Config(object):
     REDIS_URL = os.environ['REDIS_URL']
     REDIS_CHAN = 'chat'
 
+    CELERY_BROKER_URL = os.environ['CELERY_BROKER']
+    CELERY_RESULT_BACKEND = os.environ['CELERY_BROKER']
+
+
 
 class ProductionConfig(Config):
     DEBUG = False

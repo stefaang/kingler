@@ -3,9 +3,9 @@ Core components:
  
  - [Flask](http://flask.pocoo.org/), the python web app framework
  - [MongoDB](https://www.mongodb.com/) for all persistent data ops
- - socketIO for real-time position updates
+ - [socketIO](https://flask-socketio.readthedocs.io/en/latest/) for real-time position updates
  - [leaflet](http://leafletjs.com/) for maps
-
+ - Celery, distributed task queue, the backend worker
 
 How to run this?
 
@@ -19,7 +19,7 @@ virtualenv env
 source env/bin/activate
 pip install -r requirements.txt
 ```
-- Setup some environment vars (autoenv is handy)
+- Setup some environment vars (autoenv is handy) - see config.py
 ```
 export APP_SETTINGS="config.DevelopmentConfig"
 export REDIS_URL="redis://localhost"
