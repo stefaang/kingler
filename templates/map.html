@@ -115,19 +115,18 @@
     // set default position
     var defaultPos = L.latLng(50.98, 3.755);
 
-    var markers = {};
-    // put a marker for each Racer
 
+    // put a marker for each Racer
+    var markers = {};
 
     function addRacerMarker(racer) {
-        console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng)
+        console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng);
         if (! racer.color)
-            racer.color = 'black'
-        var marker = L.marker([racer.lat, racer.lng], {
+            racer.color = 'black';
+        markers[racer.name] = L.marker([racer.lat, racer.lng], {    // TODO: subclass
             icon: L.AwesomeMarkers.icon({
                 icon: racer.icon,
                 markerColor: racer.color,
-                extraClasses: "fa-4x"
             }),
 {#            icon: L.divIcon({className: "pok001", html:'<div class="pok001"></div>', iconAnchor:[40,40]}),#}
             title: racer.name,
@@ -146,7 +145,6 @@
             e.target.unbindPopup();
             e.target.bindPopup(e.target.options.title).openPopup();
         }).addTo(map);
-        markers[racer.name] = marker;
     }
 
     for (var i = 0 ; i < flaskData.racers.length; i++) {
@@ -157,7 +155,10 @@
     // bind to main Racer
     var mainUserMarker = markers[flaskData.username];
     mainUserMarker.setZIndexOffset(200); // put on top
-    var mainRange = L.circle(mainUserMarker.getLatLng(), 100).addTo(map);
+    var mainRange = L.circle(
+            mainUserMarker.getLatLng(), 100,
+            { interactive: false }
+    ).addTo(map);
     mainUserMarker.on('move', function(e) {
         mainRange.setLatLng(e.latlng);
     })
@@ -165,7 +166,7 @@
 
 
     function pushMainLocation (){
-        pushMainLocation(mainUserMarker);
+        pushMarkerLocation(mainUserMarker);
     }
 
     function pushMarkerLocation (marker){
@@ -211,6 +212,157 @@
                 }
             }
         ]}).addTo(map);
+
+
+
+{#    // add button that sends your location#}
+{#    L.easyButton('fa-star', storeMainLocation).addTo(map);#}
+
+
+    ///////////////////////////////////
+    /// BOMBS AWAAAAY
+    //-------------------------------//
+
+    L.easyButton({
+        states : [
+            {
+                stateName: 'disabled',
+                icon: 'fa-bomb',
+                onClick: function (control) {
+                    mainUserMarker.bindPopup("Enabled Bomb Mode").openPopup();
+                    control.state('enabled');
+                    map.dragging.disable();
+                    map.once('click', function dropBomb(e) {
+                        console.log('Dropped a BOMB muhahaha');
+                        var pos = e.latlng;
+                        data = {lat: pos.lat, lng: pos.lng};
+                        socket.emit('add bomb', JSON.stringify(data));
+                        control.state('disabled');
+                        map.dragging.enable();
+                    });
+                }
+            },
+            {
+                stateName: 'enabled',
+                icon: 'fa-times',
+                onClick: function (control) {
+                    mainUserMarker.bindPopup("Disabled Bomb Mode").openPopup();
+                    map.off('click');
+                    map.dragging.enable();
+                }
+            }
+        ]}).addTo(map);
+
+    socket.on('bomb added', function(json) {
+        console.log("Inbox received:  B+");
+        console.log("Inbox unpack..: "+json.lat+" "+json.lng);
+        var marker = markers[json.id];
+        if (!marker)
+            addBombMarker(json);
+        else
+            console.log('.. but we already had that marker')
+    });
+
+    function addBombMarker(json) {
+        var pos = [json.lat, json.lng];
+        var bomb = L.marker(pos, {
+            icon: L.AwesomeMarkers.icon({
+                icon: 'bomb',
+                markerColor: 'black'
+            })
+        }).addTo(map);
+        bomb.bindPopup("BOOM");
+        markers[json.id] = bomb;
+    }
+
+{#    //////////////////#}
+
+
+    // this buttons shows your track
+    var mainUserTrack = [];
+    var mainUserTrackPolyLine = L.polyline(mainUserMarker.getLatLng()).addTo(map);
+    L.easyButton('fa-bolt', function () {
+        mainUserTrackPolyLine.setLatLngs(mainUserTrack);
+        mainUserMarker.bindPopup("Show track of this session").openPopup();
+        if (navigator.vibrate) {
+            // vibration API supported
+            // vibrate twice
+            navigator.vibrate([100, 100, 100]);
+        }
+    }).addTo(map);
+    console.log("AwesomeButtons ready");
+
+    // send location info to server
+    function storeLocation(title, pos) {
+        var data = title + ' ' + pos.lat + ' ' + pos.lng;
+        console.log("Storing this: " + data);
+        $.post('moveracer', data,
+                function () {
+                    console.log('storeLocation succes')
+                }, 'application/text');
+    }
+
+    function storeMainLocation() {
+        storeLocation(flaskData.username, mainUserMarker.getLatLng());
+    }
+
+
+    /////////////////////
+    // prepare leaflet map.locate callback functions
+
+    var prevMainPos = 0;
+    var prevTime = 0;
+    var pushReady = true;
+    function onLocationFound(e) {
+{#        console.log("Found your location hurray");#}
+        var radius = e.accuracy / 2;
+        mainUserMarker.setLatLng(e.latlng);
+                //.bindPopup("You are within " + radius + " meters from this point").openPopup();
+        mainUserTrack.push(e.latlng);
+        //mainRange.setRadius(radius);
+        if (e.latlng == prevMainPos || e.timestamp < prevTime + 5000){
+            return
+        } else {
+            pushMainLocation();
+            prevMainPos = e.latlng;
+            prevTime = e.timestamp;
+        }
+    }
+
+    function onLocationError(e) {
+        // console.log("Sorry no location found");
+        //map.setView(defaultPos, 13);
+        setFreeGeoIP();
+        // alert(e.message);
+    }
+
+    function setFreeGeoIP() {
+        // use jquery ajax call to lookup the geolocation based on your ipaddress
+        // max 10k requests per hour
+        $.getJSON("https://freegeoip.net/json/",
+            // when AJAX call is successful, run the following function
+            function (data) {
+                console.log("FreeGeoIP - "+data);
+                console.log("FreeGeoIP setting mainMarker location");
+                var pos = L.latLng(data.latitude, data.longitude);
+                // add a marker on the location of the resolved GeoIP
+                mainUserMarker.setLatLng(pos).bindPopup("You are somewhere here").openPopup();
+                mainRange.setRadius(40);
+                pushMarkerLocation(mainUserMarker);
+                // update the map
+                map.setView(pos, 14);
+            }
+        );
+    }
+
+    // connect location events to callback functions
+    map.on('locationfound', onLocationFound);
+    map.on('locationerror', onLocationError);
+
+    console.log("Leaflet location callbacks ready.. setView to main marker");
+
+
+    {% if False %}
 
     // add the pokebomber button
     // this should end up in
@@ -356,169 +508,14 @@
         plotNomNodeCounter++;
     }
 
-    mainUserMarker.on('move', function (e) {
-        pos = e.latlng
-        // update the noms
-        if (noms != null) {
-            noms.eachLayer( function (nom) {
-                $(nom.options.title).removeClass('faraway').addClass('nearby');
-            })
-        }
-    })
-
     var nomTimer = setInterval(addNomNode, 300);
 
-
-{#    // add button that sends your location#}
-{#    L.easyButton('fa-star', storeMainLocation).addTo(map);#}
+    {% endif %}
 
 
-    ///////////////////////////////////
-    /// BOMBS AWAAAAY
-    //-------------------------------//
-
-    L.easyButton({
-        states : [
-            {
-                stateName: 'disabled',
-                icon: 'fa-bomb',
-                onClick: function (control) {
-                    mainUserMarker.bindPopup("Enabled Bomb Mode").openPopup();
-                    control.state('enabled');
-                    map.dragging.disable();
-                    map.once('click', function dropBomb(e) {
-                        console.log('Yooo mannn SUP')
-                        var pos = e.latlng;
-                        data = {lat: pos.lat, lng: pos.lng}
-                        console.log('Yooo mannn SUP')
-                        socket.emit('add bomb', JSON.stringify(data));
-                        control.state('disabled');
-                        map.dragging.enable();
-                    });
-                }
-            },
-            {
-                stateName: 'enabled',
-                icon: 'fa-times',
-                onClick: function (control) {
-                    mainUserMarker.bindPopup("Disabled Bomb Mode").openPopup();
-                    map.off('click');
-                    map.dragging.enable();
-                }
-            }
-        ]}).addTo(map);
-
-    socket.on('bomb added', function(json) {
-        console.log("Inbox received:  B+");
-        console.log("Inbox unpack..: "+json.lat+" "+json.lng);
-        var marker = markers[json.id];
-        if (!marker)
-            addBombMarker(json);
-        else
-            console.log('.. but we already had that marker')
-    })
-
-    function addBombMarker(json) {
-        var pos = [json.lat, json.lng]
-        var bomb = L.marker(pos, {
-            icon: L.AwesomeMarkers.icon({
-                icon: 'bomb',
-                markerColor: 'black'
-            })
-        }).addTo(map);
-        bomb.bindPopup("BOOM");
-        markers[json.id] = bomb;
-    }
-
-{#    //////////////////#}
 
 
-    // this buttons shows your track
-    var mainUserTrack = [];
-    var mainUserTrackPolyLine = L.polyline(mainUserMarker.getLatLng()).addTo(map);
-    L.easyButton('fa-bolt', function () {
-        mainUserTrackPolyLine.setLatLngs(mainUserTrack);
-        mainUserMarker.bindPopup("Show track of this session").openPopup();
-        if (navigator.vibrate) {
-            // vibration API supported
-            // vibrate twice
-            navigator.vibrate([100, 100, 100]);
-        }
-    }).addTo(map);
-    console.log("AwesomeButtons ready");
 
-    // send location info to server
-    function storeLocation(title, pos) {
-        var data = title + ' ' + pos.lat + ' ' + pos.lng;
-        console.log("Storing this: " + data);
-        $.post('moveracer', data,
-                function () {
-                    console.log('storeLocation succes')
-                }, 'application/text');
-    }
-
-    var dummychecked = true;
-    function storeMainLocation() {
-        storeLocation(flaskData.username, mainUserMarker.getLatLng());
-    }
-
-
-    /////////////////////
-    // prepare leaflet map.locate callback functions
-
-    var prevMainPos = 0;
-    var prevTime = 0;
-    var pushReady = true;
-    function onLocationFound(e) {
-        //console.log("Found your location hurray");
-
-        var radius = e.accuracy / 2;
-        //storeLocation(flaskData.username, e.latlng);
-        //mainUserMarker.unbindPopup();
-        mainUserMarker.setLatLng(e.latlng);
-                //.bindPopup("You are within " + radius + " meters from this point").openPopup();
-        mainUserTrack.push(e.latlng);
-        mainRange.setRadius(radius);
-        if (e.latlng == prevMainPos || e.timestamp < prevTime + 5000){
-            return
-        } else {
-            pushMainLocation();
-            prevMainPos = e.latlng;
-            prevTime = e.timestamp;
-        }
-    }
-
-    function onLocationError(e) {
-        // console.log("Sorry no location found");
-        //map.setView(defaultPos, 13);
-        setFreeGeoIP();
-        // alert(e.message);
-    }
-
-    function setFreeGeoIP() {
-        // use jquery ajax call to lookup the geolocation based on your ipaddress
-        // max 10k requests per hour
-        $.getJSON("https://freegeoip.net/json/",
-            // when AJAX call is successful, run the following function
-            function (json) {
-                console.log("FreeGeoIP - "+json);
-                console.log("FreeGeoIP setting mainMarker location");
-                var pos = L.latLng(json.latitude, json.longitude);
-                // add a marker on the location of the resolved GeoIP
-                mainUserMarker.setLatLng(pos).bindPopup("You are somewhere here").openPopup();
-                mainRange.setRadius(40);
-                pushMarkerLocation(mainUserMarker);
-                // update the map
-                map.setView(pos, 14);
-            }
-        );
-    }
-
-    // connect location events to callback functions
-    map.on('locationfound', onLocationFound);
-    map.on('locationerror', onLocationError);
-
-    console.log("Leaflet location callbacks ready.. setView to main marker");
     map.setView(mainUserMarker.getLatLng(), 16);
 
     {# HOME: 50.9829401,3.7375336, 15 #}
