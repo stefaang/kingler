@@ -184,7 +184,7 @@
     L.easyButton({
         states : [
             {
-                stateName: 'disabled',
+                stateName: 'locator-disabled',
                 icon: 'fa-crosshairs',
                 onClick: function (control) {
                     mainUserMarker.bindPopup("Enabled Locator").openPopup();
@@ -197,18 +197,18 @@
                         maxZoom: 17,                // zoom to 15 max
                         timeout: 30000
                     });
-                    control.state('enabled');
+                    control.state('locator-enabled');
                 }
             },
             {
-                stateName: 'enabled',
+                stateName: 'locator-enabled',
                 icon: 'fa-times',
                 onClick: function (control) {
                     mainUserMarker.bindPopup("Disabled Locator").openPopup();
 
                     console.log("Stop using Leaflet Location");
                     map.stopLocate();
-                    control.state('disabled');
+                    control.state('locator-disabled');
                 }
             }
         ]}).addTo(map);
@@ -226,27 +226,28 @@
     L.easyButton({
         states : [
             {
-                stateName: 'disabled',
+                stateName: 'bombmode-off',
                 icon: 'fa-bomb',
                 onClick: function (control) {
                     mainUserMarker.bindPopup("Enabled Bomb Mode").openPopup();
-                    control.state('enabled');
+                    control.state('bombmode-on');
                     map.dragging.disable();
                     map.once('click', function dropBomb(e) {
                         console.log('Dropped a BOMB muhahaha');
                         var pos = e.latlng;
                         data = {lat: pos.lat, lng: pos.lng};
                         socket.emit('add bomb', JSON.stringify(data));
-                        control.state('disabled');
+                        control.state('bombmode-off');
                         map.dragging.enable();
                     });
                 }
             },
             {
-                stateName: 'enabled',
+                stateName: 'bombmode-on',
                 icon: 'fa-times',
                 onClick: function (control) {
                     mainUserMarker.bindPopup("Disabled Bomb Mode").openPopup();
+                    control.state('bombmode-off')
                     map.off('click');
                     map.dragging.enable();
                 }
