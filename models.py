@@ -1,8 +1,9 @@
 from app import db, app
 from datetime import datetime
 
-ALLIED_BOMB_RANGE = 1000
-ENEMY_BOMB_RANGE = 60
+BOMB_ALLY_VISION = 1000
+BOMB_ENEMY_VISION = 60
+BOMB_EXPLOSION_RANGE = 70
 
 ICONMAP = {
     'green': 'leaf',
@@ -130,27 +131,94 @@ class Racer(db.Document):
 
     def get_new_bombs(self):
         bombs = []
-        def bombinfo(b):
-            lat, lng = b.pos['coordinates']
-            return {'lat': lat, 'lng': lng, 'team': b.team, 'id': str(b.id)}
 
         abombs = Bomb.objects(pos__near=self.pos,
-                              pos__max_distance=ALLIED_BOMB_RANGE,
-                              team=self.color)[:100]
+                              pos__max_distance=BOMB_ALLY_VISION,
+                              team=self.color,
+                              active=True)[:100]
 
         ebombs = Bomb.objects(pos__near=self.pos,
-                              pos__max_distance=ENEMY_BOMB_RANGE,
-                              team__ne=self.color)[:100]
+                              pos__max_distance=BOMB_ENEMY_VISION,
+                              team__ne=self.color,
+                              active = True)[:100]
 
         for b in set(abombs) | set(ebombs):
             if b not in self.nearbybombs:
                 self.nearbybombs.append(b)
-                bombs.append(bombinfo(b))
+                bombs.append(b.get_info())
         self.save()
         return bombs
 
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
+
+
+
+class Bomb(db.Document):
+
+    pos = db.PointField()
+    color = db.StringField(default='black')
+    team = db.StringField(required=True)
+
+    range = db.IntField(default=BOMB_EXPLOSION_RANGE)
+    date_created = db.DateTimeField
+    date_exploded = db.DateTimeField
+    active = db.BooleanField(default=True)
+
+    owner = db.ReferenceField(Racer)
+
+    meta = {'allow_inheritance': True}
+
+    def __init__(self, **kwargs):
+        self.date_created = datetime.now()
+        super(Bomb, self).__init__(**kwargs)
+
+    def get_info(self):
+        if isinstance(self.pos, tuple):
+            lat, lng = self.pos
+        else:
+            lat, lng = self.pos['coordinates']
+        return {'lat': lat, 'lng': lng, 'team': self.team, 'id': str(self.id)}
+
+    def get_nearby_racers(self):
+        allies = Racer.objects(pos__near=self.pos,
+                               pos__max_distance=BOMB_ALLY_VISION,
+                               color=self.team)[:100]
+        enemies = Racer.objects(pos__near=self.pos,
+                                pos__max_distance=BOMB_ENEMY_VISION,
+                                color__ne=self.team)[:100]
+        racers = [r.name for r in list(allies)+list(enemies)]
+        return racers
+
+    def explode(self):
+        app.logger.debug('bomb explodes!')
+        """Detonates the bomb and returns a dict with the effects"""
+        # get a list of players that see the explosion
+        spectators = Racer.objects(pos__near=self.pos,
+                                   pos__max_distance=BOMB_ALLY_VISION)[:100]
+        victims = Racer.objects(pos__near=self.pos,
+                                pos__max_distance=self.range)[:100]
+        # only return names
+        spectators = [r.name for r in spectators]
+        victims = [r.name for r in victims]
+        self.active = False
+        self.date_exploded = datetime.now()
+        self.save()
+        return spectators, victims, self.range
+
+
+
+class Zone(db.Document):
+    name = db.StringField()
+    geom = db.PolygonField()
+
+    def __init__(self, name, geom):
+        self.name = name
+        self.geom = geom
+
+    def __repr__(self):
+        return '<id {} {}>'.format(self.id, self.name)
+
 
 
 class Position(db.Document):
@@ -167,50 +235,3 @@ class Position(db.Document):
 
     def __repr__(self):
         return '<{} {} {} {}>'.format(self.time, self.name, self.pos, self.accuracy)
-
-
-class Bomb(db.Document):
-
-    pos = db.PointField()
-    color = db.StringField(default='black')
-    team = db.StringField(required=True)
-
-    range = db.IntField(default=200)
-    date_created = db.DateTimeField
-    date_detonated = db.DateTimeField
-    active = db.BooleanField(default=True)
-
-    owner = db.ReferenceField(Racer)
-
-    meta = {'allow_inheritance': True}
-
-    def __init__(self, **kwargs):
-        self.date_created = datetime.now()
-        super(Bomb, self).__init__(**kwargs)
-
-    def get_nearby_racers(self):
-        allies = Racer.objects(pos__near=self.pos,
-                               pos__max_distance=ALLIED_BOMB_RANGE,
-                               color=self.team)[:100]
-        enemies = Racer.objects(pos__near=self.pos,
-                                pos__max_distance=ENEMY_BOMB_RANGE,
-                                color__ne=self.team)[:100]
-        racers = [r.name for r in list(allies)+list(enemies)]
-        return racers
-
-    def detonate(self):
-        """Detonates the bomb and returns a dict with the effects"""
-        pass
-
-
-
-class Zone(db.Document):
-    name = db.StringField()
-    geom = db.PolygonField()
-
-    def __init__(self, name, geom):
-        self.name = name
-        self.geom = geom
-
-    def __repr__(self):
-        return '<id {} {}>'.format(self.id, self.name)

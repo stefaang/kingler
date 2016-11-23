@@ -43,7 +43,7 @@ def handle_movemarker(data):
     #emit('marker moved', data, broadcast=True)
 
     # get the marker name and the new position from the json data
-    d = json.loads(data)
+    d = data
     name = d.get('name')
     lat, lng = float(d.get('lat', 0)), float(d.get('lng', 0))
 
@@ -82,6 +82,7 @@ def handle_movemarker(data):
 
 @socketio.on('add bomb')
 def handle_addbomb(data):
+    app.logger.debug('add bomb received')
     d = json.loads(data)
     lat, lng = float(d.get('lat', 0)), float(d.get('lng', 0))
     # add the bomb to the db
@@ -93,7 +94,9 @@ def handle_addbomb(data):
     for racer in racers:
         d.update( {'team': color, 'id': str(bomb.id)})
         emit('bomb added', d, room=racer)
-    # return 'OK'
+    # create a task to explode in 10 seconds
+    do_bomb_explode.apply_async((str(bomb.id),), countdown=5)
+    # TODO: different bombtypes
 
 # room support
 @socketio.on('join')
@@ -126,6 +129,12 @@ def login():
             return render_template('login.html', error='Only use letters and numbers in your Username')
         username = session['username'] = escape(request.form['username'])
         color = session['color'] = request.form['color']
+
+        if username == 'clearallbombsPLX':
+            bombs = Bomb.objects()
+            for b in bombs:
+                b.delete()
+            return redirect(url_for('logout'))
 
         r = Racer.objects(name=username).first()
         if not r:

@@ -59,6 +59,13 @@
         return temp;
     }
 
+    function guid() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+            return v.toString(16);
+        });
+    }
+
     // enable vibration support
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
 
@@ -156,8 +163,12 @@
     var mainUserMarker = markers[flaskData.username];
     mainUserMarker.setZIndexOffset(200); // put on top
     var mainRange = L.circle(
-            mainUserMarker.getLatLng(), 100,
-            { interactive: false }
+            mainUserMarker.getLatLng(), 5,
+            { interactive: false,
+                stroke: true,
+                color: '#B40404',
+                weight: 1
+            }
     ).addTo(map);
     mainUserMarker.on('move', function(e) {
         mainRange.setLatLng(e.latlng);
@@ -171,8 +182,8 @@
 
     function pushMarkerLocation (marker){
         var pos = marker.getLatLng()
-        var data = JSON.stringify({name:marker.options.title, lat: pos.lat, lng: pos.lng});
-        console.log('Outbox: '+data);
+        var data = {name:marker.options.title, lat: pos.lat, lng: pos.lng};
+        console.log('Outbox: '+JSON.stringify(data));
         socket.emit('move marker', data);
     }
 
@@ -215,6 +226,8 @@
 
 
 
+
+
 {#    // add button that sends your location#}
 {#    L.easyButton('fa-star', storeMainLocation).addTo(map);#}
 
@@ -223,22 +236,43 @@
     /// BOMBS AWAAAAY
     //-------------------------------//
 
-    L.easyButton({
+    function setupBombMode(){
+        //mainUserMarker.bindPopup("Enabled Bomb Mode").openPopup();
+        mainRange.setRadius(100);
+        mainRange.setStyle({
+            color: '#2E2E2E',
+            weight: 3
+        });
+        map.dragging.disable();
+        map.touchZoom.disable();
+    }
+
+    function teardownBombMode(){
+        //mainUserMarker.bindPopup("Disabled Bomb Mode").openPopup();
+        mainRange.setRadius(5);
+        mainRange.setStyle({
+            color: '#B40404',
+            weight: 1
+        });
+        map.off('click');
+        map.dragging.enable();
+        map.touchZoom.enable();
+    }
+
+    bombbutton = L.easyButton({
         states : [
             {
                 stateName: 'bombmode-off',
                 icon: 'fa-bomb',
                 onClick: function (control) {
-                    mainUserMarker.bindPopup("Enabled Bomb Mode").openPopup();
                     control.state('bombmode-on');
-                    map.dragging.disable();
                     map.once('click', function dropBomb(e) {
                         console.log('Dropped a BOMB muhahaha');
                         var pos = e.latlng;
                         data = {lat: pos.lat, lng: pos.lng};
                         socket.emit('add bomb', JSON.stringify(data));
+                        teardownBombMode();
                         control.state('bombmode-off');
-                        map.dragging.enable();
                     });
                 }
             },
@@ -246,13 +280,25 @@
                 stateName: 'bombmode-on',
                 icon: 'fa-times',
                 onClick: function (control) {
-                    mainUserMarker.bindPopup("Disabled Bomb Mode").openPopup();
-                    control.state('bombmode-off')
-                    map.off('click');
-                    map.dragging.enable();
+                    teardownBombMode()
+                    control.state('bombmode-off');
                 }
             }
         ]}).addTo(map);
+
+    function addBombMarker(json) {
+        if (! json.pos) {
+            var pos = [json.lat, json.lng];
+        }
+        var bomb = L.marker(pos, {
+            icon: L.AwesomeMarkers.icon({
+                icon: 'bomb',
+                markerColor: json.team     //'black'
+            })
+        }).addTo(map);
+        bomb.bindPopup("BOOM");
+        markers[json.id] = bomb;
+    }
 
     socket.on('bomb added', function(json) {
         console.log("Inbox received:  B+");
@@ -264,22 +310,127 @@
             console.log('.. but we already had that marker')
     });
 
-    function addBombMarker(json) {
+    socket.on('bomb exploded', function(json) {
+        console.log("Inbox received: BOOM");
+        console.log("Inbox unpack..: "+json.lat+" "+json.lng+" "+json.id);
+        var marker = markers[json.id];
+        if (marker) {
+            console.log("You and I, we knew this was coming");
+            map.removeLayer(marker);
+            delete markers[json.id];
+
+        } else {
+            console.log('Oh... what was that');
+        }
+        var radius = 10;
+        console.log('explode at pos');
         var pos = [json.lat, json.lng];
-        var bomb = L.marker(pos, {
-            icon: L.AwesomeMarkers.icon({
-                icon: 'bomb',
-                markerColor: 'black'
-            })
-        }).addTo(map);
-        bomb.bindPopup("BOOM");
-        markers[json.id] = bomb;
+        console.log('create icon');
+
+
+        var explosionIcon = L.divIcon({
+            className: 'explosion-icon '+json.id,
+        });
+
+        console.log('create explosion marker');
+        var explosion = L.marker(pos, {icon: explosionIcon});
+        // TODO: animated L.circle would be much better...
+        console.log('create explosion add trigger');
+        explosion.on('add', function(e){
+            console.log('fetch explosion icon');
+            var myIcon = $('.'+json.id);
+            myIcon.css({
+                transition: 'all 1s',
+                borderRadius: '50%',
+                opacity: '0.8',
+                backgroundColor: 'black',
+                boxShadow: '0px 0px 8px orange'
+            });
+            console.log('found icon..x'+myIcon.length+' now add timeouts');
+            var audio = new Audio('static/sound/timebombshort.mp3');
+            audio.play();
+            setTimeout(function(){
+                console.log('do timeout1 to explosion icon');
+                myIcon.css( {   // TODO: put this in CSS somehow
+                    width: '50px',
+                    height: '50px',
+                    marginLeft: '-25px',
+                    marginTop: '-25px',
+                    backgroundColor: 'orange'
+                });
+                console.log('done timeout1 to explosion icon');
+            }, 1000);
+            setTimeout(function(){
+                myIcon.css( {
+                    width: '30px',
+                    height: '30px',
+                    marginLeft: '-15px',
+                    marginTop: '-15px',
+                    backgroundColor: '#B40404',  // red
+                    boxShadow: '0px 0px 30px #2E2E2E'
+                });
+            }, 2000);
+            setTimeout(function(){
+                myIcon.css( {
+                    boxShadow: 'none',
+                    width: '50px',
+                    height: '50px',
+                    marginLeft: '-25px',
+                    marginTop: '-25px',
+                    backgroundColor: '#2E2E2E', // darkgrey
+                    boxShadow: '0px 0px 40px #2E2E2E'
+                });
+            }, 3000);
+            setTimeout(function () {
+                myIcon.css( {
+                    transition: 'all 10s',
+                    opacity: '0',
+                });
+            }, 4000);
+
+            setTimeout(function () {
+                map.removeLayer(explosion);
+            }, 14000);
+        });
+        explosion.addTo(map);
+    });
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+          document.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
     }
 
 {#    //////////////////#}
+    // FULLSCREEN button
 
+    L.easyButton({
+        states : [
+            {
+                stateName: 'fullscreen-off',
+                icon: 'fa-mobile',
+                onClick: function (control) {
+                    toggleFullScreen();
+                    control.state('fullscreen-on');
+                }
+            },
+            {
+                stateName: 'fullscreen-on',
+                icon: 'fa-desktop',
+                onClick: function (control) {
+                    toggleFullScreen();
+                    control.state('fullscreen-off');
+                }
+            }]
+    }).addTo(map);
 
-    // this buttons shows your track
+{#    //////////////////#}
+    // SHOW TRACK button
+
     var mainUserTrack = [];
     var mainUserTrackPolyLine = L.polyline(mainUserMarker.getLatLng()).addTo(map);
     L.easyButton('fa-bolt', function () {
@@ -362,6 +513,10 @@
 
     console.log("Leaflet location callbacks ready.. setView to main marker");
 
+
+{#/////////////////////////////////////////#}
+{#    NOT USED                  #}
+    {#  #}
 
     {% if False %}
 
