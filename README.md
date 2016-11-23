@@ -24,12 +24,16 @@ pip install -r requirements.txt
 export APP_SETTINGS="config.DevelopmentConfig"
 export REDIS_URL="redis://localhost"
 export SECRET_KEY="whysosecret?"
+export CELERY_BROKER="redis://localhost:6379/0"
 ```
 - Start the webserver (see Procfile for Heroku version)
 ```
 gunicorn app.app -k eventlet -w 1 -b 0.0.0.0:5000
 ```
-
+- Start Celery worker in another terminal (but with the same venv)
+```
+celery worker -A app.celery --loglevel=info
+```
 
 You may want to
 

@@ -19,3 +19,4 @@ redis==2.10.5
 six==1.10.0
 wsgiref==0.1.2
 greenlet
+celery
