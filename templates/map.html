@@ -40,6 +40,7 @@
 <script src="static/js/easy-button.js"></script>
 <script src="static/js/leaflet.awesome-markers.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="static/js/jquery.color.min.js"></script>
 
 <script>
     var flaskData = {{ flaskData|tojson|safe }};
@@ -65,6 +66,12 @@
             return v.toString(16);
         });
     }
+
+    var transitionDefaults = {
+        duration: 400,
+        easing: ''
+    };
+
 
     // enable vibration support
     navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
@@ -338,59 +345,43 @@
         console.log('create explosion add trigger');
         explosion.on('add', function(e){
             console.log('fetch explosion icon');
-            var myIcon = $('.'+json.id);
-            myIcon.css({
-                transition: 'all 1s',
-                borderRadius: '50%',
-                opacity: '0.8',
-                backgroundColor: 'black',
-                boxShadow: '0px 0px 8px orange'
-            });
-            console.log('found icon..x'+myIcon.length+' now add timeouts');
+
             var audio = new Audio('static/sound/timebombshort.mp3');
             audio.play();
-            setTimeout(function(){
-                console.log('do timeout1 to explosion icon');
-                myIcon.css( {   // TODO: put this in CSS somehow
-                    width: '50px',
-                    height: '50px',
-                    marginLeft: '-25px',
-                    marginTop: '-25px',
-                    backgroundColor: 'orange'
-                });
-                console.log('done timeout1 to explosion icon');
-            }, 1000);
-            setTimeout(function(){
-                myIcon.css( {
-                    width: '30px',
-                    height: '30px',
-                    marginLeft: '-15px',
-                    marginTop: '-15px',
-                    backgroundColor: '#B40404',  // red
-                    boxShadow: '0px 0px 30px #2E2E2E'
-                });
-            }, 2000);
-            setTimeout(function(){
-                myIcon.css( {
-                    boxShadow: 'none',
-                    width: '50px',
-                    height: '50px',
-                    marginLeft: '-25px',
-                    marginTop: '-25px',
-                    backgroundColor: '#2E2E2E', // darkgrey
-                    boxShadow: '0px 0px 40px #2E2E2E'
-                });
-            }, 3000);
-            setTimeout(function () {
-                myIcon.css( {
-                    transition: 'all 10s',
-                    opacity: '0',
-                });
-            }, 4000);
 
-            setTimeout(function () {
+            $('.'+json.id)
+            .css({
+                borderRadius: '50%',
+                opacity: '0.8',
+                backgroundColor: '#2E2E2E',
+{#                boxShadow: '0px 0px 8px orange'#}
+            })
+            .animate({
+                width: '50px',
+                height: '50px',
+                marginLeft: '-25px',
+                marginTop: '-25px',
+                backgroundColor: '#FE9A2E'
+            }, 1000)
+            .animate({
+                width: '30px',
+                height: '30px',
+                marginLeft: '-15x',
+                marginTop: '-15px',
+                backgroundColor: '#B40404',  // red
+            }, 1000)
+            .animate({
+                width: '50px',
+                height: '50px',
+                marginLeft: '-25px',
+                marginTop: '-25px',
+                backgroundColor: '#2E2E2E', // darkgrey
+            }, 3000)
+            .animate({
+                opacity: '0',
+            }, 4000, function () {
                 map.removeLayer(explosion);
-            }, 14000);
+            });
         });
         explosion.addTo(map);
     });
