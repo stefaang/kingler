@@ -426,41 +426,6 @@
         audio.play();
     });
 
-    function toggleFullScreen() {
-      if (!document.fullscreenElement) {
-          document.requestFullscreen();
-      } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        }
-      }
-    }
-
-{#    //////////////////#}
-    // FULLSCREEN button
-{##}
-{#    L.easyButton({#}
-{#        states : [#}
-{#            {#}
-{#                stateName: 'fullscreen-off',#}
-{#                icon: 'fa-mobile',#}
-{#                onClick: function (control) {#}
-{#                    if (map.isFullscreen())#}
-{#                        map.toggleFullscreen()#}
-{#                    control.state('fullscreen-on');#}
-{#                }#}
-{#            },#}
-{#            {#}
-{#                stateName: 'fullscreen-on',#}
-{#                icon: 'fa-desktop',#}
-{#                onClick: function (control) {#}
-{#                    if (map.isFullscreen())#}
-{#                        map.toggleFullscreen()#}
-{#                    control.state('fullscreen-off');#}
-{#                }#}
-{#            }]#}
-{#    }).addTo(map);#}
-
 {#    //////////////////#}
     // SHOW TRACK button
 
