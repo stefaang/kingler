@@ -76,7 +76,7 @@ class Racer(db.Document):
         del self.nearbybombs[:]
 
     def get_info(self):
-        lat, lng = self.pos['coordinates']
+        lng, lat = self.pos['coordinates']
         return {'name': self.name, 'lat': lat, 'lng': lng,
                 'icon':ICONMAP[self.color], 'color': self.color}
 
@@ -98,9 +98,9 @@ class Racer(db.Document):
                                name__ne=self.name)[:100]
 
         for r in allies:
-            posx, posy = r.pos['coordinates']
+            lng, lat = r.pos['coordinates']
             #app.logger.debug("Put ally %s at pos: %s", r.name, r.pos)
-            d = {'name': r.name, 'lat': posx, 'lng': posy}
+            d = {'name': r.name, 'lat': lat, 'lng': lng}
             if self.setnearby(r):
                 # if we have nearby changes, add extra info as the client doesn't know who it is
                 d.update({'icon': ICONMAP[r.color], 'color': r.color})
@@ -111,9 +111,9 @@ class Racer(db.Document):
                                 pos__max_distance=ENEMY_RANGE,
                                 color__ne=self.color)[:100]  # not equals operator
         for r in enemies:
-            posx, posy = r.pos['coordinates']
+            lng, lat = r.pos['coordinates']
             #app.logger.debug("Put enemy %s at pos: %s", r.name, r.pos)
-            d = {'name': r.name, 'lat': posx, 'lng': posy}
+            d = {'name': r.name, 'lat': lat, 'lng': lng}
             # if the nearby list changes, add extra info
             if self.setnearby(r):
                 d.update({'icon': ICONMAP[r.color], 'color': r.color})
@@ -175,9 +175,9 @@ class Bomb(db.Document):
 
     def get_info(self):
         if isinstance(self.pos, tuple):
-            lat, lng = self.pos
+            lng, lat = self.pos
         else:
-            lat, lng = self.pos['coordinates']
+            lng, lat = self.pos['coordinates']
         return {'lat': lat, 'lng': lng, 'team': self.team, 'id': str(self.id)}
 
     def get_nearby_racers(self):

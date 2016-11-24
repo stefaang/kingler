@@ -102,6 +102,7 @@
 {#                touchZoom: false,    // disable zooming on mobile#}
                 // scrollWheelZoom: false,   // but not on PC
                 doubleClickZoom: false,   // zoom on center, wherever you click
+                fullscreenControl: true,
             }
     );
 
@@ -304,7 +305,7 @@
         var bomb = L.marker(pos, {
             icon: L.AwesomeMarkers.icon({
                 icon: 'bomb',
-                markerColor: json.team     //'black'
+                markerColor: 'black'  //json.team
             })
         }).addTo(map);
         bomb.bindPopup("BOOM");
@@ -340,64 +341,89 @@
 
 
         var explosionIcon = L.divIcon({
+            iconSize: [30, 30],
+            iconAnchor: [10, 10],
+            popupAnchor: [10, 0],
+            shadowSize: [0, 0],
             className: 'explosion-icon '+json.id,
         });
 
-        // actually this one should be animated ...
-        damageRange = L.circle(
-            pos, 100,
-            { interactive: false,
-                stroke: true,
-                color: '#2E2E2E',
-                weight: 3
-            }).addTo(map);
-
         console.log('create explosion marker');
-        var explosion = L.marker(pos, {icon: explosionIcon});
-        // TODO: animated L.circle would be much better...
-        console.log('create explosion add trigger');
-        explosion.on('add', function(e){
-            console.log('fetch explosion icon');
-
-            var audio = new Audio('static/sound/timebombshort.mp3');
-            audio.play();
-
-            $('.'+json.id)
-            .css({
-                borderRadius: '50%',
-                opacity: '0.8',
-                backgroundColor: '#2E2E2E',
+{#        var explosion = L.marker(pos, {icon: explosionIcon});#}
+{#        // TODO: animated L.circle would be much better...#}
+{#        console.log('create explosion add trigger');#}
+{#        explosion.on('add', function(e){#}
+{##}
+{#            // actually this one should be animated ...#}
+{#            var damageRange = L.circle(#}
+{#                    pos, 100, { interactive: false,#}
+{#                                stroke: true,#}
+{#                                color: '#2E2E2E',#}
+{#                                weight: 3#}
+{#                              }#}
+{#            ).addTo(map);#}
+{##}
+{#            console.log('fetch explosion icon');#}
+{#            $('.'+json.id)#}
+{#            .css({#}
+{#                borderRadius: '50%',#}
+{#                opacity: '0.8',#}
+{#                backgroundColor: '#2E2E2E',#}
 {#                boxShadow: '0px 0px 8px orange'#}
-            })
-            .animate({
-                width: '50px',
-                height: '50px',
-                marginLeft: '-25px',
-                marginTop: '-25px',
-                backgroundColor: '#FE9A2E'
-            }, 1000)
-            .animate({
-                width: '30px',
-                height: '30px',
-                marginLeft: '-15x',
-                marginTop: '-15px',
-                backgroundColor: '#B40404',  // red
-            }, 1000)
-            .animate({
-                width: '50px',
-                height: '50px',
-                marginLeft: '-25px',
-                marginTop: '-25px',
-                backgroundColor: '#2E2E2E', // darkgrey
-            }, 3000)
-            .animate({
-                opacity: '0',
-            }, 4000, function () {
-                map.removeLayer(explosion);
-                map.removeLayer(damageRange);
-            });
-        });
-        explosion.addTo(map);
+{#            })#}
+{#            .delay(700)#}
+{#            .animate({#}
+{#                width: '50px',#}
+{#                height: '50px',#}
+{#                marginLeft: '-25px',#}
+{#                marginTop: '-25px',#}
+{#                backgroundColor: '#FE9A2E'#}
+{#            }, 600)#}
+{#            .animate({#}
+{#                width: '30px',#}
+{#                height: '30px',#}
+{#                marginLeft: '-15x',#}
+{#                marginTop: '-15px',#}
+{#                backgroundColor: '#B40404',  // red#}
+{#            }, 600)#}
+{#            .animate({#}
+{#                width: '50px',#}
+{#                height: '50px',#}
+{#                marginLeft: '-25px',#}
+{#                marginTop: '-25px',#}
+{#                backgroundColor: '#2E2E2E', // darkgrey#}
+{#            }, 1000)#}
+{#            .animate({#}
+{#                opacity: '0',#}
+{#            }, 3000, function () {#}
+{#                map.removeLayer(explosion);#}
+{#                map.removeLayer(damageRange);#}
+{#            });#}
+{#        });#}
+{#        explosion.addTo(map);#}
+        var damageRange = L.circle(
+                pos, 10, { interactive: false,
+                            stroke: true,
+                            color: '#2E2E2E',
+                            weight: 3
+                          }
+        ).addTo(map);
+        var radius = 10;
+
+        setTimeout( function(){
+            var id = setInterval(function(){
+                radius += 7;
+                if (radius < 100) {
+                    damageRange.setRadius(radius);
+                } else if (radius > 600) {
+                    map.removeLayer(damageRange);
+                    clearInterval(id);
+                }
+            }, 40);
+        }, 10);
+
+        var audio = new Audio('static/sound/bomb.mp3');
+        audio.play();
     });
 
     function toggleFullScreen() {
@@ -412,26 +438,28 @@
 
 {#    //////////////////#}
     // FULLSCREEN button
-
-    L.easyButton({
-        states : [
-            {
-                stateName: 'fullscreen-off',
-                icon: 'fa-mobile',
-                onClick: function (control) {
-                    toggleFullScreen();
-                    control.state('fullscreen-on');
-                }
-            },
-            {
-                stateName: 'fullscreen-on',
-                icon: 'fa-desktop',
-                onClick: function (control) {
-                    toggleFullScreen();
-                    control.state('fullscreen-off');
-                }
-            }]
-    }).addTo(map);
+{##}
+{#    L.easyButton({#}
+{#        states : [#}
+{#            {#}
+{#                stateName: 'fullscreen-off',#}
+{#                icon: 'fa-mobile',#}
+{#                onClick: function (control) {#}
+{#                    if (map.isFullscreen())#}
+{#                        map.toggleFullscreen()#}
+{#                    control.state('fullscreen-on');#}
+{#                }#}
+{#            },#}
+{#            {#}
+{#                stateName: 'fullscreen-on',#}
+{#                icon: 'fa-desktop',#}
+{#                onClick: function (control) {#}
+{#                    if (map.isFullscreen())#}
+{#                        map.toggleFullscreen()#}
+{#                    control.state('fullscreen-off');#}
+{#                }#}
+{#            }]#}
+{#    }).addTo(map);#}
 
 {#    //////////////////#}
     // SHOW TRACK button
@@ -448,21 +476,6 @@
         }
     }).addTo(map);
     console.log("AwesomeButtons ready");
-
-    // send location info to server
-    function storeLocation(title, pos) {
-        var data = title + ' ' + pos.lat + ' ' + pos.lng;
-        console.log("Storing this: " + data);
-        $.post('moveracer', data,
-                function () {
-                    console.log('storeLocation succes')
-                }, 'application/text');
-    }
-
-    function storeMainLocation() {
-        storeLocation(flaskData.username, mainUserMarker.getLatLng());
-    }
-
 
     /////////////////////
     // prepare leaflet map.locate callback functions
@@ -675,6 +688,28 @@
 
 
 
+    var info = L.control();
+
+    info.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+        this.update();
+        return this._div;
+    };
+
+    // method that we will use to update the control based on feature properties passed
+    info.update = function (props) {
+        this._div.innerHTML = '<h4>Team score</h4>' +  (props ?
+            '<b>' + props.team + '</b><br />' + props.score + ' points'
+            : 'undefined');
+    };
+
+    info.addTo(map);
+
+
+    function resetScore(e) {
+        info.update();
+    }
+
 
 
     map.setView(mainUserMarker.getLatLng(), 16);
@@ -695,7 +730,7 @@
         if (marker) {
             marker.setLatLng(L.latLng(data.lat, data.lng));
         }
-    })
+    });
 
     socket.on('marker added', function(data) {
         console.log("Inbox received:  M+");
@@ -705,7 +740,7 @@
             addRacerMarker(data);
         else
             console.log('.. but we already had that marker')
-    })
+    });
 
     socket.on('marker removed', function(data) {
         console.log("Inbox received:  M-");
@@ -718,7 +753,13 @@
             console.log('.. but we don\'t know that marker?')
         }
 
-    })
+    });
+
+    socket.on('team scored', function(data) {
+        console.log("Inbox received:  T+");
+        console.log("Inbox unpack..: "+data.team+" "+data.score);
+        info.update(data);
+    });
 
 </script>
 </body>

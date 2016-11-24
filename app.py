@@ -45,12 +45,12 @@ def handle_movemarker(data):
     # get the marker name and the new position from the json data
     d = data
     name = d.get('name')
-    lat, lng = float(d.get('lat', 0)), float(d.get('lng', 0))
+    lng, lat = float(d.get('lng', 0)), float(d.get('lat', 0))
 
     # OPTIONAL: check if session user is allowed to move this marker!
     # get the moving racer marker and update its position
     movedracer = Racer.objects(name=name).first()
-    movedracer.pos = {"type": "Point", "coordinates": [lat,lng]}
+    movedracer.pos = {"type": "Point", "coordinates": [lng,lat]}
     movedracer.save()
 
     # app.logger.debug('get nearby racers')
@@ -84,10 +84,10 @@ def handle_movemarker(data):
 def handle_addbomb(data):
     app.logger.debug('add bomb received')
     d = json.loads(data)
-    lat, lng = float(d.get('lat', 0)), float(d.get('lng', 0))
+    lng, lat = float(d.get('lng', 0)), float(d.get('lat', 0))
     # add the bomb to the db
     color = session['racer']['color']
-    bomb = Bomb(pos=(lat,lng), team=color)
+    bomb = Bomb(pos=(lng,lat), team=color)
     bomb.save()
     # alert nearby people
     racers = bomb.get_nearby_racers()
@@ -191,9 +191,9 @@ def move_racer():
         # TODO clean this
         name, lat, lng = request.get_data().split()
         try:
-            #r = Racer('yolo', 'POINT(%s %s)' % (lat, lng))
+            #r = Racer('yolo', 'POINT(%s %s)' % (lng, lat))
             r = Racer.objects(name=name).first()
-            r.pos = (float(lat), float(lng))
+            r.pos = (float(lng), float(lat))
             r.save()
             return "OK"
         except Exception, e:
@@ -212,7 +212,7 @@ def add_racer():
     lng = data['lng']
     try:
         r = Racer(name=name, color='black')
-        r.pos = (float(lat), float(lng))
+        r.pos = (float(lng), float(lat))
         r.save()
         return "OK"
     except Exception, e:
@@ -236,7 +236,7 @@ def add_position():
             lat = float(data['coords']['latitude'])
             lng = float(data['coords']['longitude'])
             acc = float(data['coords']['accuracy'])
-            pos = Position(name, (lat, lng), acc)
+            pos = Position(name, (lng, lat), acc)
             pos.save()
             app.logger.info("successfully added %s", pos)
             return "OK"
