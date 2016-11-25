@@ -41,6 +41,7 @@ class Racer(db.Document):
     nearbybombs = db.ListField(db.ReferenceField('Bomb'))   # tracks nearby Bombs
     # stats
     viewrange = db.IntField(default=300)
+    score = db.IntField(default=0)
 
     def __init__(self, **kwargs):
         self.date_created = datetime.now()
@@ -170,6 +171,8 @@ class Bomb(db.Document):
     meta = {'allow_inheritance': True}
 
     def __init__(self, **kwargs):
+        if 'owner' in kwargs and isinstance(kwargs['owner'], basestring):
+            kwargs['owner'] = Racer.objects.get(id=kwargs['owner'])
         self.date_created = datetime.now()
         super(Bomb, self).__init__(**kwargs)
 
@@ -187,8 +190,7 @@ class Bomb(db.Document):
         enemies = Racer.objects(pos__near=self.pos,
                                 pos__max_distance=BOMB_ENEMY_VISION,
                                 color__ne=self.team)[:100]
-        racers = [r.name for r in list(allies)+list(enemies)]
-        return racers
+        return [r.name for r in allies], [r.name for r in enemies]
 
     def explode(self):
         app.logger.debug('bomb explodes!')
@@ -198,9 +200,6 @@ class Bomb(db.Document):
                                    pos__max_distance=BOMB_ALLY_VISION)[:100]
         victims = Racer.objects(pos__near=self.pos,
                                 pos__max_distance=self.range)[:100]
-        # only return names
-        spectators = [r.name for r in spectators]
-        victims = [r.name for r in victims]
         self.active = False
         self.date_exploded = datetime.now()
         self.save()

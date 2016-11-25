@@ -173,6 +173,8 @@
 
     // bind to main Racer
     var mainUserMarker = markers[flaskData.username];
+    var mainUserTeamColor = flaskData.racers[0].color;
+    console.log('We are team '+mainUserTeamColor)
     mainUserMarker.setZIndexOffset(200); // put on top
     var mainRange = L.circle(
             mainUserMarker.getLatLng(), 5,
@@ -277,6 +279,7 @@
                 stateName: 'bombmode-off',
                 icon: 'fa-bomb',
                 onClick: function (control) {
+                    setupBombMode()
                     control.state('bombmode-on');
                     map.once('click', function dropBomb(e) {
                         console.log('Dropped a BOMB muhahaha');
@@ -305,7 +308,7 @@
         var bomb = L.marker(pos, {
             icon: L.AwesomeMarkers.icon({
                 icon: 'bomb',
-                markerColor: 'black'  //json.team
+                markerColor: 'black',  //json.team
             })
         }).addTo(map);
         bomb.bindPopup("BOOM");
@@ -402,11 +405,14 @@
 {#        });#}
 {#        explosion.addTo(map);#}
         var damageRange = L.circle(
-                pos, 10, { interactive: false,
-                            stroke: true,
-                            color: '#2E2E2E',
-                            weight: 3
-                          }
+                pos, 10,
+                {
+                    interactive: false,
+                    stroke: true,
+                    color: '#2E2E2E',
+                    fillOpacity: 0.6,
+                    weight: 3,
+                }
         ).addTo(map);
         var radius = 10;
 
@@ -652,30 +658,37 @@
     {% endif %}
 
 
+    // TEAM SCORE BOARD
 
-    var info = L.control();
+    var teamScore = L.control();
 
-    info.onAdd = function (map) {
-        this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+    teamScore.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'info'); // create a div with a class "teamScore"
         this.update();
         return this._div;
     };
 
     // method that we will use to update the control based on feature properties passed
-    info.update = function (props) {
-        this._div.innerHTML = '<h4>Team score</h4>' +  (props ?
-            '<b>' + props.team + '</b><br />' + props.score + ' points'
-            : 'undefined');
+    teamScore.update = function (props) {
+        var html = '<h4>Team score</h4>'
+        if (props) {
+            for (var color in props.team) {
+                html += '<i style="background:' + color + '"></i> ' + props.team[color] + ' points<br>';
+            }
+        }
+        this._div.innerHTML = html;
     };
 
-    info.addTo(map);
+
+
+    teamScore.addTo(map);
 
 
     function resetScore(e) {
-        info.update();
+        teamScore.update();
     }
 
-
+    //
 
     map.setView(mainUserMarker.getLatLng(), 16);
 
@@ -720,10 +733,10 @@
 
     });
 
-    socket.on('team scored', function(data) {
+    socket.on('new score', function(data) {
         console.log("Inbox received:  T+");
-        console.log("Inbox unpack..: "+data.team+" "+data.score);
-        info.update(data);
+        console.log("Inbox unpack..: "+data.team[mainUserTeamColor]+" "+data.individual[flaskData.username]);
+        teamScore.update(data);
     });
 
 </script>

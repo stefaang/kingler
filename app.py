@@ -83,15 +83,17 @@ def handle_movemarker(data):
 @socketio.on('add bomb')
 def handle_addbomb(data):
     app.logger.debug('add bomb received')
+    app.logger.debug('idv2 is %s', session['racerid'])
+
     d = json.loads(data)
     lng, lat = float(d.get('lng', 0)), float(d.get('lat', 0))
     # add the bomb to the db
     color = session['racer']['color']
-    bomb = Bomb(pos=(lng,lat), team=color)
+    bomb = Bomb(pos=(lng,lat), team=color, owner=session['racerid'])
     bomb.save()
     # alert nearby people
-    racers = bomb.get_nearby_racers()
-    for racer in racers:
+    allies, enemies = bomb.get_nearby_racers()
+    for racer in allies + enemies:
         d.update( {'team': color, 'id': str(bomb.id)})
         emit('bomb added', d, room=racer)
     # create a task to explode in 10 seconds
@@ -146,6 +148,8 @@ def login():
         r.save()
         # keep track of the racer object in this session
         session['racer'] = r
+        session['racerid'] = str(r.id)
+        app.logger.debug('id is %s', session['racerid'])
         return redirect(url_for('show_map'))
     return render_template('login.html', error='')
 
