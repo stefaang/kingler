@@ -36,6 +36,8 @@ def handle_movemarker(data):
     """
     - update the new marker position in db
     - notify all markers in range of this change [both for old range and new range]
+    - update bombs
+    - update flags: pickup or return
     """
     timestamp = time.time()
     app.logger.info('received move marker: %s', data)
@@ -72,10 +74,15 @@ def handle_movemarker(data):
             emit('marker removed', mr, room=racer['name'])
             emit('marker removed', racer, room=mr['name'])
 
+    # check bombs
     bombs = movedracer.get_new_bombs()
     for bomb in bombs:
         emit('bomb added', bomb, room=mr['name'])
 
+    # check flags
+    movedracer.handle_flags()
+
+    # finalize by checking how long all this took
     duration = time.time() - timestamp
     app.logger.debug('move marker saved in %s ms', 1000*duration)
     # return "OK"

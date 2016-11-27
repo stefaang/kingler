@@ -2,8 +2,9 @@ from app import db, app
 from datetime import datetime
 
 BOMB_ALLY_VISION = 1000
-BOMB_ENEMY_VISION = 60
-BOMB_EXPLOSION_RANGE = 70
+BOMB_ENEMY_VISION = 30
+BOMB_EXPLOSION_RANGE = 50   # todo: put in flaskOptions
+FLAG_PICKUP_RANGE = 20
 
 ICONMAP = {
     'green': 'leaf',
@@ -12,7 +13,6 @@ ICONMAP = {
     'red': 'fire'
 }
 
-# import geoalchemy2
 
 class Person(db.Document):
     name = db.StringField()
@@ -42,6 +42,8 @@ class Racer(db.Document):
     # stats
     viewrange = db.IntField(default=300)
     score = db.IntField(default=0)
+    is_alive = db.BooleanField(default=True)
+    has_hands_free = db.BooleanField(default=True)
 
     def __init__(self, **kwargs):
         self.date_created = datetime.now()
@@ -150,9 +152,27 @@ class Racer(db.Document):
         self.save()
         return bombs
 
+    def handle_flags(self):
+        """Pickup enemy flag if not carrying one and return own team flags to base"""
+        flags = Flag.objects(pos__near=self.pos,
+                             pos__max_distance=FLAG_PICKUP_RANGE,
+                             state__ne='pickedup')
+        for flag in flags:
+            if flag.team == self.color:
+                if flag.state == 'dropped':
+                    flag.return_to_base()
+                else:
+                    # ignore when our flag is just in base
+                    pass
+            else:
+                # don't pickup flags that are already carried
+                if self.has_hands_free:
+                    flag.pickup()
+
+
+
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
-
 
 
 class Bomb(db.Document):
@@ -206,6 +226,22 @@ class Bomb(db.Document):
         return spectators, victims, self.range
 
 
+class Flag(db.Document):
+    # creation params
+    pos = db.PointField()
+    base = db.PointField()
+    color = db.StringField(default='black')
+    icon = db.StringField(default='bug')
+
+    state = db.StringField(default='home')  # restrict: home / pickedup / dropped
+
+    def return_to_base(self):
+        self.pos = self.base
+        self.state = 'home'
+        self.save()
+
+    def pickup(self):
+        pass
 
 class Zone(db.Document):
     name = db.StringField()

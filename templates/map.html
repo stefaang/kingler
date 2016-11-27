@@ -252,7 +252,7 @@
 
     function setupBombMode(){
         //mainUserMarker.bindPopup("Enabled Bomb Mode").openPopup();
-        mainRange.setRadius(100);
+        mainRange.setRadius(50);
         mainRange.setStyle({
             color: '#2E2E2E',
             weight: 3
@@ -418,8 +418,8 @@
 
         setTimeout( function(){
             var id = setInterval(function(){
-                radius += 7;
-                if (radius < 100) {
+                radius += 5;
+                if (radius < 50) {
                     damageRange.setRadius(radius);
                 } else if (radius > 600) {
                     map.removeLayer(damageRange);
@@ -671,7 +671,7 @@
     // method that we will use to update the control based on feature properties passed
     teamScore.update = function (props) {
         var html = '<h4>Team score</h4>'
-        if (props) {
+        if (props && 'team' in props) {
             for (var color in props.team) {
                 html += '<i style="background:' + color + '"></i> ' + props.team[color] + ' points<br>';
             }
@@ -737,6 +737,14 @@
         console.log("Inbox received:  T+");
         console.log("Inbox unpack..: "+data.team[mainUserTeamColor]+" "+data.individual[flaskData.username]);
         teamScore.update(data);
+    });
+
+    socket.on('flag pickup', function(data) {
+        console.log("Inbox received:  F+");
+    });
+
+    socket.on('flag dropped', function(data) {
+        console.log("Inbox received: F-");
     });
 
 </script>
