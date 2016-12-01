@@ -44,6 +44,12 @@
     opacity: 0.7;
 }
 
+/* increase font for awesome-markers */
+.awesome-marker i {
+    font-size: 18px;
+    margin-top: 8px;
+}
+
 
 .leaflet-marker-icon .explosion-icon {
     width: 20px;
@@ -52,6 +58,16 @@
     border-radius: 50%;
     box-shadow: 0px 0px 4px blue;
     transition: all 1s;
+}
+
+.flag-icon {
+    background: url(../img/game-icons/alien-skull.svg);
+    /*background-size: 100%;*/
+    /*color: #0078A8;*/
+}
+
+.bomb-icon {
+    background: url(../img/game-icons/unlit-bomb.svg);
 }
 
 .pok {

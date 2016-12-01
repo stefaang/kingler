@@ -40,7 +40,7 @@ def handle_movemarker(data):
     - update flags: pickup or return
     """
     timestamp = time.time()
-    app.logger.info('received move marker: %s', data)
+    #app.logger.info('received move marker: %s', data)
     # broadcast the new position to everybody?? room??
     #emit('marker moved', data, broadcast=True)
 
@@ -52,8 +52,8 @@ def handle_movemarker(data):
     # OPTIONAL: check if session user is allowed to move this marker!
     # get the moving racer marker and update its position
     movedracer = Racer.objects(name=name).first()
-    movedracer.pos = {"type": "Point", "coordinates": [lng,lat]}
-    movedracer.save()
+    movedracer.modify(pos={"type": "Point", "coordinates": [lng,lat]})
+    movedracer = movedracer.reload()
 
     # app.logger.debug('get nearby racers')
     racers = movedracer.get_nearby_racers()
@@ -77,35 +77,56 @@ def handle_movemarker(data):
     # check bombs
     bombs = movedracer.get_new_bombs()
     for bomb in bombs:
-        emit('bomb added', bomb, room=mr['name'])
+        emit('bomb added', bomb.get_info(), room=mr['name'])
+        # trigger enemy bombs
+        if bomb.team != movedracer.color:
+            do_bomb_explode.apply_async((str(bomb.id),), countdown=bomb.trigger_time)
 
     # check flags
-    movedracer.handle_flags()
+    events = movedracer.handle_flags()
+    for event in events:
+        eventtype = event['type']
+        # let everyone know (broadcast in cell)
+        app.logger.info('WUP, i have to send %s', event)
+        for racer in [mr]+racers:
+            emit(eventtype, event, room=racer['name'])
 
     # finalize by checking how long all this took
     duration = time.time() - timestamp
-    app.logger.debug('move marker saved in %s ms', 1000*duration)
+    #app.logger.debug('move marker saved in %s ms', 1000*duration)
     # return "OK"
 
 @socketio.on('add bomb')
 def handle_addbomb(data):
+    # todo: let the server decide when to send updates (ex a task every second?)
     app.logger.debug('add bomb received')
-    app.logger.debug('idv2 is %s', session['racerid'])
 
-    d = json.loads(data)
-    lng, lat = float(d.get('lng', 0)), float(d.get('lat', 0))
+    lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
     # add the bomb to the db
     color = session['racer']['color']
     bomb = Bomb(pos=(lng,lat), team=color, owner=session['racerid'])
+    if 'range' in data:
+        bomb.explosion_range = int(data['range'])
     bomb.save()
     # alert nearby people
     allies, enemies = bomb.get_nearby_racers()
     for racer in allies + enemies:
-        d.update( {'team': color, 'id': str(bomb.id)})
-        emit('bomb added', d, room=racer)
+        data.update( {'team': color, 'id': str(bomb.id)})
+        emit('bomb added', data, room=racer)
     # create a task to explode in 10 seconds
-    do_bomb_explode.apply_async((str(bomb.id),), countdown=5)
     # TODO: different bombtypes
+    # currently supported: throw bomb and mine (todo: split this)
+    do_bomb_explode.apply_async((str(bomb.id),), countdown=10)
+
+
+
+@socketio.on('add flag')
+def handle_addflag(data):
+    app.logger.debug('add flag received')
+    lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
+    team = data.get('team')
+    flag = Flag(pos=(lng,lat), team=team).save()
+    app.logger.info('added flag: %s', flag)
 
 # room support
 @socketio.on('join')
@@ -148,7 +169,7 @@ def login():
         r = Racer.objects(name=username).first()
         if not r:
             # add a new Racer to the db
-            r = Racer(name=username, pos=[50, 3.7], color=color)
+            r = Racer(name=username, pos=[3.7, 51], color=color)
         else:
             # update the color attribute to the db
             r.color = color
@@ -177,6 +198,7 @@ def show_map():
             mainracer.clearNearby()   # in case it was not done on logout
             app.logger.info('loaded %s, of type %s', mainracer, type(mainracer))
             racers = mainracer.get_nearby_racers()
+            flags = [f.get_info() for f in mainracer.get_nearby_flags()]
             myself = mainracer.get_info()
             racers = [myself] + racers
             app.logger.info('loading... %s', racers)
@@ -187,7 +209,7 @@ def show_map():
             return "Failed to show map"
 
         # prepare dict object
-        data = {'racers':racers, 'username':session['username']}
+        data = {'racers':racers, 'username':session['username'], 'flags': flags}
         return render_template('map.html', flaskData=data)
     else:
         return 'You are not logged in'
