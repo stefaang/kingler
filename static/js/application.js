@@ -48,9 +48,11 @@ var map = L.map('map',
     }
 );
 
+L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
+    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>',
 // Add CartoDB tiles to the map
-L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+// L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+//     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
     maxZoom: 21,
     maxNativeZoom: 18,  // this allows to use a deeper maxZoom
     id: 'carto.light'
@@ -129,7 +131,7 @@ function MainRacerMarker(racer) {
     var mainRange = L.circle( marker.getLatLng(), 5,
             { //interactive: false,
                 stroke: true,
-                color: '#B40404',
+                color: colormap[racer.color],
                 weight: 1
             }
     ).addTo(map);
@@ -152,7 +154,7 @@ function MainRacerMarker(racer) {
     marker.deactivateBombMode = function() {
         mainRange.setRadius(5);
         mainRange.setStyle({
-            color: '#B40404',
+            color: colormap[racer.color],
             weight: 1
         });
         mainRange.off('click');
@@ -198,9 +200,10 @@ function addFlagMarker(flag) {
         iconSize: [58, 58],
         //html:'<i class="fa fa-fw fa-2x fa-flag flag-icon"></i>'
     });
+    var title = flag.team.charAt(0).toUpperCase() + flag.team.slice(1) + ' flag'
     markers[flag.id] = L.marker([flag.lat, flag.lng], {    // TODO: subclass
         icon: icon,
-        title: flag.id,
+        title: title,
         draggable: false,
         //zIndexOffset: 50
     }).addTo(map);
@@ -314,7 +317,7 @@ bombButton.addTo(map);
 
 function listenToButtonB(e) {
     if (e.originalEvent.key == 'b')
-        bombButton.onClick();
+        bombButton._currentState.onClick(bombButton, map);
 };
 
 map.on('keypress',  listenToButtonB);

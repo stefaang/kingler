@@ -64,17 +64,22 @@
     border-radius: 5px;
     background-image: url(../img/game-icons/tower-flag.svg);
     /*background-size: 100%;*/
-    /*color: #0078A8;*/
 }
 /* extra marker color tints */
 .flag-icon.red {
-    background-color: #A12F36;
+    border: 1px #8A272C;
+    background-color: #A6363C;
+    background: url(../img/game-icons/tower-flag.svg), linear-gradient(#A6363CAA, #722327AA);
 }
 .flag-icon.green {
-    background-color: #00934F;
+    border: 1px #006E2F;
+    background-color: #009550;
+    background: url(../img/game-icons/tower-flag.svg), linear-gradient(#009550AA, #006435AA)
 }
 .flag-icon.blue {
-    background-color: #0072B5;
+    border: 1px #0065A2;
+    background-color: #0078BA;
+    background: url(../img/game-icons/tower-flag.svg), linear-gradient(#0078BAAA, #004A96AA);
 }
 
 .bomb-icon {
