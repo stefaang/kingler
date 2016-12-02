@@ -88,7 +88,7 @@ function RacerMarker(racer, options) {
     var icon = L.ExtraMarkers.icon({
         icon: 'fa-'+racer.icon,
         markerColor: racer.color,
-        shape: (options.shape) ? options.shape : 'square',
+        shape: (options && options.shape) ? options.shape : 'square',
     });
     var marker = L.marker([racer.lat, racer.lng], {    // TODO: subclass
         icon: icon,
