@@ -25,6 +25,11 @@ ICONMAP = {
     'red': 'fire'
 }
 
+class Cell(db.Document):
+    # use this to divide players in global cells
+    pos = db.PointField()
+    name = db.StringField()
+
 
 class MapEntity(db.Document):
     pos = db.PointField()
@@ -50,6 +55,8 @@ class Racer(MapEntity):
     name = db.StringField(required=True, max_length=32)
     color = db.StringField(default='black', max_length=16)
     icon = db.StringField(default='bug', max_length=16)
+
+    party = db.StringField()
 
     # tracking params
     date_lastseen = db.DateTimeField
@@ -101,7 +108,7 @@ class Racer(MapEntity):
         return {'name': self.name, 'lat': lat, 'lng': lng,
                 'icon':ICONMAP[self.color], 'color': self.color}
 
-    def get_nearby_racers(self):
+    def get_nearby_racers(self, info_only=True):
         ''' Returns info about self and a list with all nearby allied and enemy Racers
         Each Racer is represented by a dict with the following keys
         - a known Racer in range: name, lat, lng
@@ -123,7 +130,7 @@ class Racer(MapEntity):
             if self.setnearby(r):
                 # if we have nearby changes, add extra info as the client doesn't know who it is
                 d.update({'icon': ICONMAP[r.color], 'color': r.color})
-            racers.append(d)
+            racers.append(d if info_only else r)
 
         # get the nearby Racers of the other teams within range of 200 m
         enemies = Racer.objects(pos__near=self.pos,
@@ -136,14 +143,14 @@ class Racer(MapEntity):
             # if the nearby list changes, add extra info
             if self.setnearby(r):
                 d.update({'icon': ICONMAP[r.color], 'color': r.color})
-            racers.append(d)
+            racers.append(d if info_only else r)
 
         # sanitize those who are outofrange
         #app.logger.debug('OUT OF RANGE check: %s vs %s', self.nearby, set(set(allies) | set(enemies)))
         for r in set(self.nearby) - set(set(allies) | set(enemies)):
             self.unsetnearby(r)
             # name only means that the client can drop this
-            racers.append({'name': r.name})
+            racers.append({'name': r.name} if info_only else r)
         self.save()
         #app.logger.debug('getnearbyracers presents: %s', racers)
         return racers

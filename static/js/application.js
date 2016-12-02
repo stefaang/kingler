@@ -88,7 +88,7 @@ function RacerMarker(racer, options) {
     var icon = L.ExtraMarkers.icon({
         icon: 'fa-'+racer.icon,
         markerColor: racer.color,
-        shape: ('shape' in options) ? options.shape : 'square',
+        shape: (options.shape) ? options.shape : 'square',
     });
     var marker = L.marker([racer.lat, racer.lng], {    // TODO: subclass
         icon: icon,
@@ -119,10 +119,11 @@ function RacerMarker(racer, options) {
 }
 
 function MainRacerMarker(racer) {
-    var marker = RacerMarker(racer, {shape : 'star'});
-
+    var marker = RacerMarker(racer, {shape : 'circle'});
+    var colormap = {'red': '#A12F36', 'green': '#00934F', 'blue': '#0072B5'}
     // always display the Main User on top
     marker.setZIndexOffset(900);
+
 
     // add a Circle that shows the action range
     var mainRange = L.circle( marker.getLatLng(), 5,
@@ -193,8 +194,8 @@ function addFlagMarker(flag) {
     //     shape: 'circle',
     // });
     var icon = L.divIcon({
-        className: 'flag-icon '+ flag.color,
-        iconSize: [38, 38],
+        className: 'flag-icon '+ flag.team,
+        iconSize: [58, 58],
         //html:'<i class="fa fa-fw fa-2x fa-flag flag-icon"></i>'
     });
     markers[flag.id] = L.marker([flag.lat, flag.lng], {    // TODO: subclass
@@ -266,13 +267,6 @@ L.easyButton( 'fa-flag',   function() {
 /// BOMBS AWAAAAY
 //-------------------------------//
 
-function listenToButtonB(e) {
-    if (e.originalEvent.key == 'b')
-        bombbutton.onClick();
-};
-
-map.on('keypress',  listenToButtonB);
-
 bombButton = L.easyButton({
     states : [
         {
@@ -317,6 +311,14 @@ bombButton.teardownBombMode = function(control){
 };
 
 bombButton.addTo(map);
+
+function listenToButtonB(e) {
+    if (e.originalEvent.key == 'b')
+        bombButton.onClick();
+};
+
+map.on('keypress',  listenToButtonB);
+
 
 function addBombMarker(json) {
     if (! json.pos) {

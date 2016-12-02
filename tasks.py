@@ -58,26 +58,32 @@ def do_bomb_explode(bombid):
     # show new scores to spectators
     # TODO: put this in a separate task.. update_scores around pos
     if victims:
-        app.logger.debug('calculate new scores')
-        data = {'individual': {}, 'team' : {}}
-        spectators = [r.reload() for r in spectators] # load the new scores
-        for racer in spectators:
-            data['individual'][racer.name] = racer.score
-            if racer.color not in data['team']:
-                data['team'][racer.color] = sum(r.score for r in spectators if r.color == racer.color)
-
-        for racer in spectators:
-            socketio.emit('new score', data, room=racer.name)
+        spectators = [r.reload() for r in spectators]  # load the new scores
+        update_scores(spectators)
     else:
         app.logger.debug('no score changes')
 
 
 @celery.task
 def adjust_score(racerid, points):
-    Racer.objects(id=racerid).update_one(inc__score=points)
+    Racer.get(id=racerid).update_one(inc__score=points)
 
 
 @celery.task
 def revive_racer(racerid):
     Racer.objects(id=racerid, is_alive=False).update_one(is_alive=True)
 
+# tasks that do not require celery (yet)
+
+def update_scores(racers):
+    app.logger.debug('calculate new scores')
+    data = {'individual': {}, 'team': {}}
+    for racer in racers:
+        data['individual'][racer.name] = racer.score
+
+        # this can be done client side..
+        if racer.color not in data['team']:
+            data['team'][racer.color] = sum(r.score for r in racers if r.color == racer.color)
+
+    for racer in racers:
+        socketio.emit('new score', data, room=racer.name)

@@ -61,9 +61,20 @@
 }
 
 .flag-icon {
-    background: url(../img/game-icons/alien-skull.svg);
+    border-radius: 5px;
+    background-image: url(../img/game-icons/tower-flag.svg);
     /*background-size: 100%;*/
     /*color: #0078A8;*/
+}
+/* extra marker color tints */
+.flag-icon.red {
+    background-color: #A12F36;
+}
+.flag-icon.green {
+    background-color: #00934F;
+}
+.flag-icon.blue {
+    background-color: #0072B5;
 }
 
 .bomb-icon {

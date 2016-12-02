@@ -90,7 +90,11 @@ def handle_movemarker(data):
         app.logger.info('WUP, i have to send %s', event)
         for racer in [mr]+racers:
             emit(eventtype, event, room=racer['name'])
-
+            if eventtype == 'flag scored':
+                movedracer.modify(inc__score=5)
+                spectators = Racer.objects(pos__near=movedracer.pos,
+                                           pos__max_distance=ALLIED_RANGE,)[:100]
+                update_scores(movedracer.get_nearby_racers(spectators))
     # finalize by checking how long all this took
     duration = time.time() - timestamp
     #app.logger.debug('move marker saved in %s ms', 1000*duration)
