@@ -338,7 +338,7 @@ function addBombMarker(json) {
         // })
         icon: L.divIcon({
             className: 'bomb-icon',
-            iconSize: [40,40],
+            iconSize: [100,100],
         })
     }).addTo(map);
     bomb.bindPopup("BOOM");
@@ -521,8 +521,14 @@ socket.on('marker moved', function(data) {
     console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
     var marker = markers[data.name];
     if (marker) {
-        marker.setLatLng(L.latLng(data.lat, data.lng));
-    }
+        console.log("fx setup..");
+        var point = map.latLngToLayerPoint(L.latLng(data.lat, data.lng))
+        console.log('point is '+point);
+        var fx = new L.PosAnimation();
+        console.log("fx go run.."+fx);
+        fx.run(marker, point, 0.5);
+    } else
+        console.log("but marker not known"+marker);
 });
 
 socket.on('marker added', function(data) {
