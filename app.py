@@ -30,7 +30,7 @@ def handle_connect():
 def handle_disconnect():
     app.logger.info('Disconnecting %s ...', session['username'])
     leave_room(str(session['username']))
-    Racer.get(id=session['userid']).modify(is_online=False)
+    Racer.objects(id=session['userid']).first().modify(is_online=False)
 
 @socketio.on('move marker')
 def handle_movemarker(data):
@@ -203,7 +203,7 @@ def show_map():
         racers = []
         try:
             # get the main Racer.. you need to be logged in
-            session['racer'] = Racer.get(id=session['userid'])
+            session['racer'] = Racer.objects(id=session['userid']).first()
             mainracer = session['racer']
             mainracer.modify(is_online=True)
             mainracer.clearNearby()   # in case it was not done on logout
