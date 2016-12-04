@@ -76,7 +76,7 @@ def revive_racer(racerid):
 # tasks that do not require celery (yet)
 
 def update_scores(racers):
-    app.logger.debug('calculate new scores')
+    app.logger.debug('calculate new scores for %s', racers)
     data = {'individual': {}, 'team': {}}
     for racer in racers:
         data['individual'][racer.name] = racer.score

@@ -201,12 +201,15 @@ function addFlagMarker(flag) {
         //html:'<i class="fa fa-fw fa-2x fa-flag flag-icon"></i>'
     });
     var title = flag.team.charAt(0).toUpperCase() + flag.team.slice(1) + ' flag'
-    markers[flag.id] = L.marker([flag.lat, flag.lng], {    // TODO: subclass
+    var marker = L.marker([flag.lat, flag.lng], {    // TODO: subclass
         icon: icon,
         title: title,
         draggable: false,
         //zIndexOffset: 50
-    }).addTo(map);
+    });
+    marker.team = flag.team;
+
+    markers[flag.id] = marker.addTo(map);
 }
 
 for (var i = 0; i < flaskData.flags.length; i++) {
@@ -558,7 +561,12 @@ socket.on('flag grabbed', function(data) {
     // set marker[data.name] icon to flag mode
     var flag = markers[data.target];
     if (flag) {
-        map.removeLayer(flag);
+        flag.setIcon(
+            L.divIcon({
+                className: 'flag-icon base',
+                iconSize: [58, 58],
+            })
+        );
     }
 });
 
@@ -570,6 +578,7 @@ socket.on('flag dropped', function(data) {
     if (flag) {
         // update position to drop site and add again to map
         flag.setLatLng(racer.getLatLng()).addTo(map);
+        // flag.setIcon()
     }
     // set marker[data.name] icon to flag mode
 });
@@ -593,5 +602,11 @@ socket.on('flag scored', function(data) {
     if (flag) {
         // update position to base
         flag.setLatLng(pos).addTo(map);
+        flag.setIcon(
+            L.divIcon({
+                className: 'flag-icon '+flag.team,
+                iconSize: [58, 58],
+            })
+        );
     }
 });

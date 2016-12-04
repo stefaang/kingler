@@ -94,7 +94,7 @@ def handle_movemarker(data):
                 movedracer.modify(inc__score=5)
                 spectators = Racer.objects(pos__near=movedracer.pos,
                                            pos__max_distance=ALLIED_RANGE,)[:100]
-                update_scores(movedracer.get_nearby_racers(spectators))
+                update_scores(spectators)
     # finalize by checking how long all this took
     duration = time.time() - timestamp
     #app.logger.debug('move marker saved in %s ms', 1000*duration)
@@ -129,7 +129,11 @@ def handle_addflag(data):
     app.logger.debug('add flag received')
     lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
     team = data.get('team')
-    flag = Flag(pos=(lng,lat), team=team).save()
+    # don't allow flag within 50 m
+    nearbyflags = Flag.objects(pos__near=(lng,lat),
+                               pos__max_distance=50)
+    if not list(nearbyflags):
+        flag = Flag(pos=(lng,lat), team=team).save()
     app.logger.info('added flag: %s', flag)
 
 # room support
