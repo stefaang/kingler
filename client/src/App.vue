@@ -4,10 +4,13 @@
     <page-map v-if="route.page=='map'"></page-map>
 
     <modal-team v-if="route.modal=='team'"></modal-team>
+    <modal-login v-if="route.modal=='login'"></modal-login>
   </div>
 </template>
 
 <script>
+import ModalLogin from './modal/ModalLogin.vue'
+import ModalTeam from './modal/ModalTeam.vue'
 import PageHome from './page/PageHome.vue'
 import PageMap from './page/PageMap.vue'
 
@@ -19,6 +22,8 @@ export default {
     }
   },
   components: {
+    ModalLogin,
+    ModalTeam,
     PageHome,
     PageMap
   }

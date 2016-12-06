@@ -2,6 +2,7 @@
 import vue from 'rollup-plugin-vue2'
 import css from 'rollup-plugin-css-only'
 import buble from 'rollup-plugin-buble'
+import livereload from 'rollup-plugin-livereload'
 
 export default {
   entry: 'src/main.js',
@@ -10,6 +11,7 @@ export default {
   plugins: [
     vue(),
     css(),
-    buble()
+    buble(),
+    process.argv.indexOf('--live') > 1 && livereload()
   ]
 }

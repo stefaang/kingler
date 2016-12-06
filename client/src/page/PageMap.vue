@@ -3,44 +3,65 @@
 </template>
 
 <script>
+import { inert } from '../lib.js'
 import playersMixin from '../game/players.js'
+import mapboxMixin from '../mixins/mapbox.js'
 
-const L = window.L
+mapboxgl.accessToken = 'pk.eyJ1IjoidGhnaCIsImEiOiJjaXdlMTJiczkwMDZ6MnRvNmdjODNmOTBlIn0.8aeMZVbu2uuPDXKcpDmZVw';
 
 export default {
   name: 'page-map',
-  mixins: [playersMixin],
+  mixins: [
+    playersMixin,
+    mapboxMixin
+  ],
+  data () {
+    return {
+      markers: []
+    }
+  },
   computed: {
   },
   methods: {
-    init() {
-      var map = L.map('map', {
-        dragging: true, // disable dragging the map
-        touchZoom: false, // disable zooming on mobile
-        // scrollWheelZoom: false,   // but not on PC
-        doubleClickZoom: false, // zoom on center, wherever you click
-        fullscreenControl: true,
-        center: [51.05, 3.75],
-        zoom: 12
-      })
-
-      L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
-        attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>',
-        // Add CartoDB tiles to the map
-        // L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
-        //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        maxZoom: 21,
-        maxNativeZoom: 18, // this allows to use a deeper maxZoom
-        id: 'carto.light'
-      }).addTo(map)
-
-
-      this.playerMarkers.map(m => m.addTo(map))
-      console.log('Leaflet is ready.')
-    }
   },
   mounted () {
-    this.init()
+    this.initMap()
+    this.oldPlayers = []
+  },
+  watch: {
+    players: {
+      deep: true,
+      handler (val) {
+        const old = this.oldPlayers
+        console.log('playersChanged')
+        val.forEach((p, i) => {
+          if (!p) {
+            return console.warn('Expected a player object in the players array')
+          }
+          if (p && !old[i]) {
+            // Add new
+            this.markers[i] = this.createMarker(p)
+            return console.log('created')
+          }
+          if (p.name !== old[i].name) {
+            // Complete redraw
+            this.markers[i].remove()
+            this.markers[i] = this.createMarker(p)
+            return console.log('removed')
+          }
+          if (p.position[0] !== old[i].position[0] || p.position[1] !== old[i].position[1]) {
+            // Move location
+            this.markers[i].setLngLat(p.position)
+            return console.log('moved')
+          }
+          console.log('nothing', p, i)
+        })
+        if (val.length < old.length) {
+          console.warn('to implement: remove players from field')
+        }
+        this.oldPlayers = inert(val)
+      }
+    }
   }
 }
 </script>

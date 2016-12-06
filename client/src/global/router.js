@@ -1,6 +1,7 @@
 window.route = {
   uri: '/',
-  page: 'home'
+  page: 'home',
+  modal: 'team'
 }
 
 Vue.mixin({

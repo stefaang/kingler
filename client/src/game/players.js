@@ -1,3 +1,5 @@
+import { inert } from '../lib.js'
+
 // You may not overwrite this reference to the players array, only push, splice, ...
 export const players = []
 
@@ -8,8 +10,9 @@ export function moveRandomAll () {
 
 export function moveRandom (p) {
   for (const key in p.position) {
-    p.position[key] = p.position[key] + (0.01 - Math.random() * 0.02)
+    p.position[key] = p.position[key] + (0.001 - Math.random() * 0.002)
   }
+  p.position = inert(p.position)
 }
 
 // This is a Vue mixin
@@ -44,22 +47,19 @@ function toPlayerMarker (player) {
 setTimeout(function () {
   players.push({
     name: 'me',
-    position: [51.05, 3.75]
+    position: [3.7250, 51.05]
   })
-  console.log(players.length)
 }, 1000)
 setTimeout(function () {
   players.push({
     name: 'you',
-    position: [51.05, 3.75]
+    position: [3.7250, 51.05]
   })
-  console.log(players.length)
 }, 2000)
 setTimeout(function () {
   players.push({
     name: 'blub',
-    position: [51.05, 3.75]
+    position: [3.7250, 51.05]
   })
-  console.log(players.length)
 }, 3000)
-setInterval(moveRandomAll, 3000)
+setInterval(moveRandomAll, 1000)
