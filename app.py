@@ -18,6 +18,8 @@ from models import *
 from tasks import *
 
 
+##################
+# SOCKETIO routes
 
 @socketio.on('connect')
 def handle_connect():
@@ -156,9 +158,17 @@ def on_leave(data):
     send('%s has left the room.' % username, room=room)
 
 
+#################3
+# FLASK routes
+
 @app.route('/')
 def index():
     return render_template('index.html', session=session)
+
+
+@app.route('/vue')
+def newstyle():
+    return render_template('vue.html', session=session)
 
 
 @app.route('/login', methods=['GET', 'POST'])
