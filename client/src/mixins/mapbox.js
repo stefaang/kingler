@@ -39,15 +39,15 @@ export default {
     },
     createMarker(player) {
       console.log('creating player', inert(player.position))
+      var marker = document.createElement('div');
+      marker.className = 'marker'
+      marker.textContent = (player.name || '').slice(0, 3)
       var el = document.createElement('div');
-      el.className = 'marker';
-      el.style.background = 'red';
-      el.textContent = 'red';
+      el.appendChild(marker)
   
       var marker = new mapboxgl.Marker(el)
         .setLngLat(player.position)
         .addTo(this.map)
-      console.log('cre', marker)
       return marker
     }
   }

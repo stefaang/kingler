@@ -76,4 +76,16 @@ export default {
   bottom: 0;
   overflow: hidden;
 }
+.marker {
+  width: 64px;
+  height: 64px;
+  transform: perspective(100px) rotateX(45deg);
+  font-size: 32px;
+  border-radius: 50%;
+  line-height: 64px;
+  background-color: black;
+  color: white;
+  text-align: center;
+  transform: perspective(300px) rotateX(45deg) ;
+}
 </style>
