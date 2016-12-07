@@ -10,3 +10,4 @@ for doc in cursor:
 
 # coll.delete_one({'name' : 'stefaan'})
 # coll.delete_many({'_cls' : 'MapEntity.HoldableEntity.Flag'})
+coll.delete_many({'_cls' : 'MapEntity.Racer'})
