@@ -1,5 +1,5 @@
 from app import db, app
-from datetime import datetime
+from datetime import datetime as dt
 
 GLOBAL_VISION = 1000
 
@@ -36,9 +36,12 @@ class MapEntity(db.Document):
     meta = {'allow_inheritance': True}
     date_created = db.DateTimeField
 
+    team = db.StringField(default='black')
+    teamview_only = db.BooleanField(default=False)
+
     def __init__(self, **kwargs):
         super(MapEntity, self).__init__(**kwargs)
-        self.date_created = datetime.now()
+        self.date_created = dt.now()
 
 
 class HoldableEntity(MapEntity):
@@ -55,14 +58,15 @@ class Racer(MapEntity):
     name = db.StringField(required=True, max_length=32)
     color = db.StringField(default='black', max_length=16)
     icon = db.StringField(default='bug', max_length=16)
+    teamview_only = db.BooleanField(default=True)
+
 
     party = db.StringField()
 
     # tracking params
     date_lastseen = db.DateTimeField
-    is_online = db.BooleanField(default=False)  # currently unused
-    nearby = db.ListField(db.ReferenceField('Racer'))       # tracks nearby Racers
-    nearbystatic = db.ListField(db.ReferenceField(MapEntity))
+    is_online = db.BooleanField(default=False)              # currently unused
+    nearby = db.ListField(db.ReferenceField('MapEntity'))   # track nearby Racers, Bombs, ...
 
     # stats
     viewrange = db.IntField(default=300)
@@ -72,10 +76,6 @@ class Racer(MapEntity):
 
     has_hands_free = db.BooleanField(default=True)
     carried_item = db.ReferenceField(HoldableEntity)
-
-    def clean(self):
-        self.date_lastseen = datetime.now()
-        super(Racer, self).clean()
 
     def setnearby(self, other):
         # this can be a one liner + a lot more atomic
@@ -101,12 +101,54 @@ class Racer(MapEntity):
     def clearNearby(self):
         for other in self.nearby[:]:
             self.unsetnearby(other)
-        del self.nearbystatic[:]
+        # del self.nearbystatic[:]
 
     def get_info(self):
         lng, lat = self.pos['coordinates']
         return {'name': self.name, 'lat': lat, 'lng': lng,
                 'icon':ICONMAP[self.color], 'color': self.color}
+
+    def get_nearby_stuff(self, info_only=True):
+        oldnb = self.nearby
+        # get nearby allies and let them know we are nearby
+        allies = Racer.objects(pos__near=self.pos,
+                               pos__max_distance=ALLIED_RANGE,
+                               team=self.team,
+                               is_online=True,
+                               id__ne=self.id)
+        res = allies.update(full_result=True, add_to_set__nearby=self)
+
+        # get the nearby Racers of the other teams within short range and let them know we are here
+        enemies = Racer.objects(pos__near=self.pos,
+                                pos__max_distance=ENEMY_RANGE,
+                                is_online=True,
+                                color__ne=self.color)
+
+        enemies.update(full_result=True, add_to_set__nearby=self)
+
+        allystuff = MapEntity.objects(pos__near=self.pos,
+                                      pos__max_distance=ALLIED_RANGE,
+                                      team=self.team,
+                                      id__ne=self.id)
+
+        # and the rest that shows up on global view
+        otherstuff = MapEntity.objects(pos__near=self.pos,
+                                       pos__max_distance=ALLIED_RANGE,
+                                       team__ne=self.team,
+                                       teamview_only=False)
+
+        # this will be the new nearby list
+        newnearby = set(list(allies)+list(enemies)+list(allystuff)+list(otherstuff))
+        # purge the out of range items
+        for item in self.nearby:
+            if item not in newnearby:
+                if hasattr(item, 'nearby'):
+                    # remove self from the items nearby list
+                    item.update(pull__nearby=self)
+        # now finally update the nearby list
+        self.modify(nearby=newnearby)
+
+        return oldnb, self.nearby
 
     def get_nearby_racers(self, info_only=True):
         ''' Returns info about self and a list with all nearby allied and enemy Racers
@@ -121,27 +163,18 @@ class Racer(MapEntity):
         allies = Racer.objects(pos__near=self.pos,
                                pos__max_distance=ALLIED_RANGE,
                                color=self.color,
-                               id__ne=self.id)[:100]
+                               id__ne=self.id)
+        # get the nearby Racers of the other teams within range of 200 m
+        enemies = Racer.objects(pos__near=self.pos,
+                                pos__max_distance=ENEMY_RANGE,
+                                color__ne=self.color)[:100]  # not equals operator
 
-        for r in allies:
+        for r in list(allies) + list(enemies):
             lng, lat = r.pos['coordinates']
             #app.logger.debug("Put ally %s at pos: %s", r.name, r.pos)
             d = {'name': r.name, 'lat': lat, 'lng': lng}
             if self.setnearby(r):
                 # if we have nearby changes, add extra info as the client doesn't know who it is
-                d.update({'icon': ICONMAP[r.color], 'color': r.color})
-            racers.append(d if info_only else r)
-
-        # get the nearby Racers of the other teams within range of 200 m
-        enemies = Racer.objects(pos__near=self.pos,
-                                pos__max_distance=ENEMY_RANGE,
-                                color__ne=self.color)[:100]  # not equals operator
-        for r in enemies:
-            lng, lat = r.pos['coordinates']
-            #app.logger.debug("Put enemy %s at pos: %s", r.name, r.pos)
-            d = {'name': r.name, 'lat': lat, 'lng': lng}
-            # if the nearby list changes, add extra info
-            if self.setnearby(r):
                 d.update({'icon': ICONMAP[r.color], 'color': r.color})
             racers.append(d if info_only else r)
 
@@ -172,24 +205,24 @@ class Racer(MapEntity):
                               active=True)[:100]
 
         # update the list of known bombs for this racer
-        for b in set(abombs) | set(ebombs):
-            if b not in self.nearbystatic:
-                self.modify(push__nearbystatic=b)
-                bombs.append(b)
-                app.logger.debug('IGOTBOMBS: %s', len([b for b in self.nearbystatic if isinstance(b, Bomb)]))
+        # for b in set(abombs) | set(ebombs):
+        #     if b not in self.nearbystatic:
+        #         self.modify(push__nearbystatic=b)
+        #         bombs.append(b)
+        #         app.logger.debug('IGOTBOMBS: %s', len([b for b in self.nearbystatic if isinstance(b, Bomb)]))
 
         return bombs
 
     def get_nearby_flags(self):
         flags = []
 
-        fquery = Flag.objects(pos__near=self.pos,
-                              pos__max_distance=FLAG_VISION_RANGE)[:100]
+        # fquery = Flag.objects(pos__near=self.pos,
+        #                       pos__max_distance=FLAG_VISION_RANGE)[:100]
 
-        for f in fquery:
-            if f not in self.nearbystatic:
-                self.modify(push__nearbystatic=f)
-                flags.append(f)
+        # for f in fquery:
+        #     if f not in self.nearbystatic:
+        #         self.modify(push__nearbystatic=f)
+        #         flags.append(f)
         return flags
 
 
@@ -238,6 +271,7 @@ class Bomb(MapEntity):
     """ Work like land mines """
     color = db.StringField(default='black')
     team = db.StringField(required=True)
+    teamview_only = db.BooleanField(default=True)
 
     trigger_range = db.IntField(default=BOMB_TRIGGER_RANGE)
     explosion_range = db.IntField(default=BOMB_EXPLOSION_RANGE)
@@ -253,7 +287,7 @@ class Bomb(MapEntity):
     def __init__(self, **kwargs):
         if 'owner' in kwargs and isinstance(kwargs['owner'], basestring):
             kwargs['owner'] = Racer.objects.get(id=kwargs['owner'])
-        self.date_created = datetime.now()
+        self.date_created = dt.now()
         super(Bomb, self).__init__(**kwargs)
 
     def get_info(self):
@@ -294,7 +328,7 @@ class Bomb(MapEntity):
         app.logger.debug('bomb explodes! - %s others nearby', len(d['nearbybombs']))
         d['explosionrange'] = self.explosion_range
         self.active = False
-        self.date_exploded = datetime.now()
+        self.date_exploded = dt.now()
         self.save()
         return d
 
@@ -348,12 +382,12 @@ class Position(db.Document):
     name = db.StringField()
     pos = db.PointField()
     accuracy = db.IntField()
-    time = db.DateTimeField()
+    time = db.DateTimeField
 
     def __init__(self, name, pos, acc=0):
         self.name = name
         self.pos = pos
-        self.time = datetime.now()
+        self.time = dt.now()
         self.accuracy = acc
 
     def __repr__(self):

@@ -44,65 +44,15 @@ def handle_movemarker(data):
     - update flags: pickup or return
     """
     timestamp = time.time()
-    #app.logger.info('received move marker: %s', data)
-    # broadcast the new position to everybody?? room??
-    #emit('marker moved', data, broadcast=True)
+    app.logger.info('received move marker: %s', data)
 
-    # get the marker name and the new position from the json data
-    d = data
-    name = d.get('name')
-    lng, lat = float(d.get('lng', 0)), float(d.get('lat', 0))
-
-    # OPTIONAL: check if session user is allowed to move this marker!
-    # get the moving racer marker and update its position
-    movedracer = Racer.objects(name=name).first()
-    movedracer.modify(pos={"type": "Point", "coordinates": [lng,lat]})
-    movedracer = movedracer.reload()
-
-    # app.logger.debug('get nearby racers')
-    racers = movedracer.get_nearby_racers()
-    mr = movedracer.get_info()
-    # app.logger.debug('get nearby racers others: %s', racers)
-    # update the others' view
-    for racer in racers:
-        if len(racer) == 3:
-            # app.logger.debug('Move marker... %s', racer)
-            emit('marker moved', mr, room=racer['name'])
-            emit('marker moved', racer, room=mr['name'])
-        elif len(racer) == 5:
-            # app.logger.debug('Add marker... %s', racer)
-            emit('marker added', mr, room=racer['name'])
-            emit('marker added', racer, room=mr['name'])
-        elif len(racer) == 1:
-            # app.logger.debug('Remove marker... %s', racer)
-            emit('marker removed', mr, room=racer['name'])
-            emit('marker removed', racer, room=mr['name'])
-
-    # check bombs
-    bombs = movedracer.get_new_bombs()
-    for bomb in bombs:
-        emit('bomb added', bomb.get_info(), room=mr['name'])
-        # trigger enemy bombs
-        if bomb.team != movedracer.color:
-            do_bomb_explode.apply_async((str(bomb.id),), countdown=bomb.trigger_time)
-
-    # check flags
-    events = movedracer.handle_flags()
-    for event in events:
-        eventtype = event['type']
-        # let everyone know (broadcast in cell)
-        app.logger.info('WUP, i have to send %s', event)
-        for racer in [mr]+racers:
-            emit(eventtype, event, room=racer['name'])
-            if eventtype == 'flag scored':
-                movedracer.modify(inc__score=5)
-                spectators = Racer.objects(pos__near=movedracer.pos,
-                                           pos__max_distance=ALLIED_RANGE,)[:100]
-                update_scores(spectators)
+    update_racer_pos(data)
     # finalize by checking how long all this took
+
     duration = time.time() - timestamp
-    #app.logger.debug('move marker saved in %s ms', 1000*duration)
+    app.logger.debug('move marker saved in %s ms', 1000*duration)
     # return "OK"
+
 
 @socketio.on('add bomb')
 def handle_addbomb(data):

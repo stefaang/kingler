@@ -17,6 +17,21 @@ var plotNomLastPos = mrm.getLatLng();
 var noms = L.featureGroup([]).addTo(map);
 var nomIcon = L.AwesomeMarkers.icon({icon: 'diamond', markerColor: 'orange'});
 
+
+// helper to handle objects - please delete this
+function cloneAsObject(obj) {
+    if (obj === null || !(obj instanceof Object)) {
+        return obj;
+    }
+    var temp = (obj instanceof Array) ? [] : {};
+    // ReSharper disable once MissingHasOwnPropertyInForeach
+    for (var key in obj) {
+        temp[key] = cloneAsObject(obj[key]);
+    }
+    return temp;
+}
+
+
 L.easyButton('fa-coffee', function () {
     var range = 160;
     var pos = mrm.getLatLng();

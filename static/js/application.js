@@ -2,19 +2,18 @@
 console.log(flaskData);
 console.log(flaskData.racers[0]);
 
+// globals
+var map = null;
+var mrm = null;
+var mainUserTeamColor = null;
+var markers = {};
 
-// helper to handle objects
-function cloneAsObject(obj) {
-    if (obj === null || !(obj instanceof Object)) {
-        return obj;
-    }
-    var temp = (obj instanceof Array) ? [] : {};
-    // ReSharper disable once MissingHasOwnPropertyInForeach
-    for (var key in obj) {
-        temp[key] = cloneAsObject(obj[key]);
-    }
-    return temp;
-}
+var socket = null;
+
+//
+// WIP: put all this stuff in a module
+//
+
 
 
 // SocketIO for realtime bidirectional messages between client and server
@@ -24,21 +23,21 @@ if (window.location.protocol == "https:") {
     var ws_scheme = "ws://"
 };
 
-var socket = io();
+socket = io();
 socket.on('connect', function() {
    socket.emit('derp event', {data: 'i am connecting hell yeah'});
    console.log("Websockets ready - connected");
 });
 console.log("Websockets initialized");
 
+
 // enable vibration support
 navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
 
 
-
 //////////////////////
 // Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
-var map = L.map('map',
+map = L.map('map',
     {
         dragging: true,     // disable dragging the map
         touchZoom: false,    // disable zooming on mobile
@@ -51,8 +50,8 @@ var map = L.map('map',
 L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
     attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>',
 // Add CartoDB tiles to the map
-// L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
-//     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+//L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+//    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
     maxZoom: 21,
     maxNativeZoom: 18,  // this allows to use a deeper maxZoom
     id: 'carto.light'
@@ -80,7 +79,6 @@ L.ExtraMarkers.Icon.prototype.options.prefix = 'fa';
 
 // the markers object keeps track of all markers (LOL)
 // it's a dictionary that maps objectID to a marker [except for racers.. they use racer name (todo rework.. or not)]
-var markers = {};
 
 function RacerMarker(racer, options) {
     // racer must have these props:
@@ -138,7 +136,7 @@ function MainRacerMarker(racer) {
     // this circle needs to follow the main marker at all time
     marker.on('move', function(e) {
         mainRange.setLatLng(e.latlng);
-        mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
+        this.mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
     });
 
     // add BombMode support
@@ -177,18 +175,23 @@ for (var i = 0 ; i < flaskData.racers.length; i++) {
 }
 
 // bind to main Racer .. TODO: set this in global module settings
-var mrm = markers[flaskData.username];
-var mainUserTeamColor = mrm.color;
+mrm = markers[flaskData.username];
+mainUserTeamColor = mrm.color;
 console.log('We are team '+mainUserTeamColor);
 
 //console.log('mainsusermarker iconsize '+mrm.options.icon.options.iconSize);
 //mrm.options.icon.options.iconSize = [50,50];
 
-console.log("Markers ready");
+console.log("Racer Markers ready");
 
 
 
-// add flags
+
+
+
+/////////////////
+// FLAGS
+
 function addFlagMarker(flag) {
     // var icon = L.ExtraMarkers.icon({
     //     icon: 'fa-flag',
@@ -219,6 +222,64 @@ for (var i = 0; i < flaskData.flags.length; i++) {
     if (flag.state == 'carried')
         map.removeLayer(markers[flag.id]);
 }
+
+socket.on('flag grabbed', function(data) {
+    console.log("Inbox received:  Flag Grab");
+    console.log("Inbox unpack..: "+data.name+" grabbed "+data.target);
+    // set marker[data.name] icon to flag mode
+    var flag = markers[data.target];
+    if (flag) {
+        flag.setIcon(
+            L.divIcon({
+                className: 'flag-icon base',
+                iconSize: [58, 58],
+            })
+        );
+    }
+});
+
+socket.on('flag dropped', function(data) {
+    console.log("Inbox received:  Flag Drop");
+    console.log("Inbox unpack..: "+data.name+" dropped "+data.target);
+    var flag = markers[data.target];
+    var racer = markers[data.name];
+    if (flag) {
+        // update position to drop site and add again to map
+        flag.setLatLng(racer.getLatLng()).addTo(map);
+        // flag.setIcon()
+    }
+    // set marker[data.name] icon to flag mode
+});
+
+socket.on('flag returned', function(data) {
+    console.log("Inbox received:  Flag Returned");
+    console.log("Inbox unpack..: "+data.name+" returned "+data.target+". Now back to "+data.lat+','+data.lng);
+    var flag = markers[data.target];
+    var pos = [data.lat, data.lng];
+    if (flag) {
+        // update position to base
+        flag.setLatLng(pos);
+    }
+});
+
+socket.on('flag scored', function(data) {
+    console.log("Inbox received:  Flag Score");
+    console.log("Inbox unpack..: "+data.name+" scored "+data.target+". Now back to "+data.lat+','+data.lng);
+    var flag = markers[data.target];
+    var pos = [data.lat, data.lng];
+    if (flag) {
+        // update position to base
+        flag.setLatLng(pos).addTo(map);
+        flag.setIcon(
+            L.divIcon({
+                className: 'flag-icon '+flag.team,
+                iconSize: [58, 58],
+            })
+        );
+    }
+});
+
+
 
 ////////////////////////
 //  BUTTONS
@@ -259,6 +320,10 @@ L.easyButton({
 
 
 
+//////////////////////////
+// LOCATION
+//
+//
 // add button that sends your location
 //L.easyButton('fa-star', pushMainLocation).addTo(map);
 
@@ -268,6 +333,66 @@ L.easyButton( 'fa-flag',   function() {
         socket.emit('add flag', data);
     }
 ).setPosition('bottomleft').addTo(map);
+
+/////////////////////
+// prepare leaflet map.locate callback functions
+
+mrm.loctracker = {
+    prevPos : 0,
+    prevTime: 0
+}
+function onLocationFound(e) {
+    //
+    mrm.setLatLng(e.latlng);
+    map.setView(e.latlng);
+
+    // Store this point to the tracker
+    mainUserTrack.push(e.latlng);
+
+    if (e.latlng == mrm.loctracker.prevPos || e.timestamp < mrm.loctracker.prevTime + 5000){
+        return
+    } else {
+        mrm.pushLocation();
+        mrm.loctracker.prevPos = e.latlng;
+        mrm.loctracker.prevTime = e.timestamp;
+    }
+}
+
+function onLocationError(e) {
+    // console.log("Sorry no location found");
+    //map.setView(defaultPos, 13);
+    setFreeGeoIP();
+    // alert(e.message);
+}
+
+function setFreeGeoIP() {
+    // use jquery ajax call to lookup the geolocation based on your ipaddress
+    // max 10k requests per hour
+    $.getJSON("https://freegeoip.net/json/",
+        // when AJAX call is successful, run the following function
+        function (data) {
+            console.log("FreeGeoIP - "+data);
+            console.log("FreeGeoIP setting mainMarker location");
+            var pos = L.latLng(data.latitude, data.longitude);
+            // add a marker on the location of the resolved GeoIP
+            mrm.setLatLng(pos).bindPopup("Your GPS doesnt work yet..").openPopup();
+
+            pushMarkerLocation(mrm);
+            // update the map
+            map.setView(pos, 14);
+        }
+    );
+}
+
+// connect location events to callback functions
+map.on('locationfound', onLocationFound);
+map.on('locationerror', onLocationError);
+
+console.log("Leaflet location callbacks ready.. setView to main marker");
+
+
+
+
 
 ///////////////////////////////////
 /// BOMBS AWAAAAY
@@ -412,10 +537,10 @@ socket.on('bomb exploded', function(json) {
 ///////////////////////////////
 // SHOW TRACK button
 
-var mainUserTrack = [];
-var mainUserTrackPolyLine = L.polyline(mrm.getLatLng()).addTo(map);
+mrm.mainUserTrack = [];
+mrm.mainUserTrackPolyLine = L.polyline(mrm.getLatLng()).addTo(map);
 L.easyButton('fa-bolt', function () {
-    mainUserTrackPolyLine.setLatLngs(mainUserTrack);
+    mrm.mainUserTrackPolyLine.setLatLngs(mrm.mainUserTrack);
     mrm.bindPopup("Show track of this session").openPopup();
     if (navigator.vibrate) {
         // vibration API supported
@@ -425,64 +550,12 @@ L.easyButton('fa-bolt', function () {
 }).addTo(map);
 console.log("Easy Buttons ready");
 
-/////////////////////
-// prepare leaflet map.locate callback functions
-
-var prevMainPos = 0;    // move these globals to mrm
-var prevTime = 0;
-var pushReady = true;
-function onLocationFound(e) {
-    //
-    mrm.setLatLng(e.latlng);
-    map.setView(e.latlng);
-
-    // Store this point to the tracker
-    mainUserTrack.push(e.latlng);
-
-    if (e.latlng == prevMainPos || e.timestamp < prevTime + 5000){
-        return
-    } else {
-        mrm.pushLocation();
-        prevMainPos = e.latlng;
-        prevTime = e.timestamp;
-    }
-}
-
-function onLocationError(e) {
-    // console.log("Sorry no location found");
-    //map.setView(defaultPos, 13);
-    setFreeGeoIP();
-    // alert(e.message);
-}
-
-function setFreeGeoIP() {
-    // use jquery ajax call to lookup the geolocation based on your ipaddress
-    // max 10k requests per hour
-    $.getJSON("https://freegeoip.net/json/",
-        // when AJAX call is successful, run the following function
-        function (data) {
-            console.log("FreeGeoIP - "+data);
-            console.log("FreeGeoIP setting mainMarker location");
-            var pos = L.latLng(data.latitude, data.longitude);
-            // add a marker on the location of the resolved GeoIP
-            mrm.setLatLng(pos).bindPopup("Your GPS doesnt work yet..").openPopup();
-
-            pushMarkerLocation(mrm);
-            // update the map
-            map.setView(pos, 14);
-        }
-    );
-}
-
-// connect location events to callback functions
-map.on('locationfound', onLocationFound);
-map.on('locationerror', onLocationError);
-
-console.log("Leaflet location callbacks ready.. setView to main marker");
 
 
 
 
+
+/////////////////////////////
 // TEAM SCORE BOARD
 
 var teamScore = L.control();
@@ -510,8 +583,18 @@ function resetScore(e) {
     teamScore.update();
 }
 
-//
+socket.on('new score', function(data) {
+    console.log("Inbox received:  T+");
+    console.log("Inbox unpack..: "+data.team[mainUserTeamColor]+" "+data.individual[flaskData.username]);
+    teamScore.update(data);
+});
 
+
+
+
+////////////////
+// FINALIZE INIT
+//
 map.setView(mrm.getLatLng(), 18);
 
 
@@ -553,66 +636,4 @@ socket.on('marker removed', function(data) {
         console.log('.. but we don\'t know that marker?')
     }
 
-});
-
-socket.on('new score', function(data) {
-    console.log("Inbox received:  T+");
-    console.log("Inbox unpack..: "+data.team[mainUserTeamColor]+" "+data.individual[flaskData.username]);
-    teamScore.update(data);
-});
-
-socket.on('flag grabbed', function(data) {
-    console.log("Inbox received:  Flag Grab");
-    console.log("Inbox unpack..: "+data.name+" grabbed "+data.target);
-    // set marker[data.name] icon to flag mode
-    var flag = markers[data.target];
-    if (flag) {
-        flag.setIcon(
-            L.divIcon({
-                className: 'flag-icon base',
-                iconSize: [58, 58],
-            })
-        );
-    }
-});
-
-socket.on('flag dropped', function(data) {
-    console.log("Inbox received:  Flag Drop");
-    console.log("Inbox unpack..: "+data.name+" dropped "+data.target);
-    var flag = markers[data.target];
-    var racer = markers[data.name];
-    if (flag) {
-        // update position to drop site and add again to map
-        flag.setLatLng(racer.getLatLng()).addTo(map);
-        // flag.setIcon()
-    }
-    // set marker[data.name] icon to flag mode
-});
-
-socket.on('flag returned', function(data) {
-    console.log("Inbox received:  Flag Returned");
-    console.log("Inbox unpack..: "+data.name+" returned "+data.target+". Now back to "+data.lat+','+data.lng);
-    var flag = markers[data.target];
-    var pos = [data.lat, data.lng];
-    if (flag) {
-        // update position to base
-        flag.setLatLng(pos);
-    }
-});
-
-socket.on('flag scored', function(data) {
-    console.log("Inbox received:  Flag Score");
-    console.log("Inbox unpack..: "+data.name+" scored "+data.target+". Now back to "+data.lat+','+data.lng);
-    var flag = markers[data.target];
-    var pos = [data.lat, data.lng];
-    if (flag) {
-        // update position to base
-        flag.setLatLng(pos).addTo(map);
-        flag.setIcon(
-            L.divIcon({
-                className: 'flag-icon '+flag.team,
-                iconSize: [58, 58],
-            })
-        );
-    }
 });

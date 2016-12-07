@@ -25,15 +25,23 @@
 .info {
     padding: 6px 8px;
     font: 14px/16px Arial, Helvetica, sans-serif;
-    background: white;
-    background: rgba(255,255,255,0.8);
+    /*background: white;*/
+    /*background: rgba(255,255,255,0.8);*/
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
-    border-radius: 5px;
+    border: 16px solid transparent;
+    border-image: url(../img/kenney/9-Slice/Colored/blue.png) 30% fill round;
+    /*border-radius: 5px;*/
     line-height: 18px;
 }
+
+.info:hover {
+    border-image: url(../img/kenney/9-Slice/Colored/blue_pressed.png) 30% fill round;
+}
+
 .info h4 {
     margin: 0 0 5px;
-    color: #777;
+    /*color: #777;*/
+    color: #DDD;
 }
 
 .info i {
@@ -48,16 +56,6 @@
 .awesome-marker i {
     font-size: 18px;
     margin-top: 8px;
-}
-
-
-.leaflet-marker-icon .explosion-icon {
-    width: 20px;
-    height: 20px;
-    background-color: rgba(255, 255, 0, 0.5);
-    border-radius: 50%;
-    box-shadow: 0px 0px 4px blue;
-    transition: all 1s;
 }
 
 .flag-icon {
@@ -84,10 +82,25 @@
     background-position: -206px -8px;
 }
 
+.chest-icon {
+    background-image: url(../img/game-icons/pirate-icons.png);
+    background-position: -410px -210px; /* size 90x90 */
+}
+
+.crate-icon {
+    background-image: url(../img/game-icons/pirate-icons.png);
+    background-position: -510px -210px;
+}
+
+.wheel-icon {
+    background-image: url(../img/game-icons/pirate-icons.png);
+    background-position: -596px -210px;
+}
+
 .pok {
     width: 80px;
     height: 80px;
-    background-image: url('images/pokesprites.png');
+    background-image: url('../img/pokesprites.png');
 	/*drop-shadow(12px 12px 7px rgba(0,0,0,0.5));*/
 }
 
