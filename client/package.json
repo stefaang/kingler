@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "postinstall": "rollup -c",
     "build": "rollup -c",
     "dev": "wrollup --live"
   },
