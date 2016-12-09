@@ -288,7 +288,12 @@ bombButton = L.easyButton({
             onClick: function (btn) {
                 this.teardownBombMode(btn);
             }
-        }],
+        },
+        {
+            stateName: 'disabled',
+            icon: 'fa-user-times'
+        }
+    ],
 
 });
 
@@ -298,6 +303,10 @@ bombButton.dropBomb = function (e) {
     var data = {lat: pos.lat, lng: pos.lng,}; // range: 200};
     socket.emit('add bomb', data);
     bombButton.teardownBombMode();
+    bombButton.state('disabled');
+    setTimeout(function(){
+        bombButton.state('bombmode-off');
+    }, 90000);  // unlock after 1.5 minute
 };
 
 bombButton.setupBombMode = function(control) {
