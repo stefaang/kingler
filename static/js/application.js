@@ -225,7 +225,6 @@ for (var i = 0; i < flaskData.flags.length; i++) {
 
 // add button that searches your location
 L.easyButton({
-    position: 'topleft',
     states : [
         {
             stateName: 'locator-disabled',
@@ -267,7 +266,7 @@ L.easyButton( 'fa-flag',   function() {
         data = {'lat':pos.lat, 'lng':pos.lng, 'team': mainUserTeamColor};
         socket.emit('add flag', data);
     }
-).setPosition('bottomleft').addTo(map);
+).addTo(map);
 
 ///////////////////////////////////
 /// BOMBS AWAAAAY
@@ -290,11 +289,10 @@ bombButton = L.easyButton({
             }
         },
         {
-            stateName: 'disabled',
+            stateName: 'cooldown',
             icon: 'fa-user-times'
         }
     ],
-
 });
 
 bombButton.dropBomb = function (e) {
@@ -303,7 +301,7 @@ bombButton.dropBomb = function (e) {
     var data = {lat: pos.lat, lng: pos.lng,}; // range: 200};
     socket.emit('add bomb', data);
     bombButton.teardownBombMode();
-    bombButton.state('disabled');
+    bombButton.state('cooldown');
     setTimeout(function(){
         bombButton.state('bombmode-off');
     }, 90000);  // unlock after 1.5 minute
@@ -317,11 +315,12 @@ bombButton.setupBombMode = function(control) {
 };
 
 bombButton.teardownBombMode = function(control){
-    //mrm.bindPopup("Disabled Bomb Mode").openPopup();
     mrm.deactivateBombMode();
     map.dragging.enable();
     map.touchZoom.enable();
-    if (!control)  control = this;  // this is used after dropBomb
+    if (!control) {
+        control = this;  // this is used after dropBomb
+    }
     control.state('bombmode-off');
 };
 
