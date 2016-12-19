@@ -161,8 +161,9 @@ def show_map():
             mainracer.modify(is_online=True)
             mainracer.clearNearby()   # in case it was not done on logout
             app.logger.info('loaded %s, of type %s', mainracer, type(mainracer))
-            racers = mainracer.get_nearby_racers()
-            flags = [f.get_info() for f in mainracer.get_nearby_flags()]
+            _, stuff = mainracer.get_nearby_stuff()
+            racers = [o.get_info() for o in stuff if isinstance(o, Racer)]
+            flags = [o.get_info() for o in stuff if isinstance(o, Flag)]
             myself = mainracer.get_info()
             racers = [myself] + racers
             app.logger.info('loading... %s', racers)

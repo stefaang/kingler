@@ -47,11 +47,12 @@ map = L.map('map',
     }
 );
 
-L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
-    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>',
+// Stamen Tileset is better on bike as it doesn't scale deep enough
+//L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
+//    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>',
 // Add CartoDB tiles to the map
-//L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
-//    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
     maxZoom: 21,
     maxNativeZoom: 18,  // this allows to use a deeper maxZoom
     id: 'carto.light'
@@ -223,6 +224,17 @@ for (var i = 0; i < flaskData.flags.length; i++) {
         map.removeLayer(markers[flag.id]);
 }
 
+socket.on('flag added', function(data) {
+    console.log("Inbox received:  Flag Added");
+    console.log("Inbox unpack..: "+data.id+" - "+data.team+" flag");
+    var flag = markers[data.id];
+    if (flag) {
+        console.log(".. flag already existed");
+    } else {
+        addFlagMarker(data);
+    }
+});
+
 socket.on('flag grabbed', function(data) {
     console.log("Inbox received:  Flag Grab");
     console.log("Inbox unpack..: "+data.name+" grabbed "+data.target);
@@ -332,7 +344,7 @@ L.easyButton( 'fa-flag',   function() {
         data = {'lat':pos.lat, 'lng':pos.lng, 'team': mainUserTeamColor};
         socket.emit('add flag', data);
     }
-).setPosition('bottomleft').addTo(map);
+).addTo(map);
 
 /////////////////////
 // prepare leaflet map.locate callback functions
@@ -604,14 +616,14 @@ socket.on('marker moved', function(data) {
     console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
     var marker = markers[data.name];
     if (marker) {
-        console.log("fx setup..");
-        var point = map.latLngToLayerPoint(L.latLng(data.lat, data.lng))
-        console.log('point is '+point);
-        var fx = new L.PosAnimation();
-        console.log("fx go run.."+fx);
-        fx.run(marker, point, 0.5);
+        marker.setLatLng(L.latLng(data.lat, data.lng));
+        // var point = map.latLngToLayerPoint(L.latLng(data.lat, data.lng))
+        // var fx = new L.PosAnimation();
+        // console.log("fx go run.."+fx);
+        // fx.run(marker, point, 0.5);
     } else
-        console.log("but marker not known"+marker);
+        console.log("but marker not known "+marker);
+
 });
 
 socket.on('marker added', function(data) {

@@ -24,24 +24,24 @@
 
 .info {
     padding: 6px 8px;
-    font: 14px/16px Arial, Helvetica, sans-serif;
+    color: #FFF;
+    font: 14px/16px "Arial Black", Gadget, sans-serif;
     /*background: white;*/
     /*background: rgba(255,255,255,0.8);*/
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     border: 16px solid transparent;
-    border-image: url(../img/kenney/9-Slice/Colored/blue.png) 30% fill round;
+    border-image: url(../img/kenney/Colored/blue.png) 30% fill round;
     /*border-radius: 5px;*/
     line-height: 18px;
 }
 
 .info:hover {
-    border-image: url(../img/kenney/9-Slice/Colored/blue_pressed.png) 30% fill round;
+    border-image: url(../img/kenney/Colored/blue_pressed.png) 30% fill round;
 }
 
 .info h4 {
     margin: 0 0 5px;
     /*color: #777;*/
-    color: #DDD;
 }
 
 .info i {

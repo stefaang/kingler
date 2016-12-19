@@ -1,6 +1,6 @@
 from app import db, app, socketio
 from celery import Celery
-from models import Bomb, Racer
+from models import *
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
@@ -89,49 +89,61 @@ def update_racer_pos(data):
     movedracer.modify(pos={"type": "Point", "coordinates": [lng, lat]})
 
     movedracer = movedracer.reload()
+
+    # get all the new nearby stuff for the new position
     before, after = movedracer.get_nearby_stuff()
     app.logger.info('NearbyStuff went from %s to %s', before, after)
-
-    # app.logger.debug('get nearby racers')
-    racers = movedracer.get_nearby_racers()
     mr = movedracer.get_info()
-    # app.logger.debug('get nearby racers others: %s', racers)
-    # update the others' view
-    for racer in racers:
-        if len(racer) == 3:
-            # app.logger.debug('Move marker... %s', racer)
-            emit('marker moved', mr, room=racer['name'])
-            emit('marker moved', racer, room=mr['name'])
-        elif len(racer) == 5:
-            # app.logger.debug('Add marker... %s', racer)
-            emit('marker added', mr, room=racer['name'])
-            emit('marker added', racer, room=mr['name'])
-        elif len(racer) == 1:
-            # app.logger.debug('Remove marker... %s', racer)
-            emit('marker removed', mr, room=racer['name'])
-            emit('marker removed', racer, room=mr['name'])
 
-    # check bombs
-    bombs = movedracer.get_new_bombs()
+    # A.1 Create markers for the new racers in range
+    racers = (o.get_info() for o in set(after) - set(before) if isinstance(o, Racer))
+    for racer in racers:
+        emit('marker added', mr, room=racer['name'])
+        emit('marker added', racer, room=mr['name'])
+
+    # A.2 Move the position of known racers in range
+    racers = (o.get_info() for o in set(after) | set(before) if isinstance(o, Racer))
+    for racer in racers:
+        emit('marker moved', mr, room=racer['name'])
+        emit('marker moved', racer, room=mr['name'])
+
+    # A.3 Remove the racers that out of range
+    racers = (o.get_info() for o in set(before) - set(after) if isinstance(o, Racer))
+    for racer in racers:
+        emit('marker removed', mr, room=racer['name'])
+        emit('marker removed', racer, room=mr['name'])
+
+    # B. Show new bombs (we don't remove bombs)
+    bombs = (o for o in set(after) - set(before) if isinstance(o, Bomb))
     for bomb in bombs:
         emit('bomb added', bomb.get_info(), room=mr['name'])
         # trigger enemy bombs
         if bomb.team != movedracer.color:
             do_bomb_explode.apply_async((str(bomb.id),), countdown=bomb.trigger_time)
 
-    # check flags
+    # C. Show new flags (we don't remove flags)
+    flags = (o for o in set(after) - set(before) if isinstance(o, Flag))
+    for flag in flags:
+        emit('flag added', flag.get_info(), room=mr['name'])
+        # trigger enemy bombs
+
+    # C.2 Interact with existing flags
     events = movedracer.handle_flags()
     for event in events:
+        # get ALL nearby racers
+        spectators = Racer.objects(pos__near=movedracer.pos,
+                                   pos__max_distance=ALLIED_RANGE, )[:100]
         eventtype = event['type']
-        # let everyone know (broadcast in cell)
+        # let them update their flags (TODO: broadcast in cell)
         app.logger.info('WUP, i have to send %s', event)
-        for racer in [mr] + racers:
+        for racer in spectators:
             emit(eventtype, event, room=racer['name'])
-            if eventtype == 'flag scored':
-                movedracer.modify(inc__score=5)
-                spectators = Racer.objects(pos__near=movedracer.pos,
-                                           pos__max_distance=ALLIED_RANGE, )[:100]
-                update_scores(spectators)
+
+        # adjust scores if necessary
+        if eventtype == 'flag scored':
+            movedracer.modify(inc__score=5)
+            update_scores(spectators)
+
 
 def update_scores(racers):
     app.logger.debug('calculate new scores for %s', racers)
