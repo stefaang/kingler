@@ -23,10 +23,11 @@ from tasks import *
 
 @socketio.on('connect')
 def handle_connect():
-    app.logger.info('New connection received: %s', session['username'])
+    app.logger.info('New connection received: %s', session.get('username'))
     # register the handler
-    join_room(str(session['username']))
-    app.logger.info('New conn rooms: %s', rooms())
+    if 'username' in session:
+        join_room(str(session['username']))
+        app.logger.info('New conn rooms: %s', rooms())
 
 @socketio.on('disconnect')
 def handle_disconnect():
