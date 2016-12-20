@@ -192,7 +192,7 @@ def oldstylemap():
         data = {'racers':racers, 'username':session['username'], 'flags': flags}
         return render_template('map.html', flaskData=data)
     else:
-        return 'You are not logged in'
+        return redirect(url_for('login'))
 
 #TODO: make a proper REST api /resource/id/action
 @app.route('/moveracer', methods=['GET','POST'])
