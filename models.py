@@ -51,7 +51,7 @@ class HoldableEntity(MapEntity):
 
 
 class Racer(MapEntity):
-    '''Main player class'''
+    """Main player class"""
 
     # creation params
     name = db.StringField(required=True, max_length=32)
@@ -136,16 +136,18 @@ class Racer(MapEntity):
 
         return oldnb, self.nearby
 
-
     def handle_flags(self):
+        """ Pickup enemy flags (dropped or in base), return dropped ally flags
+        or score points when returning an enemy flag to base"""
+
+        # TODO: MAKE THIS A TASK
         events = []
-        # MAKE THIS A TASK AAAAH
         """Pickup enemy flag if not carrying one and return own team flags to base"""
-        fquery = Flag.objects(pos__near=self.pos,
+        nearbyflags = Flag.objects(pos__near=self.pos,
                              pos__max_distance=FLAG_PICKUP_RANGE,
                              state__ne='carried')
 
-        for flag in fquery:
+        for flag in nearbyflags:
             if flag.team == self.color:
                 if flag.state == 'dropped':
                     app.logger.info('%s returned the %s flag!!', self.name, flag.team)
@@ -167,12 +169,11 @@ class Racer(MapEntity):
                 # don't pickup flags that are already carried
                 if self.has_hands_free and self.is_alive:
                     app.logger.info('%s grabbed the %s flag!!', self.name, flag.team)
-                    # atomic update
+                    # TODO: improve atomic update
                     flag.modify({'state__ne':'carried'}, state='carried', carrier=self)
                     self.modify(has_hands_free=False, carried_item=flag.reload())
                     events.append({'type': 'flag grabbed', 'name': self.name, 'target': str(flag.id)})
         return events
-
 
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
@@ -282,26 +283,15 @@ class Zone(db.Document):
     name = db.StringField()
     geom = db.PolygonField()
 
-    def __init__(self, name, geom):
-        self.name = name
-        self.geom = geom
-
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
-
 
 
 class Position(db.Document):
     name = db.StringField()
     pos = db.PointField()
     accuracy = db.IntField()
-    time = db.DateTimeField
-
-    def __init__(self, name, pos, acc=0):
-        self.name = name
-        self.pos = pos
-        self.time = dt.now()
-        self.accuracy = acc
+    time = db.DateTimeField(default=dt.now)
 
     def __repr__(self):
         return '<{} {} {} {}>'.format(self.time, self.name, self.pos, self.accuracy)
