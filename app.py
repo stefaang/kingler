@@ -18,6 +18,9 @@ from models import *
 from tasks import *
 
 
+########################
+#
+# SOCKETIO routes
 
 @socketio.on('connect')
 def handle_connect():
@@ -106,6 +109,12 @@ def on_leave(data):
     send('%s has left the room.' % username, room=room)
 
 
+###############################
+#
+#  FLASK routes
+#
+
+
 @app.route('/')
 def index():
     return render_template('index.html', session=session)
@@ -141,7 +150,7 @@ def login():
         session['racer'] = r
         session['racerid'] = str(r.id)
         app.logger.debug('id is %s', session['racerid'])
-        return redirect(url_for('show_map'))
+        return redirect(url_for('oldstylemap'))
     return render_template('login.html', error='')
 
 @app.route('/logout')
@@ -150,8 +159,14 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('index'))
 
+
+@app.route('/vue')
+def newstylemap():
+    return render_template('vue.html', session=session)
+
+
 @app.route('/map')
-def show_map():
+def oldstylemap():
     if 'username' in session:
         racers = []
         try:
