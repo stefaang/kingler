@@ -83,7 +83,6 @@ def update_racer_pos(data):
     name = d.get('name')
     lng, lat = float(d.get('lng', 0)), float(d.get('lat', 0))
 
-    # OPTIONAL: check if session user is allowed to move this marker!
     # get the moving racer marker and update its position
     movedracer = Racer.objects(name=name).first()
     movedracer.modify(pos={"type": "Point", "coordinates": [lng, lat]})

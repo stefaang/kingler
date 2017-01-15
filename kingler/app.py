@@ -38,6 +38,11 @@ def handle_disconnect():
         if r:
             r.modify(is_online=False)
 
+@socketio.on('vue derp event')
+def handle_vue_connect():
+    app.logger.info('New VUE connection')
+
+
 @socketio.on('move marker')
 def handle_movemarker(data):
     """
@@ -49,7 +54,11 @@ def handle_movemarker(data):
     timestamp = time.time()
     app.logger.info('received move marker: %s', data)
 
+    # TODO: check if session user is allowed to move this marker!
+
+    # update the position and do perform all related tasks
     update_racer_pos(data)
+
     # finalize by checking how long all this took
 
     duration = time.time() - timestamp

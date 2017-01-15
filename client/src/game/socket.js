@@ -1,10 +1,10 @@
-var socket
+var socket;
 
 export function init() {
-  // Start connecting 
+  // Setup socketIO connection
   socket = window.io();
   socket.on('connect', function() {
-    socket.emit('derp event', { data: 'i am connecting hell yeah' });
+    socket.emit('vue derp event', { data: 'i am connecting hell yeah' });
     console.log("Websockets ready - connected");
   });
 }
