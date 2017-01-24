@@ -14,44 +14,4 @@
             <a href="{{ url_for('logout') }}" class="btn btn-default btn-lg">Logout</a>
         </p>
     {% endif %}
-    <script>
-        var url = 'https://api.pokehuntr.com/';
-        console.log('hello from whateverorigin');
-        $.getJSON(
-            'http://whateverorigin.org/get?url=' + encodeURIComponent(url+'authorise') + '&callback=?',
-            function(data){
-                alert(data.contents);
-            }
-        );
-
-        $.ajax({
-            url: s + "authorise",
-            type: "GET",
-            crossDomain: !0,
-            data: {
-                latitude: 50.963832747575786,
-                longitude: 3.7188720703125004,
-                hashCheck: "e48a2c0250e01634e07ce615a60c0889"
-            },
-            xhrFields: {
-                withCredentials: !0
-            }
-        }).success(function() {
-            $.ajax({
-                url: s + "geo/gym",
-                type: "GET",
-                crossDomain: !0,
-                data: {
-                    latitude: 50.963832747575786,
-                    longitude: 3.7188720703125004
-                },
-                xhrFields: {
-                    withCredentials: !0
-                }
-            }).success(function() {
-                d()
-            })
-        })
-
-    </script>
 {% endblock %}

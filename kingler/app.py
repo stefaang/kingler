@@ -24,19 +24,26 @@ from tasks import *
 
 @socketio.on('connect')
 def handle_connect():
-    app.logger.info('New connection received: %s', session['username'])
-    # register the handler
-    join_room(str(session['username']))
+    if 'username' in session:
+        app.logger.info('New connection received: %s', session['username'])
+        # register the handler
+        join_room(str(session['username']))
+    else:
+        app.logger.warning('New connection but no username in session')
     app.logger.info('New conn rooms: %s', rooms())
+    return 'OK'
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    app.logger.info('Disconnecting %s ...', session['username'])
-    leave_room(str(session['username']))
     if session.get('username'):
+        app.logger.info('Disconnecting %s ...', session['username'])
+        leave_room(str(session['username']))
         r = Racer.objects(name=session['username']).first()
         if r:
             r.modify(is_online=False)
+    else:
+        app.logger.warning('Disconnecting but no username in session')
+    return 'OK'
 
 @socketio.on('vue derp event')
 def handle_vue_connect():
