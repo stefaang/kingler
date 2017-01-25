@@ -3,12 +3,12 @@ console.log(flaskData);
 console.log(flaskData.racers[0]);
 
 // globals
-var map = null;
-var mrm = null;
-var mainUserTeamColor = null;
-var markers = {};
+let map = null;
+let mrm = null;
+let mainUserTeamColor = null;
+let markers = {};
 
-var socket = null;
+let socket = null;
 
 //
 // WIP: put all this stuff in a module
@@ -33,6 +33,37 @@ console.log("Websockets initialized");
 
 // enable vibration support
 navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+
+// enable sound support
+// user interaction is required on mobile devices --> a splash screen to activate sound
+// for now, you just need to tap the map once
+let maudio = document.getElementById('oldleaflet-audio');
+
+let soundSprite = {
+    silence: {start: 0, end: 50},
+    bomb : {start: 0, end: 300},
+};
+
+// TODO: add splash screen here
+// element.addEventListener('touchstart', function(ev) {
+//     console.log('Enable SOUND');
+//     maudio.play();
+//     playSoundFile('silence');
+// });
+
+function playSoundFile(idx) {
+    console.log('play sound '+idx);
+
+    maudio.currentPosition = soundSprite[idx].start;
+    var x = setInterval(function() {
+        maudio.currentPosition += 50;
+        console.log('..still playing.. '+maudio.currentPosition);
+        if(maudio.currentPosition >= soundSprite[idx].end) {
+            maudio.pause(); // There is no stop() in HTML5
+            clearInterval(x);
+        }
+    }, 50);
+}
 
 
 //////////////////////
@@ -394,15 +425,7 @@ L.easyButton({
     ]}).addTo(map);
 
 
-
-
-
-//////////////////////////
-// LOCATION
-//
-//
-// add button that sends your location
-//L.easyButton('fa-star', pushMainLocation).addTo(map);
+// A button to Add a Flag to the map (TODO: admin only)
 
 L.easyButton( 'fa-flag',   function() {
         let pos = mrm.getLatLng();
@@ -410,6 +433,12 @@ L.easyButton( 'fa-flag',   function() {
         socket.emit('add flag', data);
     }
 ).addTo(map);
+
+
+//////////////////////////
+// LOCATION
+//
+//
 
 /////////////////////
 // prepare leaflet map.locate callback functions
@@ -492,7 +521,6 @@ bombButton = L.easyButton({
                 this.teardownBombMode(btn);
             }
         }],
-
 });
 
 bombButton.dropBomb = function (e) {
@@ -585,6 +613,7 @@ socket.on('bomb exploded', function(json) {
             }
     ).addTo(map);
 
+    // make the circle grow in size to simulate an actual explosion
     setTimeout( function(){
         let id = setInterval(function(){
             // bomb explosion radius is part of json data
@@ -599,8 +628,7 @@ socket.on('bomb exploded', function(json) {
     }, 10);
 
     // play the bomb sound
-    let audio = new Audio('static/sound/bomb.mp3');
-    audio.play();
+    playSoundFile('bomb');
 
     // and buzz away
     if (navigator.vibrate) {
@@ -623,6 +651,8 @@ L.easyButton('fa-bolt', function () {
         // vibrate twice
         navigator.vibrate([100, 100, 100]);
     }
+    maudio.play();
+    playSoundFile('bomb');
 }).addTo(map);
 console.log("Easy Buttons ready");
 

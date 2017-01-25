@@ -34,23 +34,28 @@
         html, body, #map {
             height: 100%;
         }
+
+        #oldleaflet-audio {
+            height: 0;
+        }
     </style>
 </head>
 <body>
+    <div id="map"></div>
+    <div id="audio">
+        <audio src="static/sound/bomb.mp3" id="oldleaflet-audio"/>
+    </div>
 
-<div id="map"></div>
-<!-- font awesome hell yeah-->
-<script src="https://use.fontawesome.com/697ebb27cd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
-<script src="static/js/easy-button.js"></script>
-<script src="static/js/leaflet.extra-markers.min.js"></script>
-<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
+    <!-- font awesome hell yeah-->
+    <script src="https://use.fontawesome.com/697ebb27cd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
+    <script src="static/js/easy-button.js"></script>
+    <script src="static/js/leaflet.extra-markers.min.js"></script>
+    <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script src="static/js/jquery.color.min.js"></script>
-<script src="static/js/application.js">
-
-</script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="static/js/jquery.color.min.js"></script>
+    <script src="static/js/application.js"></script>
 </body>
 </html>

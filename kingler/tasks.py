@@ -63,7 +63,7 @@ def do_bomb_explode(bombid):
     # show new scores to spectators
     # TODO: put this in a separate task.. update_scores around pos
     if victims:
-        spectators = [r.reload() for r in spectators]  # load the new scores
+        # spectators = [r.reload() for r in spectators]  # load the new scores
         update_scores(spectators)
     else:
         app.logger.debug('no score changes')
@@ -71,12 +71,12 @@ def do_bomb_explode(bombid):
 
 @celery.task
 def adjust_score(racerid, points):
-    Racer.objects.get(id=racerid).update_one(inc__score=points)
+    Racer.objects.get(id=racerid).modify(inc__score=points)
 
 
 @celery.task
 def revive_racer(racerid):
-    Racer.objects.get(id=racerid, is_alive=False).update_one(is_alive=True)
+    Racer.objects.get(id=racerid, is_alive=False).modify(is_alive=True)
 
 
 ########################
