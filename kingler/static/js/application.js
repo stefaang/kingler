@@ -53,8 +53,8 @@ let soundSprite = {
 
 function playSoundFile(idx) {
     console.log('play sound '+idx);
-
     maudio.currentPosition = soundSprite[idx].start;
+    maudio.play();
     var x = setInterval(function() {
         maudio.currentPosition += 50;
         console.log('..still playing.. '+maudio.currentPosition);
@@ -651,7 +651,6 @@ L.easyButton('fa-bolt', function () {
         // vibrate twice
         navigator.vibrate([100, 100, 100]);
     }
-    maudio.play();
     playSoundFile('bomb');
 }).addTo(map);
 console.log("Easy Buttons ready");
