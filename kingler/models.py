@@ -2,8 +2,7 @@ import logging
 import sys
 from datetime import datetime as dt
 
-from flask_mongoengine import MongoEngine
-from mongoengine import signals
+#from mongoengine import signals
 
 
 GLOBAL_VISION = 1000
@@ -24,7 +23,15 @@ FLAG_VISION_RANGE = GLOBAL_VISION
 
 logger = logging.getLogger(__name__)
 
-db = MongoEngine()
+# in the application context, the db is already defined by flask_mongoengine
+if 'db' in globals():
+    logger.info('Database connection in application context')
+# outside of the application, use mongoengine right away
+else:
+    import mongoengine
+    logger.info('Connecting to database outside of application context')
+    mongoengine.connect('kingler')
+    db = mongoengine
 
 ICONMAP = {
     'green': 'leaf',
@@ -48,7 +55,7 @@ class MapEntity(db.Document):
     teamview_only = db.BooleanField(default=False)
 
     def __repr__(self):
-        return '{} {} at {}'.format(self._cls, str(self.id), self.pos.get('Coordinates') if self.pos else None)
+        return '{} {} at {}'.format(self._cls, str(self.id), self.pos.get('coordinates') if self.pos else None)
 
     __str__ = __repr__
 
@@ -86,10 +93,10 @@ class Racer(MapEntity):
     has_hands_free = db.BooleanField(default=True)
     carried_item = db.ReferenceField(HoldableEntity)
 
-    @classmethod
-    def pre_save(cls, sender, document, **kwargs):
-        logger.debug("Pre Save: %s" % document.name)
-        logger.debug("Updated - %s", document._delta())
+    # @classmethod
+    # def pre_save(cls, sender, document, **kwargs):
+    #     logger.debug("Pre Save: %s" % document.name)
+    #     logger.debug("Updated - %s", document._delta())
 
     def clearNearby(self):
         self.modify(nearby=list())
@@ -188,7 +195,7 @@ class Racer(MapEntity):
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
 
-signals.pre_save.connect(Racer.pre_save, sender=Racer)
+#signals.pre_save.connect(Racer.pre_save, sender=Racer)
 
 
 class Bomb(MapEntity):
@@ -202,7 +209,7 @@ class Bomb(MapEntity):
     expire_time = db.IntField(default=BOMB_EXPIRE_TIME)
     trigger_time = db.IntField(default=BOMB_TRIGGER_TIME)
     date_exploded = db.DateTimeField
-    active = db.BooleanField(default=True)
+    is_active = db.BooleanField(default=True)
 
     owner = db.ReferenceField(Racer)
 
@@ -230,7 +237,7 @@ class Bomb(MapEntity):
         return [r.name for r in allies], [r.name for r in enemies]
 
     def explode(self):
-        if not self.active:
+        if not self.is_active:
             return None
         #logger.debug('bomb explodes!')
         """Detonates the bomb and returns a dict with the effects"""
@@ -248,10 +255,10 @@ class Bomb(MapEntity):
             pos__near=self.pos,
             pos__max_distance=self.explosion_range,
             id__ne=self.id,
-            active=True)[:100]
+            is_active=True)[:100]
         logger.debug('bomb explodes! - %s others nearby', len(d['nearbybombs']))
         d['explosionrange'] = self.explosion_range
-        self.active = False
+        self.is_active = False
         self.date_exploded = dt.now()
         self.save()
         return d

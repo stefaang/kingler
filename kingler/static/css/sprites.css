@@ -77,6 +77,11 @@
     background-image: url(../img/game-icons/tower-flag-base.png);
 }
 
+.coin-icon {
+    background-image: url(../img/game-icons/pirate-icons.png);
+    background-position: -510px -210px;
+}
+
 .bomb-icon {
     background-image: url(../img/game-icons/pirate-icons.png);
     background-position: -206px -8px;

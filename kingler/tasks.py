@@ -106,13 +106,13 @@ def update_racer_pos(data):
         emit('marker moved', mr, room=racer['name'])
         emit('marker moved', racer, room=mr['name'])
 
-    # A.3 Remove the racers that out of range
+    # A.3 Remove the racers who are out of range
     racers = (o.get_info() for o in set(before) - set(after) if isinstance(o, Racer))
     for racer in racers:
         emit('marker removed', mr, room=racer['name'])
         emit('marker removed', racer, room=mr['name'])
 
-    # B. Show new bombs (we don't remove bombs)
+    # B. Show new bombs (we don't remove bombs.. they disappear after explosion) TODO: but do they see the explosion??
     bombs = (o for o in set(after) - set(before) if isinstance(o, Bomb))
     for bomb in bombs:
         emit('bomb added', bomb.get_info(), room=mr['name'])
@@ -128,10 +128,10 @@ def update_racer_pos(data):
 
     # C.2 Interact with existing flags
     events = movedracer.handle_flags()
+    # get ALL nearby racers
+    spectators = Racer.objects(pos__near=movedracer.pos,
+                               pos__max_distance=ALLIED_RANGE, )[:100]
     for event in events:
-        # get ALL nearby racers
-        spectators = Racer.objects(pos__near=movedracer.pos,
-                                   pos__max_distance=ALLIED_RANGE, )[:100]
         eventtype = event['type']
         # let them update their flags (TODO: broadcast in cell)
         app.logger.info('WUP, i have to send %s', event)
@@ -140,8 +140,19 @@ def update_racer_pos(data):
 
         # adjust scores if necessary
         if eventtype == 'flag scored':
-            movedracer.modify(inc__score=5)
+            movedracer.modify(inc__score=5) # TODO: check for more atoms
             update_scores(spectators)
+
+    # D. Show new coins
+    coins = (o for o in set(after) - set(before) if isinstance(o, CopperCoin))
+    for coin in coins:
+        lng, lat = coin.pos['coordinates']
+        info = {'lng':lng, 'lat':lat, 'value': coin.value, 'id': str(coin.id)}
+        emit('coin added', info, room=mr['name'])
+
+    # D.2 Pickup nearby coins
+    #coins = CopperCoin.objects()
+
 
 
 def update_scores(racers):
