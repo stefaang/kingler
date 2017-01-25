@@ -22,6 +22,6 @@ import random
 
 # add 100 new coins to the database with random value 5 - 10 - 15 - 20
 for i in range(100):
-    randpos = [3.72 + .04*random.random(), 51.0 + .04*random.random()]
+    randpos = [3.72 + .04*random.random(), 51.0 + .025*random.random()]
     c = CopperCoin(pos=randpos, value=5*random.randint(1,5))
     c.save()

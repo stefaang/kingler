@@ -39,8 +39,8 @@ navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mo
 // Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
 map = L.map('map',
     {
-        dragging: true,     // disable dragging the map
-        touchZoom: false,    // disable zooming on mobile
+        dragging: true,
+        // touchZoom: false,    // disable zooming on mobile
         // scrollWheelZoom: false,   // but not on PC
         doubleClickZoom: false,   // zoom on center, wherever you click
         fullscreenControl: true,
