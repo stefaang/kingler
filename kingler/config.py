@@ -9,7 +9,9 @@ class Config(object):
     SECRET_KEY = os.environ['SECRET_KEY']
     MONGODB_SETTINGS = {
         'db': 'kingler',
-        # 'host': os.environ['MONGODB_URL']
+        # Host ip address also works
+        # 'host': '172.18.0.2',
+        'host': 'db_1'
     }
     REDIS_URL = os.environ['REDIS_URL']
     REDIS_CHAN = 'chat'

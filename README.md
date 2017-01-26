@@ -68,3 +68,14 @@ In case we ever go back to PostGres (I hope not)
 - use alembic / flask-migrate to migrate databases
  - edit script.py.mako to include geoalchemy2
  - edit your db migrate versions carefully
+
+
+### Docker build
+
+    docker-compose build
+    docker-compose up
+
+### Run as a daemon
+
+    docker-compose up -d
+    docker-compose restart
