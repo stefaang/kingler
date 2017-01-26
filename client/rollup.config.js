@@ -6,7 +6,7 @@ import livereload from 'rollup-plugin-livereload'
 
 export default {
   entry: 'src/main.js',
-  dest: '../static/dist/bundle.js',
+  dest: '../kingler/static/dist/bundle.js',
   sourceMap: true,
   plugins: [
     vue(),

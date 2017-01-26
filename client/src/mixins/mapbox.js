@@ -1,6 +1,6 @@
 import { inert } from '../lib.js'
 
-const introZoom = 2
+const introZoom = 2;
 
 const options = {
   container: 'map',
@@ -8,20 +8,26 @@ const options = {
   center: [3.7250, 51.05],
   zoom: 14 - introZoom,
 
-  // Making it fancy
+  // Make it fancy 3D
   pitch: 45
-}
+};
 
 export default {
   methods: {
+
     // Options passed to initMap will be merged with the defaults above
     initMap(opts) {
-      Object.assign(options, opts)
-      this.map = new mapboxgl.Map(options)
+      Object.assign(options, opts);
+      this.map = new mapboxgl.Map(options);
 
-      this.map.addControl(new mapboxgl.NavigationControl())
+      let map = this.map;
+      map.addControl(new mapboxgl.NavigationControl());
 
-
+      map.addControl(new mapboxgl.GeolocateControl({
+          positionOptions: {
+              enableHighAccuracy: true
+          }
+      }));
 
 
       // this.playerMarkers.map(m => m.addTo(map))
@@ -31,24 +37,33 @@ export default {
         setTimeout(() => this.flyTo({ zoom: options.zoom + introZoom }), 1000)
       }
     },
+
     flyTo(opts) {
       this.map.flyTo(Object.assign({
         speed: 0.6,
         curve: 1
       }, options, opts))
     },
+
     createMarker(player) {
-      console.log('creating player', inert(player.position))
+      console.log('creating player', inert(player.position));
+
+      // create an element and make it stylable
       var marker = document.createElement('div');
-      marker.className = 'marker'
-      marker.textContent = (player.name || '').slice(0, 3)
+      marker.className = 'marker';
+      marker.textContent = (player.name || '').slice(0, 3);
       var el = document.createElement('div');
-      el.appendChild(marker)
-  
+      el.appendChild(marker);
+
+      // create a mapbox marker from this element and add it to the map
       var marker = new mapboxgl.Marker(el)
         .setLngLat(player.position)
-        .addTo(this.map)
+        .addTo(this.map);
       return marker
-    }
+    },
+
+    moveMarker(marker, newpos) {
+      return marker.setLngLat(newpos)
+    },
   }
 }

@@ -5,7 +5,7 @@
     <div class="container">
       <div class="starter-template">
         <div class="img">
-          <img src="./css/images/ezgif-optimized.gif" id="pacmananim" />
+          <img src="static/css/images/ezgif-optimized.gif" id="pacmananim" />
         </div>
         <h2>Welcome to da party!</h2>
         <p class="bs-component">

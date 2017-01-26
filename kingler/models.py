@@ -1,7 +1,9 @@
-from app import db, app
+import logging
+import sys
 from datetime import datetime as dt
 
-from mongoengine import signals
+#from mongoengine import signals
+
 
 GLOBAL_VISION = 1000
 
@@ -19,7 +21,17 @@ BOMB_EXPLOSION_RANGE = 20
 FLAG_PICKUP_RANGE = 5
 FLAG_VISION_RANGE = GLOBAL_VISION
 
-logger = app.logger
+logger = logging.getLogger(__name__)
+
+# in the application context, the db is already defined by flask_mongoengine
+if 'db' in globals():
+    logger.info('Database connection in application context')
+# outside of the application, use mongoengine right away
+else:
+    import mongoengine
+    logger.info('Connecting to database outside of application context')
+    mongoengine.connect('kingler')
+    db = mongoengine
 
 ICONMAP = {
     'green': 'leaf',
@@ -41,6 +53,11 @@ class MapEntity(db.Document):
 
     team = db.StringField(default='black')
     teamview_only = db.BooleanField(default=False)
+
+    def __repr__(self):
+        return '{} {} at {}'.format(self._cls, str(self.id), self.pos.get('coordinates') if self.pos else None)
+
+    __str__ = __repr__
 
 
 class HoldableEntity(MapEntity):
@@ -76,10 +93,10 @@ class Racer(MapEntity):
     has_hands_free = db.BooleanField(default=True)
     carried_item = db.ReferenceField(HoldableEntity)
 
-    @classmethod
-    def pre_save(cls, sender, document, **kwargs):
-        logger.debug("Pre Save: %s" % document.name)
-        logger.debug("Updated - %s", document._delta())
+    # @classmethod
+    # def pre_save(cls, sender, document, **kwargs):
+    #     logger.debug("Pre Save: %s" % document.name)
+    #     logger.debug("Updated - %s", document._delta())
 
     def clearNearby(self):
         self.modify(nearby=list())
@@ -150,7 +167,7 @@ class Racer(MapEntity):
         for flag in nearbyflags:
             if flag.team == self.color:
                 if flag.state == 'dropped':
-                    app.logger.info('%s returned the %s flag!!', self.name, flag.team)
+                    logger.info('%s returned the %s flag!!', self.name, flag.team)
                     flag.return_to_base()
                     lng, lat = flag.pos['coordinates']
                     events.append({'type': 'flag returned', 'name': self.name, 'target': str(flag.id),
@@ -158,7 +175,7 @@ class Racer(MapEntity):
                 elif flag.state == 'home':
                     if not self.has_hands_free and isinstance(self.carried_item, Flag):
                         # score points... somehow
-                        app.logger.info('%s scores 5 points for TEAM %s!!', self.name, self.color)
+                        logger.info('%s scores 5 points for TEAM %s!!', self.name, self.color)
                         stolen_flag = self.carried_item
                         stolen_flag.return_to_base()
                         self.modify(has_hands_free=True, carried_item=None)
@@ -168,7 +185,7 @@ class Racer(MapEntity):
             else:
                 # don't pickup flags that are already carried
                 if self.has_hands_free and self.is_alive:
-                    app.logger.info('%s grabbed the %s flag!!', self.name, flag.team)
+                    logger.info('%s grabbed the %s flag!!', self.name, flag.team)
                     # TODO: improve atomic update
                     flag.modify({'state__ne':'carried'}, state='carried', carrier=self)
                     self.modify(has_hands_free=False, carried_item=flag.reload())
@@ -178,7 +195,7 @@ class Racer(MapEntity):
     def __repr__(self):
         return '<id {} {}>'.format(self.id, self.name)
 
-signals.pre_save.connect(Racer.pre_save, sender=Racer)
+#signals.pre_save.connect(Racer.pre_save, sender=Racer)
 
 
 class Bomb(MapEntity):
@@ -192,7 +209,7 @@ class Bomb(MapEntity):
     expire_time = db.IntField(default=BOMB_EXPIRE_TIME)
     trigger_time = db.IntField(default=BOMB_TRIGGER_TIME)
     date_exploded = db.DateTimeField
-    active = db.BooleanField(default=True)
+    is_active = db.BooleanField(default=True)
 
     owner = db.ReferenceField(Racer)
 
@@ -220,9 +237,9 @@ class Bomb(MapEntity):
         return [r.name for r in allies], [r.name for r in enemies]
 
     def explode(self):
-        if not self.active:
+        if not self.is_active:
             return None
-        #app.logger.debug('bomb explodes!')
+        #logger.debug('bomb explodes!')
         """Detonates the bomb and returns a dict with the effects"""
         d = {}
         # get a list of players that see the explosion
@@ -238,10 +255,10 @@ class Bomb(MapEntity):
             pos__near=self.pos,
             pos__max_distance=self.explosion_range,
             id__ne=self.id,
-            active=True)[:100]
-        app.logger.debug('bomb explodes! - %s others nearby', len(d['nearbybombs']))
+            is_active=True)[:100]
+        logger.debug('bomb explodes! - %s others nearby', len(d['nearbybombs']))
         d['explosionrange'] = self.explosion_range
-        self.active = False
+        self.is_active = False
         self.date_exploded = dt.now()
         self.save()
         return d
@@ -259,7 +276,7 @@ class Flag(HoldableEntity):
         super(Flag, self).__init__(**kwargs)
         self.base = self.pos
         if not self.base:
-            app.logger.warning('Flag needs a base position')
+            logger.warning('Flag needs a base position')
 
     def drop_on_ground(self, pos):
         return self.modify(pos=pos, state='dropped', carrier=None)
@@ -277,6 +294,10 @@ class Flag(HoldableEntity):
 
     def __repr__(self):
         return '<id {} team {} pos {}>'.format(self.id, self.team, self.pos['coordinates'])
+
+
+class CopperCoin(MapEntity):
+    value = db.IntField()
 
 
 class Zone(db.Document):
