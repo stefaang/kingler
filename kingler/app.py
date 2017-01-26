@@ -9,9 +9,10 @@ from flask_socketio import SocketIO, send, emit, join_room, leave_room, rooms
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
-db = MongoEngine(app)
+db = MongoEngine()
 
 socketio = SocketIO(app, message_queue=app.config['REDIS_URL'])
+db.init_app(app)
 
 # now import the models and tasks
 from models import *

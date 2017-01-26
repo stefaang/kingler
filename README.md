@@ -13,27 +13,30 @@ How to run this?
 ```
 sudo apt-get install python27 python-virtualenv python-dev build-essential redis-server libgeos-dev
 ```
+
+- Get MongoDB 2.6+
+  [Instructions](https://www.digitalocean.com/community/tutorials/how-to-install-mongodb-on-ubuntu-16-04)
+
 - Setup Virtual environment
 ```
 virtualenv env
 source env/bin/activate
 pip install -r requirements.txt
 ```
-- Get MongoDB 2.6+
-```
-[Instructions.](https://www.digitalocean.com/community/tutorials/how-to-install-mongodb-on-ubuntu-16-04)
-```
-- Setup some environment vars (autoenv is handy) - see config.py
+
+- Setup some environment vars (add them to env/bin/activate script) - see config.py
 ```
 export APP_SETTINGS="config.DevelopmentConfig"
 export REDIS_URL="redis://localhost"
 export SECRET_KEY="whysosecret?"
 export CELERY_BROKER="redis://localhost:6379/0"
 ```
+
 - Start the webserver (see Procfile for Heroku version)
 ```
 gunicorn app.app --chdir kingler -k eventlet -w 1 -b 0.0.0.0:5000
 ```
+
 - Start Celery worker in another terminal (but with the same venv)
 ```
 celery worker -A app.celery --loglevel=info

@@ -1,3 +1,5 @@
+'use strict';
+
 // show the setup data provided by the server
 console.log(flaskData);
 console.log(flaskData.racers[0]);
@@ -14,7 +16,17 @@ let socket = null;
 // WIP: put all this stuff in a module
 //
 
-
+class Dummy {
+    constructor(name) {
+        this.name = name;
+    }
+    printName() {
+        console.log('Hello there, '+this.name)
+    }
+}
+let d = new Dummy('derp');
+d.printName();
+console.log(d);
 
 // SocketIO for realtime bidirectional messages between client and server
 if (window.location.protocol == "https:") {
@@ -40,8 +52,8 @@ navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mo
 let maudio = document.getElementById('oldleaflet-audio');
 
 let soundSprite = {
-    silence: {start: 0, end: 50},
-    bomb : {start: 0, end: 300},
+    silence: {start: 1000, stop: 1300},
+    bomb : {start: 0, stop: 2000},
 };
 
 // TODO: add splash screen here
@@ -53,16 +65,18 @@ let soundSprite = {
 
 function playSoundFile(idx) {
     console.log('play sound '+idx);
-    maudio.currentPosition = soundSprite[idx].start;
+    let start = soundSprite[idx].start,
+        stop = soundSprite[idx].stop;
     maudio.play();
-    var x = setInterval(function() {
-        maudio.currentPosition += 50;
-        console.log('..still playing.. '+maudio.currentPosition);
-        if(maudio.currentPosition >= soundSprite[idx].end) {
-            maudio.pause(); // There is no stop() in HTML5
-            clearInterval(x);
-        }
-    }, 50);
+    maudio.addEventListener('canplay', function() {
+        let ma = this;
+        ma.currentPosition = start * 0.001;
+        setTimeout(function() {
+            ma.pause();
+            ma.removeEventListener('canplay');
+        }, stop - start);
+    });
+
 }
 
 
@@ -112,86 +126,93 @@ L.ExtraMarkers.Icon.prototype.options.prefix = 'fa';
 // the markers object keeps track of all markers (LOL)
 // it's a dictionary that maps objectID to a marker [except for racers.. they use racer name (todo rework.. or not)]
 
-function RacerMarker(racer, options) {
-    // racer must have these props:
-    //   name, lat, lng, color, icon
-    console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng);
+class RacerMarker extends L.Marker {
+    constructor(racer, options){
+        // racer object must contain following properties:
+        //   name, lat, lng, color, icon
+        console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng);
+        // create the L.marker
+        super([racer.lat, racer.lng], {
+            title: racer.name,
+            draggable: true,
+            zIndexOffset: 400
+        });
+        let icon = L.ExtraMarkers.icon({
+            icon: 'fa-'+racer.icon,
+            markerColor: racer.color,
+            shape: (options && options.shape) ? options.shape : 'square',
+        });
+        this.setIcon(icon);
+        this.on('dragend', this.pushLocation);
+    }
 
-    let icon = L.ExtraMarkers.icon({
-        icon: 'fa-'+racer.icon,
-        markerColor: racer.color,
-        shape: (options && options.shape) ? options.shape : 'square',
-    });
-    let marker = L.marker([racer.lat, racer.lng], {    // TODO: subclass
-        icon: icon,
-        title: racer.name,
-        draggable: true,
-        zIndexOffset: 400
-    }).on('click', function (e) {
-        let popup = e.target.getPopup();
+    showRacerName() {
+        let popup = this.getPopup();
         if (!popup) {
-            e.target.bindPopup(e.target.options.title).openPopup();
+            this.bindPopup(this.options.title).openPopup();
         } else {
             popup.openPopup();
         }
-    }).on('dragend', function (e) {
-        e.target.pushLocation(e.target);
-    });
+    }
 
-    marker.pushLocation = function(){
+    pushLocation() {
         let pos = this.getLatLng();
-        let data = {name:marker.options.title, lat: pos.lat, lng: pos.lng};
+        let data = {name: this.name, lat: pos.lat, lng: pos.lng};
         console.log('Outbox: '+JSON.stringify(data));
         socket.emit('move marker', data);
-    };
+    }
 
-    marker.color = racer.color;
+    get color() {
+        return this.options.icon.options.color;
+    }
 
-    return marker;
+    get name() {
+        return this.options.title;
+    }
+
+
 }
 
-function MainRacerMarker(racer) {
-    let marker = RacerMarker(racer, {shape : 'circle'});
-    let colormap = {'red': '#A12F36', 'green': '#00934F', 'blue': '#0072B5'};
-    // always display the Main User on top
-    marker.setZIndexOffset(900);
+class MainRacerMarker extends RacerMarker {
+    constructor(racer) {
+        super(racer, {shape: 'circle'});
+        // always display the Main User on top
+        this.setZIndexOffset(900);
 
+        // track all movement of the main racer
+        this.mainUserTrack = [];
+        this.mainUserTrackPolyLine = L.polyline(this.getLatLng()).addTo(map);
 
-    // add a Circle that shows the action range
-    let mainRange = L.circle( marker.getLatLng(), 15,
-            { //interactive: false,
-                stroke: true,
-                color: colormap[racer.color],
-                weight: 1
-            }
-    ).addTo(map);
-    // this circle needs to follow the main marker at all time
-    marker.on('move', function(e) {
-        mainRange.setLatLng(e.latlng);
-        this.mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
-    });
+        // add a Circle that shows the action range
+        let colormap = {'red': '#A12F36', 'green': '#00934F', 'blue': '#0072B5'};
+        this.mainRangeStyles = {
+            bombmodeEnabled: { color: '#2E2E2E', weight: 1, stroke: true,},
+            bombmodeDisabled: { color: colormap[racer.color], weight: 1, stroke: true,},
+        };
+
+        this.mainRange = L.circle(this.getLatLng(), 35,
+            this.mainRangeStyles.bombmodeDisabled
+        ).addTo(map);
+
+        // this circle needs to follow the main marker at all time
+        this.on('move', function (e) {
+            this.mainRange.setLatLng(e.latlng);
+            this.mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
+        });
+    }
 
     // add BombMode support
-    marker.activateBombMode = function(dropBomb, teardown) {
-        mainRange.setRadius(50);
-        mainRange.setStyle({
-            color: '#2E2E2E',
-            weight: 1
-        });
-        mainRange.once('click', dropBomb);
+    activateBombMode(dropBomb, teardown) {
+        this.mainRange.setRadius(50);
+        this.mainRange.setStyle(this.mainRangeStyles.bombmodeEnabled);
+        this.mainRange.once('click', dropBomb);
     };
 
-    marker.deactivateBombMode = function() {
-        mainRange.setRadius(15);
-        mainRange.setStyle({
-            color: colormap[racer.color],
-            weight: 1
-        });
-        mainRange.off('click');
-
-    };
-
-    return marker;
+    deactivateBombMode(){
+        this.mainRange.setRadius(35);
+        this.mainRange.setStyle(this.mainRangeStyles.bombmodeDisabled);
+        this.mainRange.off('click');
+    }
 }
 
 for (let i = 0 ; i < flaskData.racers.length; i++) {
@@ -199,10 +220,10 @@ for (let i = 0 ; i < flaskData.racers.length; i++) {
     let ismainmarker = racer.name === flaskData.username;
     if (ismainmarker) {
         // setup the main central Racer
-        markers[racer.name] = MainRacerMarker(racer).addTo(map);
+        markers[racer.name] = new MainRacerMarker(racer).addTo(map);
     } else {
         // setup the other nearby Racers
-        markers[racer.name] = RacerMarker(racer).addTo(map);
+        markers[racer.name] = new RacerMarker(racer).addTo(map);
     }
 }
 
@@ -429,7 +450,7 @@ L.easyButton({
 
 L.easyButton( 'fa-flag',   function() {
         let pos = mrm.getLatLng();
-        data = {'lat':pos.lat, 'lng':pos.lng, 'team': mainUserTeamColor};
+        let data = {'lat':pos.lat, 'lng':pos.lng, 'team': mainUserTeamColor};
         socket.emit('add flag', data);
     }
 ).addTo(map);
@@ -505,7 +526,7 @@ console.log("Leaflet location callbacks ready.. setView to main marker");
 /// BOMBS AWAAAAY
 //-------------------------------//
 
-bombButton = L.easyButton({
+let bombButton = L.easyButton({
     states : [
         {
             stateName: 'bombmode-off',
@@ -641,8 +662,6 @@ socket.on('bomb exploded', function(json) {
 ///////////////////////////////
 // SHOW TRACK button
 
-mrm.mainUserTrack = [];
-mrm.mainUserTrackPolyLine = L.polyline(mrm.getLatLng()).addTo(map);
 L.easyButton('fa-bolt', function () {
     mrm.mainUserTrackPolyLine.setLatLngs(mrm.mainUserTrack);
     mrm.bindPopup("Show track of this session").openPopup();
@@ -651,13 +670,9 @@ L.easyButton('fa-bolt', function () {
         // vibrate twice
         navigator.vibrate([100, 100, 100]);
     }
-    playSoundFile('bomb');
+    playSoundFile('silence');
 }).addTo(map);
 console.log("Easy Buttons ready");
-
-
-
-
 
 
 /////////////////////////////
@@ -674,7 +689,7 @@ teamScore.onAdd = function () {
 // method that we will use to update the control based on feature properties passed
 teamScore.update = function (props) {
     let html = '<h4>Team score</h4>';
-    if (props && 'team' in props) {
+    if (props && props.team) {
         for (let color in props.team) {
             html += '<i style="background:' + color + '"></i> ' + props.team[color] + ' points<br>';
         }
@@ -742,3 +757,4 @@ socket.on('marker removed', function(data) {
     }
 
 });
+
