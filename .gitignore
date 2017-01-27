@@ -1,3 +1,7 @@
+# Frontend
+node_modules
+/public/dist
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
