@@ -222,9 +222,9 @@ vue-hot-reload-api@^2.0.1:
   version "2.0.8"
   resolved "https://registry.yarnpkg.com/vue-hot-reload-api/-/vue-hot-reload-api-2.0.8.tgz#b3ba6a9a443d561b14f2785c8ea056618cb2faa3"
 
-vue-loader@10.0.2:
-  version "10.0.2"
-  resolved "https://registry.yarnpkg.com/vue-loader/-/vue-loader-10.0.2.tgz#6fe7bcefb32c5439bd0338464aa22673ad62299c"
+vue-loader@^10.0.2:
+  version "10.1.0"
+  resolved "https://registry.yarnpkg.com/vue-loader/-/vue-loader-10.1.0.tgz#bc95ca8f605d674a407ad24783e7a907e0e01eaf"
   dependencies:
     consolidate "^0.14.0"
     hash-sum "^1.0.2"
@@ -245,9 +245,9 @@ vue-style-loader@^1.0.0:
   dependencies:
     loader-utils "^0.2.7"
 
-vue-template-compiler@2.1.5:
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/vue-template-compiler/-/vue-template-compiler-2.1.5.tgz#9555412e47b795fffdb9445c5b1645f9195b1f68"
+vue-template-compiler@^2.1.5:
+  version "2.1.10"
+  resolved "https://registry.yarnpkg.com/vue-template-compiler/-/vue-template-compiler-2.1.10.tgz#cb89643adc395e97435585522e43d0a9b1913257"
   dependencies:
     de-indent "^1.0.2"
     he "^1.1.0"
@@ -256,9 +256,9 @@ vue-template-es2015-compiler@^1.2.2:
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/vue-template-es2015-compiler/-/vue-template-es2015-compiler-1.5.0.tgz#e4f672ab1718a3abf9171a080daefac31be117e1"
 
-vue@2.1.5:
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/vue/-/vue-2.1.5.tgz#d2568d3e5093cf1486eef44cf37177e3f51d568d"
+vue@^2.1.5:
+  version "2.1.10"
+  resolved "https://registry.yarnpkg.com/vue/-/vue-2.1.10.tgz#c9235ca48c7925137be5807832ac4e3ac180427b"
 
 yallist@^2.0.0:
   version "2.0.0"

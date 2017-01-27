@@ -16,11 +16,6 @@ import PageMap from './page/PageMap.vue'
 
 export default {
   name: 'app',
-  data () {
-    return {
-      msg: 'Hello Vue!'
-    }
-  },
   components: {
     ModalLogin,
     ModalTeam,

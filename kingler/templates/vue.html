@@ -15,7 +15,9 @@
 </head>
 
 <body>
-  <div id="app">loading</div>
+  <div id="app">
+    <div ></div>
+  </div>
 
   <footer class="footer">
     <div class="container">
@@ -26,8 +28,10 @@
 
   <script src="https://api.mapbox.com/mapbox-gl-js/v0.28.0/mapbox-gl.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
-  <script src="/static/js/vendor/vue.runtime.js"></script>
+  <!-- If developing -->
   <script src="http://localhost:8080/client.js"></script>
+
+  <!-- If production -->
   <!-- <script src="/static/dist/client.js"></script> -->
 </body>
 
