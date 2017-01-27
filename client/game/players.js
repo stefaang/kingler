@@ -1,26 +1,9 @@
 import { inert } from '../lib.js'
+import { state as io } from './io.js'
 
-// This is a Vue mixin that makes players accessible to other components
-export default {
-  data: function () { // data must be a function in components
-    return {
-      players
-    }
-  },
-  computed: {
-    playerMarkers () {
-      this.$nextTick(_ => this.$emit('playersChanged'));
-      return this.players.map(toPlayerMarker)
-    }
-  },
-  methods: {
-
-  }
+export const state = {
+  list: []
 }
-
-
-// You may not overwrite this reference to the players array, only push, splice, ...
-export const players = {};
 
 // Move a player randomly
 export function moveRandom (p) {
@@ -33,35 +16,27 @@ export function moveRandom (p) {
 
 // Move all players randomly
 export function moveRandomAll () {
-  for (let id in players) {
-    moveRandom(players[id]);
+  for (let id in state.list) {
+    moveRandom(state.list[id]);
   }
 }
-
-
-function toPlayerMarker (player) {
-  return window.L.marker(player.position, {
-    title: player.name
-  })
-}
-
 
 // Some test stuff
 
 setTimeout(function () {
-  players.push({
+  state.list.push({
     name: 'me',
     position: [3.7250, 51.05]
   })
 }, 1000);
 setTimeout(function () {
-  players.push({
+  state.list.push({
     name: 'you',
     position: [3.7250, 51.05]
   })
 }, 2000);
 setTimeout(function () {
-  players.push({
+  state.list.push({
     name: 'blub',
     position: [3.7250, 51.05]
   })

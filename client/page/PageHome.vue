@@ -1,32 +1,29 @@
 <template>
-  <div class="page-home">
-    <!-- Useless navbar -->
-    <!-- <top-nav></top-nav> -->
-    <div class="container">
-      <div class="starter-template">
-        <div class="img">
-          <img src="static/css/images/ezgif-optimized.gif" id="pacmananim" />
-        </div>
-        <h2>Welcome to da party!</h2>
-        <p class="bs-component">
-          <a href="/map" @click="routeClick" class="btn btn-primary btn-lg">Single Player</a>
-          <a href="/logout" @click="routeClick" class="btn btn-primary btn-lg">Multi Player</a>
-        </p>
-        <p class="bs-component">
-          <a href="/logout" @click="routeClick" class="btn btn-default btn-lg">Logout</a>
-        </p>
-      </div>
-    </div>
+  <div class="page home-wrapper">
+    <input type="text" v-model="nick" placeholder="username">
+    <party-list />
   </div>
 </template>
 
 <script>
 import TopNav from './TopNav.vue'
+import PartyList from '../components/PartyList.vue'
 
 export default {
   name: 'page-home',
+  computed: {
+    nick: {
+      get  () {
+        return window.localStorage['nick'] || this.$state.user.nick
+      },
+      set (v) {
+        this.$state.user.nick = v
+        window.localStorage['nick'] = v
+      }
+    }
+  },
   components: {
-    TopNav
+    PartyList
   }
 }
 </script>

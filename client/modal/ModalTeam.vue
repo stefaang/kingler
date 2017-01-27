@@ -21,7 +21,11 @@ import playersMixin from '../game/players.js'
 
 export default {
   name: 'modal-login',
-  mixins: [playersMixin]
+  computed: {
+    players () {
+      return this.$state.players.list
+    }
+  }
 }
 </script>
 

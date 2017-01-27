@@ -1,10 +1,15 @@
 <template>
   <div id="app">
-    <page-home v-if="route.page=='home'"></page-home>
-    <page-map v-if="route.page=='map'"></page-map>
+    <transition name="page">
+      <page-home v-if="!isLoading && route.page == 'home'"></page-home>
+    </transition>
 
-    <modal-team v-if="route.modal=='team'"></modal-team>
-    <modal-login v-if="route.modal=='login'"></modal-login>
+    <page-map v-if="!isLoading && route.page == 'map'"></page-map>
+
+    <modal-team v-if="!isLoading && route.modal == 'team'"></modal-team>
+    <modal-login v-if="!isLoading && route.modal == 'login'"></modal-login>
+
+    <div class="loader" :class="{ 'loader--done': !isLoading }"></div>
   </div>
 </template>
 
@@ -16,6 +21,17 @@ import PageMap from './page/PageMap.vue'
 
 export default {
   name: 'app',
+  data () {
+    return {
+      isLoading: true
+    }
+  },
+  mounted () {
+    console.log('read')
+    setTimeout(() => {
+      this.isLoading = false
+    }, 200)
+  },
   components: {
     ModalLogin,
     ModalTeam,
@@ -24,3 +40,25 @@ export default {
   }
 }
 </script>
+
+<style>
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.page {
+  z-index: 1;
+  max-width: 20em;
+}
+
+.page-enter-active, .page-leave-active {
+  transition: opacity .5s
+}
+.page-enter, .page-leave-to {
+  opacity: 0
+}
+</style>

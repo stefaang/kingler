@@ -5,6 +5,7 @@
     "build": "vbuild"
   },
   "dependencies": {
+    "normalize.css": "^5.0.0",
     "vue": "^2.1.5"
   },
   "devDependencies": {

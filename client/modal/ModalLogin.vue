@@ -1,15 +1,17 @@
 <template>
   <div class="modal-login">
-    test *{{ _ && _.players }}*{{ players }}*
+    test *{{ players.length }}*
   </div>
 </template>
 
 <script>
-import playersMixin from '../game/players.js'
-
 export default {
   name: 'modal-login',
-  mixins: [playersMixin]
+  computed: {
+    players () {
+      return this.$state.players.list
+    }
+  }
 }
 </script>
 

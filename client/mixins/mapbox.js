@@ -13,6 +13,12 @@ const options = {
 };
 
 export default {
+  computed: {
+    playerMarkers () {
+      this.$nextTick(_ => this.$emit('playersChanged'));
+      return state.list.map(toPlayerMarker)
+    }
+  },
   methods: {
 
     // Options passed to initMap will be merged with the defaults above
@@ -30,7 +36,7 @@ export default {
       }));
 
 
-      // this.playerMarkers.map(m => m.addTo(map))
+      this.playerMarkers.map(m => m.addTo(map))
       // console.log('Leaflet is ready.')
 
       if (introZoom) {
@@ -66,4 +72,10 @@ export default {
       return marker.setLngLat(newpos)
     },
   }
+}
+
+function toPlayerMarker (player) {
+  return window.L.marker(player.position, {
+    title: player.name
+  })
 }

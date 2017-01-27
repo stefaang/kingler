@@ -4,7 +4,6 @@
 
 <script>
 import { inert } from '../lib.js'
-import playersMixin from '../game/players.js'
 import mapboxMixin from '../mixins/mapbox.js'
 //import socket from '../game/socket.js'
 
@@ -16,7 +15,6 @@ mapboxgl.accessToken = 'pk.eyJ1IjoidGhnaCIsImEiOiJjaXdlMTJiczkwMDZ6MnRvNmdjODNmO
 export default {
   name: 'page-map',
   mixins: [
-    playersMixin,
     mapboxMixin
   ],
   data () {
