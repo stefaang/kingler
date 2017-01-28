@@ -1,4 +1,15 @@
-from app import db, app, socketio
+# -*- coding: utf-8 -*-
+"""
+    kingler.tasks
+    ~~~~~~~~~~~~~~
+
+    Tasks and routines, some of them using Celery, are defined here
+
+    :copyright: (c) 2017 by Stefaan Ghysels
+    :license: BSD, see LICENSE for more details.
+"""
+
+from app import app, socketio
 from celery import Celery
 from models import *
 

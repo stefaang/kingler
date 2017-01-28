@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+    kingler.models
+    ~~~~~~~~~~~~~~
+
+    The MongoDB models are defined here
+
+    :copyright: (c) 2017 by Stefaan Ghysels
+    :license: BSD, see LICENSE for more details.
+"""
+
 import logging
 import sys
 from datetime import datetime as dt
@@ -47,17 +58,24 @@ class Cell(db.Document):
 
 
 class MapEntity(db.Document):
+    #: the position of the entity on the map
     pos = db.PointField()
-    meta = {'allow_inheritance': True}
+    #: the date the entity was added to the database
     date_created = db.DateTimeField(default=dt.now)
-
+    #: the team the entity belongs to (could change)
     team = db.StringField(default='black')
+    #: is this entity visible to its own team only
     teamview_only = db.BooleanField(default=False)
 
-    def __repr__(self):
-        return '{} {} at {}'.format(self._cls, str(self.id), self.pos.get('coordinates') if self.pos else None)
+    meta = {'allow_inheritance': True}
 
-    __str__ = __repr__
+    def __repr__(self):
+        """compact formatter"""
+        return '<{} {}>'.format(self._cls, str(self.id), )
+
+    def __str__(self):
+        """longer string representation"""
+        return '<{} {} at {}>'.format(self._cls, str(self.id), self.pos.get('coordinates') if self.pos else None)
 
 
 class HoldableEntity(MapEntity):

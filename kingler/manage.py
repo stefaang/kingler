@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+    kingler.manage
+    ~~~~~~~~~~~~~~
+
+    Some quick and dirty routines to prepare the database.
+
+    :copyright: (c) 2017 by Stefaan Ghysels
+    :license: BSD, see LICENSE for more details.
+"""
+
 if 0:
     # use this part of the script if you cannot import models
     import mongoengine

@@ -1,11 +1,16 @@
 A geospatial web app that shows your teammates position in real-time.
 Core components:
- 
+
+Backend:
  - [Flask](http://flask.pocoo.org/), the python web app framework
  - [MongoDB](https://www.mongodb.com/) for all persistent data ops
+ - Celery, distributed task queue, the backend worker
+Frontend Classic:
  - [socketIO](https://flask-socketio.readthedocs.io/en/latest/) for real-time position updates
  - [leaflet](http://leafletjs.com/) for maps
- - Celery, distributed task queue, the backend worker
+Frontend Fancy:
+ - ES2015 javascript and Vue
+
 
 How to run this?
 
