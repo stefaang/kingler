@@ -35,8 +35,11 @@
     margin-top: 8px;
 }
 
+.ship-icon {
+    background-image: url(../img/game-icons/drakkar-blue-64.png);
+}
+
 .flag-icon {
-    border-radius: 5px;
     background-image: url(../img/game-icons/tower-flag-white.svg);
     background-size: 100%;
 }
@@ -54,27 +57,38 @@
     background-image: url(../img/game-icons/tower-flag-base.png);
 }
 
-.coin-icon {
-    background-image: url(../img/game-icons/pirate-icons.png);
-    background-position: -510px -210px;
-}
-
-.bomb-icon {
+.anker-icon {   /* 50x50*/
     background-image: url(../img/game-icons/pirate-icons-sm.png);
-    background-position: -103px -4px;
+    background-position: -0px -0px;
 }
 
-.chest-icon {
-    background-image: url(../img/game-icons/pirate-icons.png);
-    background-position: -205px -105px; /* size 90x90 */
+.rope-icon {    /* 50x50*/
+    background-image: url(../img/game-icons/pirate-icons-sm.png);
+    background-position: -50px -0px;
 }
 
-.crate-icon {
-    background-image: url(../img/game-icons/pirate-icons.png);
-    background-position: -225px -105px;
+.moneybag-icon {    /* 50x50*/
+    background-image: url(../img/game-icons/pirate-icons-sm.png);
+    background-position: -100px -100px;
 }
 
-.wheel-icon {
-    background-image: url(../img/game-icons/pirate-icons.png);
-    background-position: -300px -105px;
+
+.bomb-icon {    /* 50x50*/
+    background-image: url(../img/game-icons/pirate-icons-sm.png);
+    background-position: -100px -0px;
+}
+
+.chest-icon {    /* 50x50*/
+    background-image: url(../img/game-icons/pirate-icons-sm.png);
+    background-position: -200px -100px;
+}
+
+.crate-icon {    /* 50x50*/
+    background-image: url(../img/game-icons/pirate-icons-sm.png);
+    background-position: -250px -100px;
+}
+
+.wheel-icon {    /* 50x50*/
+    background-image: url(../img/game-icons/pirate-icons-sm.png);
+    background-position: -300px -100px;
 }

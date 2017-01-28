@@ -16,21 +16,25 @@ from datetime import datetime as dt
 #from mongoengine import signals
 
 
-GLOBAL_VISION = 1000
+GLOBAL_RANGE = 1000
+VISION_RANGE = 150
+PICKUP_RANGE = 20
 
-ALLIED_RANGE = GLOBAL_VISION
-ENEMY_RANGE = 200
+ALLIED_RANGE = GLOBAL_RANGE
+ENEMY_RANGE = VISION_RANGE
+
+
 RACER_DEATH_DURATION = 20
 
-BOMB_ALLY_VISION = GLOBAL_VISION
+BOMB_ALLY_VISION = VISION_RANGE
 BOMB_ENEMY_VISION = 20
 BOMB_EXPIRE_TIME = 15 # to be 180
 BOMB_TRIGGER_TIME = 3
 BOMB_TRIGGER_RANGE = 10
 BOMB_EXPLOSION_RANGE = 20
 
-FLAG_PICKUP_RANGE = 5
-FLAG_VISION_RANGE = GLOBAL_VISION
+FLAG_PICKUP_RANGE = PICKUP_RANGE
+FLAG_VISION_RANGE = GLOBAL_RANGE
 
 logger = logging.getLogger(__name__)
 
@@ -126,44 +130,30 @@ class Racer(MapEntity):
 
     def get_nearby_stuff(self, info_only=True):
         oldnb = self.nearby
+        # todo: merge in single proper query or 2
         # get nearby allies and let them know we are nearby
-        allies = Racer.objects(pos__near=self.pos,
-                               pos__max_distance=ALLIED_RANGE,
-                               team=self.team,
+        logger.info('my type is rather xxxxxx %s', self._cls)
+        logger.info('my id is rather xxxxxx %s', self.id)
+
+        others = Racer.objects(pos__near=self.pos,
+                               pos__max_distance=VISION_RANGE,
                                is_online=True,
                                id__ne=self.id)
-        res = allies.update(add_to_set__nearby=self)
+        # add this Racer in the nearby list of the nearby Racers, if it wasn't there yet
+        others.update(add_to_set__nearby=self)
 
-        # get the nearby Racers of the other teams within short range and let them know we are here
-        enemies = Racer.objects(pos__near=self.pos,
-                                pos__max_distance=ENEMY_RANGE,
-                                is_online=True,
-                                color__ne=self.color)
+        outofrange = Racer.objects(pos__near=self.pos,
+                                   pos__min_distance=VISION_RANGE,
+                                   is_online=True,
+                                   id__ne=self.id)
+        outofrange.update(pull__nearby=self)
 
-        enemies.update(add_to_set__nearby=self)
+        items = MapEntity.objects(pos__near=self.pos,
+                                  pos__max_distance=VISION_RANGE,
+                                  teamview_only=False,
+                                  _cls__ne='MapEntity.Racer')
 
-        allystuff = MapEntity.objects(pos__near=self.pos,
-                                      pos__max_distance=ALLIED_RANGE,
-                                      team=self.team,
-                                      id__ne=self.id,
-                                      _cls__ne='MapEntity.Racer')   # ugh
-
-        # and the rest that shows up on global view
-        otherstuff = MapEntity.objects(pos__near=self.pos,
-                                       pos__max_distance=ALLIED_RANGE,
-                                       team__ne=self.team,
-                                       teamview_only=False,
-                                      _cls__ne='MapEntity.Racer')
-
-        # this will be the new nearby list
-        newnearby = list(set(list(allies)+list(enemies)+list(allystuff)+list(otherstuff)))
-        # purge the out of range items
-        for item in self.nearby:
-            if item not in newnearby:
-                if hasattr(item, 'nearby'):
-                    # remove self from the items nearby list
-                    item.modify(pull__nearby=self)
-
+        newnearby = list(others)+list(items)
         # now finally update the nearby list
         self.nearby = newnearby
         self.date_lastseen = dt.now()
@@ -315,8 +305,9 @@ class Flag(HoldableEntity):
 
 
 class CopperCoin(MapEntity):
-    value = db.IntField()
-
+    value = db.IntField(default=0)
+    active = db.BooleanField(default=True)
+    team = db.StringField(default='black')
 
 class Zone(db.Document):
     name = db.StringField()

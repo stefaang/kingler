@@ -49,36 +49,9 @@ navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mo
 // enable sound support
 // user interaction is required on mobile devices --> a splash screen to activate sound
 // for now, you just need to tap the map once
-let maudio = document.getElementById('oldleaflet-audio');
-
-let soundSprite = {
-    silence: {start: 1000, stop: 1300},
-    bomb : {start: 0, stop: 2000},
-};
-
-// TODO: add splash screen here
-// element.addEventListener('touchstart', function(ev) {
-//     console.log('Enable SOUND');
-//     maudio.play();
-//     playSoundFile('silence');
-// });
-
-function playSoundFile(idx) {
-    console.log('play sound '+idx);
-    let start = soundSprite[idx].start,
-        stop = soundSprite[idx].stop;
-    maudio.play();
-    maudio.addEventListener('canplay', function() {
-        let ma = this;
-        ma.currentPosition = start * 0.001;
-        setTimeout(function() {
-            ma.pause();
-            ma.removeEventListener('canplay');
-        }, stop - start);
-    });
-
-}
-
+let bombSound = new Howl({
+  src: ['static/sound/bomb.mp3']
+});
 
 //////////////////////
 // Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
@@ -144,10 +117,14 @@ class RacerMarker extends L.Marker {
             draggable: true,
             zIndexOffset: 400
         });
-        let icon = L.ExtraMarkers.icon({
-            icon: 'fa-'+racer.icon,
-            markerColor: racer.color,
-            shape: (options && options.shape) ? options.shape : 'square',
+        // let icon = L.ExtraMarkers.icon({
+        //     icon: 'fa-'+racer.icon,
+        //     markerColor: racer.color,
+        //     shape: (options && options.shape) ? options.shape : 'square',
+        // });
+        let icon = L.divIcon({
+            className: 'ship-icon ', //+ racer.color,
+            iconSize: [84, 84],
         });
         this.setIcon(icon);
         this.on('dragend', this.pushLocation);
@@ -158,7 +135,8 @@ class RacerMarker extends L.Marker {
         if (!popup) {
             this.bindPopup(this.options.title).openPopup();
         } else {
-            popup.openPopup();
+            console.log('pop this '+this.options.title)
+            popup.setContent(this.options.title).openPopup();
         }
     }
 
@@ -186,19 +164,19 @@ class MainRacerMarker extends RacerMarker {
         // always display the Main User on top
         this.setZIndexOffset(900);
 
-        // track all movement of the main racer
-        this.mainUserTrack = [];
-        this.mainUserTrackPolyLine = L.polyline(this.getLatLng()).addTo(map);
-
-        // add a Circle that shows the action range
         let colormap = {'red': '#A12F36', 'green': '#00934F', 'blue': '#0072B5'};
-        this.mainRangeStyles = {
+        this.styles = {
             bombmodeEnabled: { color: '#2E2E2E', weight: 1, stroke: true,},
-            bombmodeDisabled: { color: colormap[racer.color], weight: 1, stroke: true,},
+            default: { color: colormap[racer.color], weight: 2, stroke: true,},
         };
 
+        // track all movement of the main racer
+        this.mainUserTrack = [];
+        this.mainUserTrackPolyLine = L.polyline(this.getLatLng(), this.styles.default).addTo(map);
+        // add a Circle that shows the action range
+
         this.mainRange = L.circle(this.getLatLng(), 35,
-            this.mainRangeStyles.bombmodeDisabled
+            this.styles.default
         ).addTo(map);
 
         // this circle needs to follow the main marker at all time
@@ -206,18 +184,21 @@ class MainRacerMarker extends RacerMarker {
             this.mainRange.setLatLng(e.latlng);
             this.mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
         });
+        this.on('dragend', function() {
+            teamScore.update()
+        });
     }
 
     // add BombMode support
     activateBombMode(dropBomb, teardown) {
         this.mainRange.setRadius(50);
-        this.mainRange.setStyle(this.mainRangeStyles.bombmodeEnabled);
+        this.mainRange.setStyle(this.styles.bombmodeEnabled);
         this.mainRange.once('click', dropBomb);
     };
 
     deactivateBombMode(){
         this.mainRange.setRadius(35);
-        this.mainRange.setStyle(this.mainRangeStyles.bombmodeDisabled);
+        this.mainRange.setStyle(this.styles.default);
         this.mainRange.off('click');
     }
 }
@@ -369,8 +350,8 @@ function addCoinMarker(coin) {
     //     markerColor: 'orange',
     // });
     let icon = L.divIcon({
-        className: 'coin-icon',
-        iconSize: [40,50],
+        className: 'moneybag-icon',
+        iconSize: [50,50],
     });
     let title = 'Pacman COIN';
     let marker = L.marker([coin.lat, coin.lng], {
@@ -395,8 +376,8 @@ socket.on('coin added', function(data) {
     }
 });
 
-socket.on('coin taken', function(data) {
-    console.log("Inbox received:  Coin Taken");
+socket.on('coin pickup', function(data) {
+    console.log("Inbox received:  Coin Pickup");
     console.log("Inbox unpack..: "+data.id+" - "+data.value+"points coin");
     let coin = markers[data.id];
     if (coin) {
@@ -448,13 +429,28 @@ L.easyButton({
 
 
 // A button to Add a Flag to the map (TODO: admin only)
-
 L.easyButton( 'fa-flag',   function() {
         let pos = mrm.getLatLng();
         let data = {'lat':pos.lat, 'lng':pos.lng, 'team': mainUserTeamColor};
         socket.emit('add flag', data);
     }
 ).addTo(map);
+
+
+// A button to Add a Coin to the map (TODO: admin only)
+let addCoinButton = L.easyButton( 'fa-diamond',   function() {
+        let pos = mrm.getLatLng();
+        let data = {'lat':pos.lat, 'lng':pos.lng};
+        socket.emit('add coin', data);
+    }
+).addTo(map);
+
+map.on('keypress',  function listenToButtonC(e) {
+    if (e.originalEvent.key == 'c')
+        addCoinButton._currentState.onClick();
+    }
+);
+
 
 
 //////////////////////////
@@ -571,12 +567,11 @@ bombButton.teardownBombMode = function(control){
 
 bombButton.addTo(map);
 
-function listenToButtonB(e) {
+map.on('keypress',  function listenToButtonB(e) {
     if (e.originalEvent.key == 'b')
         bombButton._currentState.onClick(bombButton, map);
-}
-
-map.on('keypress',  listenToButtonB);
+    }
+);
 
 
 function addBombMarker(json) {
@@ -650,7 +645,7 @@ socket.on('bomb exploded', function(json) {
     }, 10);
 
     // play the bomb sound
-    playSoundFile('bomb');
+    bombSound.play();
 
     // and buzz away
     if (navigator.vibrate) {
@@ -671,7 +666,7 @@ L.easyButton('fa-bolt', function () {
         // vibrate twice
         navigator.vibrate([100, 100, 100]);
     }
-    playSoundFile('silence');
+
 }).addTo(map);
 console.log("Easy Buttons ready");
 
@@ -695,6 +690,13 @@ teamScore.update = function (props) {
             html += '<i style="background:' + color + '"></i> ' + props.team[color] + ' points<br>';
         }
     }
+    // calculate total distance travelled
+    let track = mrm.mainUserTrack;
+    let total = 0;
+    for (let i=0; i<track.length-1; i++) {
+        total += map.distance(track[i], track[i+1]);
+    }
+    html += Math.round(total)+' m travelled'
     this._div.innerHTML = html;
 };
 

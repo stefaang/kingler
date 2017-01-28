@@ -149,9 +149,9 @@ def update_racer_pos(data):
 
     # C.2 Interact with existing flags
     events = movedracer.handle_flags()
-    # get ALL nearby racers
-    spectators = Racer.objects(pos__near=movedracer.pos,
-                               pos__max_distance=ALLIED_RANGE, )[:100]
+
+    # get nearby racers
+    spectators = list(o.get_info() for o in after if isinstance(o, Racer))
     for event in events:
         eventtype = event['type']
         # let them update their flags (TODO: broadcast in cell)
@@ -165,15 +165,23 @@ def update_racer_pos(data):
             update_scores(spectators)
 
     # D. Show new coins
-    coins = (o for o in set(after) - set(before) if isinstance(o, CopperCoin))
+    coins = (o for o in set(after) - set(before) if isinstance(o, CopperCoin) and o.team != movedracer.color)
     for coin in coins:
         lng, lat = coin.pos['coordinates']
         info = {'lng':lng, 'lat':lat, 'value': coin.value, 'id': str(coin.id)}
         emit('coin added', info, room=mr['name'])
 
-    # D.2 Pickup nearby coins
-    #coins = CopperCoin.objects()
+    # D.2 Pickup nearby coins, set the team
+    coins = CopperCoin.objects(pos__near=movedracer.pos,
+                               pos__max_distance=PICKUP_RANGE,
+                               team__ne=movedracer.color)
+    for coin in coins:
+        info = {'value': coin.value, 'id': str(coin.id)}
+        emit('coin pickup', info, room=mr['name'])
 
+        for racer in spectators:
+            emit('coin pickup', info, room=racer['name'])
+        update_scores(spectators)
 
 
 def update_scores(racers):

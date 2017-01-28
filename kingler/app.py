@@ -110,7 +110,6 @@ def handle_addbomb(data):
     do_bomb_explode.apply_async((str(bomb.id),), countdown=10)
 
 
-
 @socketio.on('add flag')
 def handle_addflag(data):
     """The client requests to add a flag
@@ -130,6 +129,24 @@ def handle_addflag(data):
         app.logger.info('added flag: %s', flag)
     else:
         app.logger.warn('add flag request denied: too close to existing flag')
+
+
+@socketio.on('add coin')
+def handle_addcoin(data):
+    """The client requests to add a coin
+     :param: data : dict with the following keys:
+       lat
+       lng
+    """
+    app.logger.debug('add coin received')
+    lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
+    nearbycoins = Flag.objects(pos__near=(lng, lat),
+                               pos__max_distance=50)
+    if not list(nearbycoins):
+        coin = CopperCoin(pos=(lng, lat)).save()
+        app.logger.info('added coin: %s', coin)
+    else:
+        app.logger.warn('add coin request denied: too close to existing coin')
 
 
 # room support
@@ -221,12 +238,13 @@ def oldstylemap():
             _, stuff = mainracer.get_nearby_stuff()
             racers = [o.get_info() for o in stuff if isinstance(o, Racer)]
             flags = [o.get_info() for o in stuff if isinstance(o, Flag)]
+            mainracer.clearNearby()  # clear again to load all the stuff that I didn't add here on the next move
             myself = mainracer.get_info()
             racers = [myself] + racers
             app.logger.info('loading... %s', racers)
         except Exception as e:
             # message to dev
-            app.logger.error("Failed to show map: %s" % repr(e))
+            app.logger.error("Failed to show map: %s" % e)
             # message to user
             return "Failed to show map"
 
