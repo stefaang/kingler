@@ -96,12 +96,12 @@ map = L.map('map',
 //L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
 //    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>',
 // Add CartoDB tiles to the map
-L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
-   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    maxZoom: 21,
-    maxNativeZoom: 18,  // this allows to use a deeper maxZoom
-    id: 'carto.light'
-}).addTo(map);
+// L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+//    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+//     maxZoom: 21,
+//     maxNativeZoom: 18,  // this allows to use a deeper maxZoom
+//     id: 'carto.light'
+// }).addTo(map);
 console.log("Leaflet Map ready");
 
 
@@ -117,6 +117,13 @@ console.log("Leaflet Map ready");
 
 
 
+L.tileLayer('https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
+   maxZoom: 18,
+   attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+       '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+       'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+   id: 'mapbox.streets'
+}).addTo(map);
 //////////////////////
 //  MARKERS
 
@@ -357,20 +364,14 @@ socket.on('flag scored', function(data) {
 // COINS
 
 function addCoinMarker(coin) {
-    // var icon = L.ExtraMarkers.icon({
-    //     icon: 'fa-flag',
-    //     markerColor: flag.team,
-    //     shape: 'circle',
+    // let icon = L.ExtraMarkers.icon({
+    //     icon: 'fa-diamond',
+    //     markerColor: 'orange',
     // });
-
-    let icon = L.ExtraMarkers.icon({
-        icon: 'fa-diamond',
-        markerColor: 'orange',
+    let icon = L.divIcon({
+        className: 'coin-icon',
+        iconSize: [40,50],
     });
-    // var icon = L.divIcon({
-    //     className: 'coin-icon',
-    //     iconSize: [80,100],
-    // });
     let title = 'Pacman COIN';
     let marker = L.marker([coin.lat, coin.lng], {
         icon: icon,
@@ -588,7 +589,7 @@ function addBombMarker(json) {
         // })
         icon: L.divIcon({
             className: 'bomb-icon',
-            iconSize: [100,100],
+            iconSize: [50,50],
         })
     }).addTo(map);
     bomb.bindPopup("BOOM");
@@ -681,7 +682,7 @@ console.log("Easy Buttons ready");
 let teamScore = L.control();
 
 teamScore.onAdd = function () {
-    this._div = L.DomUtil.create('div', 'info'); // create a div with a class "teamScore"
+    this._div = L.DomUtil.create('div', 'score-board'); // create a div with a class "score-board"
     this.update();
     return this._div;
 };
@@ -716,7 +717,6 @@ socket.on('new score', function(data) {
 // FINALIZE INIT
 //
 map.setView(mrm.getLatLng(), 18);
-
 
 // incoming websocket events
 socket.on('marker moved', function(data) {
