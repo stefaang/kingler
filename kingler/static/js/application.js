@@ -52,6 +52,9 @@ navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mo
 let bombSound = new Howl({
   src: ['static/sound/bomb.mp3']
 });
+let coinSound = new Howl({
+  src: ['static/sound/coin.mp3']
+});
 
 //////////////////////
 // Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
@@ -65,17 +68,18 @@ map = L.map('map',
     }
 );
 
-// Stamen Tileset is better on bike as it doesn't scale deep enough
+// Stamen Tileset only works for bike routes as it doesn't scale deep enough
 //L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
 //    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>',
-// Add CartoDB tiles to the map
-// L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
-//    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
-//     maxZoom: 21,
-//     maxNativeZoom: 18,  // this allows to use a deeper maxZoom
-//     id: 'carto.light'
-// }).addTo(map);
-console.log("Leaflet Map ready");
+
+
+// Add CartoDB tiles to the map. Styles must be dark/light + _ + all / nolabels / only_labels
+L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
+   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 21,
+    maxNativeZoom: 18,  // this allows to use a deeper maxZoom
+    id: 'carto.dark'
+}).addTo(map);
 
 
 // Alternative tileset by MapBox
@@ -89,14 +93,18 @@ console.log("Leaflet Map ready");
 //}).addTo(map);
 
 
+// Alternative tileset by thunderforest --> very detailed
 
-L.tileLayer('https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
-   maxZoom: 18,
-   attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-       '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-       'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-   id: 'mapbox.streets'
-}).addTo(map);
+// L.tileLayer('https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
+//    maxZoom: 18,
+//    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+//        '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+//        'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+//    id: 'mapbox.streets'
+// }).addTo(map);
+
+console.log("Leaflet Map ready");
+
 //////////////////////
 //  MARKERS
 
@@ -124,10 +132,11 @@ class RacerMarker extends L.Marker {
         // });
         let icon = L.divIcon({
             className: 'ship-icon ', //+ racer.color,
-            iconSize: [84, 84],
+            iconSize: [80, 80],
         });
         this.setIcon(icon);
         this.on('dragend', this.pushLocation);
+        this.on('click', this.showRacerName);
     }
 
     showRacerName() {
@@ -135,7 +144,6 @@ class RacerMarker extends L.Marker {
         if (!popup) {
             this.bindPopup(this.options.title).openPopup();
         } else {
-            console.log('pop this '+this.options.title)
             popup.setContent(this.options.title).openPopup();
         }
     }
@@ -351,13 +359,13 @@ function addCoinMarker(coin) {
     // });
     let icon = L.divIcon({
         className: 'moneybag-icon',
-        iconSize: [50,50],
+        iconSize: [80,80],
     });
     let title = 'Pacman COIN';
     let marker = L.marker([coin.lat, coin.lng], {
         icon: icon,
         title: title,
-        //zIndexOffset: 50
+        zIndexOffset: 20
     }).on('click', function (e) {
 
 
@@ -381,6 +389,15 @@ socket.on('coin pickup', function(data) {
     console.log("Inbox unpack..: "+data.id+" - "+data.value+"points coin");
     let coin = markers[data.id];
     if (coin) {
+        if (map.distance(coin.getLatLng(), mrm.getLatLng()) < 40) {
+            // play the coin sound
+            coinSound.play();
+
+            // and buzz away
+            if (navigator.vibrate) {
+                navigator.vibrate([200]);
+            }
+        }
         // remove the coin from the map
         map.removeLayer(coin);
         delete markers[data.id];

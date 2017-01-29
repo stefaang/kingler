@@ -16,8 +16,8 @@ from datetime import datetime as dt
 #from mongoengine import signals
 
 
-GLOBAL_RANGE = 1000
-VISION_RANGE = 150
+GLOBAL_RANGE = 10000
+VISION_RANGE = 100
 PICKUP_RANGE = 20
 
 ALLIED_RANGE = GLOBAL_RANGE

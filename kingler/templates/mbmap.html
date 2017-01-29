@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pacman Party Map</title>
+
+    <!-- pokemon fantasy -->
+    <link rel="stylesheet" href="static/css/sprites.css">
+
+    <script>
+        var flaskData = {{ flaskData|tojson|safe }};
+    </script>
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        html, body, #map {
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <!-- icons -->
+    <script src="https://use.fontawesome.com/697ebb27cd.js"></script>
+    <!-- socketIO for server interaction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+    <!-- mapbox maps with several plugins -->
+
+
+    <!-- audio fixes for mobile -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.0.2/howler.core.min.js"></script>
+    <!-- jquery helps with ajax -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-color/2.1.2/jquery.color.min.js"></script>
+    <!-- custom code -->
+    <script src="static/js/application.js"></script>
+</body>
+</html>

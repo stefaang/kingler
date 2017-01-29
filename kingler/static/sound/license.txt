@@ -1,0 +1,23 @@
+-------------
+Sounds:
+-------------
+
+coin.mp3
+
+Mario Coin Sound
+Licence: The sound effect is permitted for non-commercial use under license Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+http://www.orangefreesounds.com/
+
+
+------------
+
+
+bomb.mp3
+timebomb.mp3
+
+Bomb-SoundBible.com-891110113
+Time Bomb Short-SoundBible.com-1562499525
+
+Uploaded: 11.30.09 | License: Attribution 3.0 | Recorded by Mike Koenig |
+
+-------------

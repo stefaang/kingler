@@ -151,7 +151,9 @@ def update_racer_pos(data):
     events = movedracer.handle_flags()
 
     # get nearby racers
-    spectators = list(o.get_info() for o in after if isinstance(o, Racer))
+    spectators = Racer.objects(pos__near=movedracer.pos,
+                               pos__max_distance=GLOBAL_RANGE,
+                               is_online=True)
     for event in events:
         eventtype = event['type']
         # let them update their flags (TODO: broadcast in cell)
@@ -162,11 +164,12 @@ def update_racer_pos(data):
         # adjust scores if necessary
         if eventtype == 'flag scored':
             movedracer.modify(inc__score=5) # TODO: check for more atoms
-            update_scores(spectators)
+            update_scores(spectators.reload())
 
     # D. Show new coins
     coins = (o for o in set(after) - set(before) if isinstance(o, CopperCoin) and o.team != movedracer.color)
     for coin in coins:
+        print '%s coin, %s racer' % (coin.team, movedracer.color)
         lng, lat = coin.pos['coordinates']
         info = {'lng':lng, 'lat':lat, 'value': coin.value, 'id': str(coin.id)}
         emit('coin added', info, room=mr['name'])
@@ -181,7 +184,12 @@ def update_racer_pos(data):
 
         for racer in spectators:
             emit('coin pickup', info, room=racer['name'])
-        update_scores(spectators)
+        # change the team of the coin so that this team cannot pick it up now (TODO: improve)
+        coin.modify(team=movedracer.color)
+        # add the points
+        movedracer.modify(inc__score=coin.value)
+    if coins:
+        update_scores(spectators.reload())
 
 
 def update_scores(racers):

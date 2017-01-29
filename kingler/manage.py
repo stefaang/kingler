@@ -31,6 +31,9 @@ from models import *
 import random
 
 
+def deleteAllFlags():
+    Flag.objects.delete()
+
 def rainRandomCoins(n):
     # add 100 new coins to the database with random value 5 - 10 - 15 - 20
     for i in range(n):
@@ -38,18 +41,37 @@ def rainRandomCoins(n):
         c = CopperCoin(pos=randpos, value=5*random.randint(1,5))
         c.save()
 
-def resetCoins():
-    c = CopperCoin.objects()
-    c.update(team='black')
 
-def dumpCoinsToFile():
+def deleteAllCoins():
+    CopperCoin.objects.delete()
+
+def resetCoins():
+    """Reset the team on all coins back to black"""
+    c = CopperCoin.objects()
+    c.update(team='black', value=10)
+
+def dumpCoinsToFile(fname='coindump.txt'):
+    """Dump all the coin position to a file"""
     import json
     coins = CopperCoin.objects()
-    lst = [c.pos['coordinates'] for c in coins]
+    positions = [c.pos['coordinates'] for c in coins]
 
-    with open('coindump.txt', 'wb') as f:
-        f.write(json.dumps(lst))
+    with open(fname, 'wb') as f:
+        f.write(json.dumps(positions))
+
+def loadCoinsFromFile(fname='coindump.txt'):
+    """Load a bunch of coin positions into the db"""
+    import json
+    with open(fname, 'rb') as f:
+        data = f.read()
+    positions = json.loads(data)
+    for pos in positions:
+        CopperCoin(pos=pos, value=10)
 
 if __name__ == '__main__':
-    resetCoins()
-    dumpCoinsToFile()
+    deleteAllFlags()
+    # reset coins
+    c = CopperCoin.objects()
+    c.update(team='black', value=10)
+
+    #dumpCoinsToFile()
