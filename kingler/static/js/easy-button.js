@@ -23,7 +23,7 @@ L.Control.EasyBar = L.Control.extend({
 
     for(var i = 0; i < buttons.length; i++){
       buttons[i]._bar = this;
-      buttons[i]._container = buttons[i].button;
+      buttons[i]._div = buttons[i].button;
       this._buttons.push(buttons[i]);
       this.container.appendChild(buttons[i].button);
     }
@@ -32,7 +32,7 @@ L.Control.EasyBar = L.Control.extend({
 
 
   _buildContainer: function(){
-    this._container = this.container = L.DomUtil.create('div', '');
+    this._div = this.container = L.DomUtil.create('div', '');
     this.options.leafletClasses && L.DomUtil.addClass(this.container, 'leaflet-bar easy-button-container leaflet-control');
     this.options.id && (this.container.id = this.options.id);
   },
@@ -65,7 +65,7 @@ L.Control.EasyBar = L.Control.extend({
       this._buttons[i]._map = map;
     }
 
-    var container = this._container = this.onAdd(map),
+    var container = this._div = this.onAdd(map),
         pos = this.getPosition(),
         corner = map._controlCorners[pos];
 
@@ -300,7 +300,7 @@ L.Control.EasyButton = L.Control.extend({
 
   removeFrom: function (map) {
 
-    this._container.parentNode.removeChild(this._container);
+    this._div.parentNode.removeChild(this._div);
     this._map = null;
 
     return this;
@@ -311,8 +311,8 @@ L.Control.EasyButton = L.Control.extend({
       position: this.options.position,
       leafletClasses: this.options.leafletClasses
     });
-    this._container = containerObj.container;
-    return this._container;
+    this._div = containerObj.container;
+    return this._div;
   }
 
 

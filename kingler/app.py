@@ -182,7 +182,6 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-
         if not request.form['username']:
             return render_template('login.html', error='You must fill in a Username')
         if not request.form['username'].isalnum():
@@ -190,18 +189,28 @@ def login():
         username = session['username'] = escape(request.form['username'])
         color = session['color'] = request.form['color']
 
-        if username == 'clearallbombsPLX':
-            bombs = Bomb.objects()
-            for b in bombs:
-                b.delete()
+        if username.startswith('clearall'):
+            if username.endswith('bombs'):
+                bombs = Bomb.objects()
+                for b in bombs:
+                    b.delete()
+            elif username.endswith('coins'):
+                coins = CopperCoin.objects()
+                for c in coins:
+                    c.delete()
+            elif username.endswith('flags'):
+                flags = Flag.objects()
+                for f in flags:
+                    f.delete()
             return redirect(url_for('logout'))
 
-        r = Racer.objects(name=username).first()
+        r = Racer.objects(name=username)
         if not r:
             # add a new Racer to the db
             r = Racer(name=username, pos=[3.7, 51], color=color)
         else:
             # update the color attribute to the db
+            r = r.first()
             r.color = color
         r.is_online = True
         r.save()
@@ -209,7 +218,10 @@ def login():
         session['racer'] = r
         session['racerid'] = str(r.id)
         app.logger.debug('id is %s', session['racerid'])
-        return redirect(url_for('oldstylemap'))
+        if session.get('newstyle'):
+            return redirect(url_for('newstylemap'))
+        else:
+            return redirect(url_for('oldstylemap'))
     return render_template('login.html', error='')
 
 
@@ -220,9 +232,37 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/vue')
+@app.route('/mbmap')
 def newstylemap():
-    return render_template('vue.html', session=session)
+    if 'username' in session:
+        try:
+            # get the main Racer.. you need to be logged in
+            session['racer'] = Racer.objects(name=session['username']).first()
+            mainracer = session['racer']
+            mainracer.modify(is_online=True)
+            mainracer.clearNearby()   # in case it was not done on logout
+            app.logger.info('loaded %s, of type %s', mainracer, type(mainracer))
+            _, stuff = mainracer.get_nearby_stuff()
+            racers = [o.get_info() for o in stuff if isinstance(o, Racer)]
+            flags = [o.get_info() for o in stuff if isinstance(o, Flag)]
+            mainracer.clearNearby()  # clear again to load all the stuff that I didn't add here on the next move
+            myself = mainracer.get_info()
+            racers = [myself] + racers
+            app.logger.info('loading... %s', racers)
+        except Exception as e:
+            # message to dev
+            app.logger.error("Failed to show map: %s" % e)
+            # message to user
+            return "Failed to show map"
+
+        # prepare dict object
+        data = {'racers': racers, 'username': session['username'], 'flags': flags}
+        return render_template('mbmap.html', flaskData=data)
+    else:
+        session['newstyle'] = True
+        return redirect(url_for('login'))
+
+    # return render_template('mbmap.html', session=session)
 
 
 @app.route('/map')
@@ -252,6 +292,7 @@ def oldstylemap():
         data = {'racers': racers, 'username': session['username'], 'flags': flags}
         return render_template('map.html', flaskData=data)
     else:
+        session['newstyle'] = False
         return redirect(url_for('login'))
 
 

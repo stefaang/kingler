@@ -6,11 +6,15 @@ console.log(flaskData.racers[0]);
 
 // globals
 let map = null;
-let mrm = null;
+let mrm = {};
 let mainUserTeamColor = null;
 let markers = {};
 
 let socket = null;
+
+function inert(a) {
+  return JSON.parse(JSON.stringify(a))
+}
 
 //
 // WIP: put all this stuff in a module
@@ -56,93 +60,38 @@ let coinSound = new Howl({
   src: ['static/sound/coin.mp3']
 });
 
-//////////////////////
-// Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
-map = L.map('map',
-    {
-        dragging: true,
-        // touchZoom: false,    // disable zooming on mobile
-        // scrollWheelZoom: false,   // but not on PC
-        doubleClickZoom: false,   // zoom on center, wherever you click
-        fullscreenControl: true,
-    }
-);
 
-// Stamen Tileset only works for bike routes as it doesn't scale deep enough
-//L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
-//    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>',
-
-
-// Add CartoDB tiles to the map. Styles must be dark/light + _ + all / nolabels / only_labels
-// L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
-//    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
-//     maxZoom: 21,
-//     maxNativeZoom: 18,  // this allows to use a deeper maxZoom
-//     id: 'carto.dark'
-// }).addTo(map);
-
-
-// Alternative tileset by MapBox
-
-L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
-   maxZoom: 18,
-   attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-       '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-       'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-   id: 'mapbox.streets'
-}).addTo(map);
-
-
-// Alternative tileset by thunderforest --> very detailed
-
-// L.tileLayer('https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
-//    maxZoom: 18,
-//    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-//        '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-//        'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-//    id: 'mapbox.streets'
-// }).addTo(map);
-
-console.log("Leaflet Map ready");
 
 //////////////////////
 //  MARKERS
 
 // Prepare markers to use FontAwesome
-L.ExtraMarkers.Icon.prototype.options.prefix = 'fa';
+//L.ExtraMarkers.Icon.prototype.options.prefix = 'fa';
 
 // the markers object keeps track of all markers (LOL)
 // it's a dictionary that maps objectID to a marker [except for racers.. they use racer name (todo rework.. or not)]
 
-class RacerMarker extends L.Marker {
+class RacerMarker extends mapboxgl.Marker {
     constructor(racer, options){
         // racer object must contain following properties:
         //   name, lat, lng, color, icon
         console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng);
-        // create the L.marker
-        super([racer.lat, racer.lng], {
-            title: racer.name,
-            draggable: true,
-            zIndexOffset: 400
-        });
-        // let icon = L.ExtraMarkers.icon({
-        //     icon: 'fa-'+racer.icon,
-        //     markerColor: racer.color,
-        //     shape: (options && options.shape) ? options.shape : 'square',
-        // });
-        let icon = L.divIcon({
-            className: 'ship-icon ', //+ racer.color,
-            iconSize: [80, 80],
-        });
-        this.setIcon(icon);
-        this.on('dragend', this.pushLocation);
-        this.on('click', this.showRacerName);
+
+        // create the element
+        let el = document.createElement('div');
+        el.className = 'ship-icon';
+        // create the marker with this element
+        super(el, {offset: [el.style.width/2, el.style.height/2]});
+        this.name = racer.title;
+
+        el.addEventListener('click', this.showRacerName);
+        el.addEventListener('dragend', this.pushLocation);
     }
 
     showRacerName() {
         let popup = this.getPopup();
         if (!popup) {
-            this.bindPopup(this.options.title).openPopup();
+            this.setPopup(this.options.title).openPopup();
         } else {
             popup.setContent(this.options.title).openPopup();
         }
@@ -155,20 +104,15 @@ class RacerMarker extends L.Marker {
         socket.emit('move marker', data);
     }
 
-    get color() {
-        return this.options.icon.options.color;
-    }
-
-    get name() {
-        return this.options.title;
-    }
-
-
 }
+
 
 class MainRacerMarker extends RacerMarker {
     constructor(racer) {
         super(racer, {shape: 'circle'});
+    }
+
+    setup(racer) {
         // always display the Main User on top
         this.setZIndexOffset(900);
 
@@ -180,10 +124,10 @@ class MainRacerMarker extends RacerMarker {
 
         // track all movement of the main racer
         this.mainUserTrack = [];
-        this.mainUserTrackPolyLine = L.polyline(this.getLatLng(), this.styles.default).addTo(map);
+        this.mainUserTrackPolyLine = mapboxgl.polyline(this.getLatLng(), this.styles.default).addTo(map);
         // add a Circle that shows the action range
 
-        this.mainRange = L.circle(this.getLatLng(), 35,
+        this.mainRange = mapboxgl.circle(this.getLatLng(), 35,
             this.styles.default
         ).addTo(map);
 
@@ -210,30 +154,6 @@ class MainRacerMarker extends RacerMarker {
         this.mainRange.off('click');
     }
 }
-
-for (let i = 0 ; i < flaskData.racers.length; i++) {
-    let racer = flaskData.racers[i];
-    let ismainmarker = racer.name === flaskData.username;
-    if (ismainmarker) {
-        // setup the main central Racer
-        markers[racer.name] = new MainRacerMarker(racer).addTo(map);
-    } else {
-        // setup the other nearby Racers
-        markers[racer.name] = new RacerMarker(racer).addTo(map);
-    }
-}
-
-// bind to main Racer .. TODO: set this in global module settings
-mrm = markers[flaskData.username];
-mainUserTeamColor = mrm.color;
-console.log('We are team '+mainUserTeamColor);
-
-//console.log('mainsusermarker iconsize '+mrm.options.icon.options.iconSize);
-//mrm.options.icon.options.iconSize = [50,50];
-
-console.log("Racer Markers ready");
-
-
 
 
 
@@ -359,7 +279,7 @@ function addCoinMarker(coin) {
     // });
     let icon = L.divIcon({
         className: 'coin-icon',
-        iconSize: [40,40],
+        iconSize: [60,60],
     });
     let title = 'Pacman COIN';
     let marker = L.marker([coin.lat, coin.lng], {
@@ -412,61 +332,28 @@ socket.on('coin pickup', function(data) {
 ////////////////////////
 //  BUTTONS
 
-// add button that searches your location
-L.easyButton({
-    position: 'topleft',
-    states : [
-        {
-            stateName: 'locator-disabled',
-            icon: 'fa-crosshairs',
-            onClick: function (btn, map) {
-                mrm.bindPopup("Enabled Locator").openPopup();
-
-                console.log("Start using Leaflet Location");
-                map.locate({
-                    watch: true,                // keep tracking
-                    enableHighAccuracy: true,   // enable GPS
-                    timeout: 30000
-                });
-                btn.state('locator-enabled');
-            }
-        },
-        {
-            stateName: 'locator-enabled',
-            icon: 'fa-times',
-            onClick: function (btn, map) {
-                mrm.bindPopup("Disabled Locator").openPopup();
-
-                console.log("Stop using Leaflet Location");
-                map.stopLocate();
-                btn.state('locator-disabled');
-            }
-        }
-    ]}).addTo(map);
-
-
 // A button to Add a Flag to the map (TODO: admin only)
-L.easyButton( 'fa-flag',   function() {
-        let pos = mrm.getLatLng();
-        let data = {'lat':pos.lat, 'lng':pos.lng, 'team': mainUserTeamColor};
-        socket.emit('add flag', data);
-    }
-).addTo(map);
+// L.easyButton( 'fa-flag',   function() {
+//         let pos = mrm.getLatLng();
+//         let data = {'lat':pos.lat, 'lng':pos.lng, 'team': mainUserTeamColor};
+//         socket.emit('add flag', data);
+//     }
+// ).addTo(map);
 
 
 // A button to Add a Coin to the map (TODO: admin only)
-let addCoinButton = L.easyButton( 'fa-diamond',   function() {
-        let pos = mrm.getLatLng();
-        let data = {'lat':pos.lat, 'lng':pos.lng};
-        socket.emit('add coin', data);
-    }
-).addTo(map);
-
-map.on('keypress',  function listenToButtonC(e) {
-    if (e.originalEvent.key == 'c')
-        addCoinButton._currentState.onClick();
-    }
-);
+// let addCoinButton = L.easyButton( 'fa-diamond',   function() {
+//         let pos = mrm.getLatLng();
+//         let data = {'lat':pos.lat, 'lng':pos.lng};
+//         socket.emit('add coin', data);
+//     }
+// ).addTo(map);
+//
+// map.on('keypress',  function listenToButtonC(e) {
+//     if (e.originalEvent.key == 'c')
+//         addCoinButton._currentState.onClick();
+//     }
+// );
 
 
 
@@ -527,8 +414,8 @@ function setFreeGeoIP() {
 }
 
 // connect location events to callback functions
-map.on('locationfound', onLocationFound);
-map.on('locationerror', onLocationError);
+// map.on('locationfound', onLocationFound);
+// map.on('locationerror', onLocationError);
 
 console.log("Leaflet location callbacks ready.. setView to main marker");
 
@@ -540,73 +427,73 @@ console.log("Leaflet location callbacks ready.. setView to main marker");
 /// BOMBS AWAAAAY
 //-------------------------------//
 
-let bombButton = L.easyButton({
-    states : [
-        {
-            stateName: 'bombmode-off',
-            icon: 'fa-bomb',
-            onClick: function (btn) {
-                this.setupBombMode(btn);
-            }
-        },
-        {
-            stateName: 'bombmode-on',
-            icon: 'fa-times',
-            onClick: function (btn) {
-                this.teardownBombMode(btn);
-            }
-        }],
-});
-
-bombButton.dropBomb = function (e) {
-    console.log('Dropped a BOMB muhahaha');
-    let pos = e.latlng;
-    let data = {lat: pos.lat, lng: pos.lng,}; // range: 200};
-    socket.emit('add bomb', data);
-    bombButton.teardownBombMode();
-};
-
-bombButton.setupBombMode = function(control) {
-    mrm.activateBombMode(this.dropBomb);
-    map.dragging.disable();
-    map.touchZoom.disable();
-    control.state('bombmode-on');
-};
-
-bombButton.teardownBombMode = function(control){
-    //mrm.bindPopup("Disabled Bomb Mode").openPopup();
-    mrm.deactivateBombMode();
-    map.dragging.enable();
-    map.touchZoom.enable();
-    if (!control)  control = this;  // this is used after dropBomb
-    control.state('bombmode-off');
-};
-
-bombButton.addTo(map);
-
-map.on('keypress',  function listenToButtonB(e) {
-    if (e.originalEvent.key == 'b')
-        bombButton._currentState.onClick(bombButton, map);
-    }
-);
-
-
-function addBombMarker(json) {
-    let pos = (json.pos) ? json.pos : [json.lat, json.lng];
-    let bomb = L.marker(pos, {
-        // icon: L.ExtraMarkers.icon({
-        //     icon: 'fa-bomb',
-        //     markerColor: 'black',  //json.team
-        //     shape: 'circle',
-        // })
-        icon: L.divIcon({
-            className: 'bomb-icon',
-            iconSize: [60,60],
-        })
-    }).addTo(map);
-    bomb.bindPopup("BOOM");
-    markers[json.id] = bomb;
-}
+// let bombButton = L.easyButton({
+//     states : [
+//         {
+//             stateName: 'bombmode-off',
+//             icon: 'fa-bomb',
+//             onClick: function (btn) {
+//                 this.setupBombMode(btn);
+//             }
+//         },
+//         {
+//             stateName: 'bombmode-on',
+//             icon: 'fa-times',
+//             onClick: function (btn) {
+//                 this.teardownBombMode(btn);
+//             }
+//         }],
+// });
+//
+// bombButton.dropBomb = function (e) {
+//     console.log('Dropped a BOMB muhahaha');
+//     let pos = e.latlng;
+//     let data = {lat: pos.lat, lng: pos.lng,}; // range: 200};
+//     socket.emit('add bomb', data);
+//     bombButton.teardownBombMode();
+// };
+//
+// bombButton.setupBombMode = function(control) {
+//     mrm.activateBombMode(this.dropBomb);
+//     map.dragging.disable();
+//     map.touchZoom.disable();
+//     control.state('bombmode-on');
+// };
+//
+// bombButton.teardownBombMode = function(control){
+//     //mrm.bindPopup("Disabled Bomb Mode").openPopup();
+//     mrm.deactivateBombMode();
+//     map.dragging.enable();
+//     map.touchZoom.enable();
+//     if (!control)  control = this;  // this is used after dropBomb
+//     control.state('bombmode-off');
+// };
+//
+// bombButton.addTo(map);
+//
+// map.on('keypress',  function listenToButtonB(e) {
+//     if (e.originalEvent.key == 'b')
+//         bombButton._currentState.onClick(bombButton, map);
+//     }
+// );
+//
+//
+// function addBombMarker(json) {
+//     let pos = (json.pos) ? json.pos : [json.lat, json.lng];
+//     let bomb = L.marker(pos, {
+//         // icon: L.ExtraMarkers.icon({
+//         //     icon: 'fa-bomb',
+//         //     markerColor: 'black',  //json.team
+//         //     shape: 'circle',
+//         // })
+//         icon: L.divIcon({
+//             className: 'bomb-icon',
+//             iconSize: [60,60],
+//         })
+//     }).addTo(map);
+//     bomb.bindPopup("BOOM");
+//     markers[json.id] = bomb;
+// }
 
 socket.on('bomb added', function(json) {
     console.log("Inbox received:  B+");
@@ -675,52 +562,53 @@ socket.on('bomb exploded', function(json) {
 ///////////////////////////////
 // SHOW TRACK button
 
-L.easyButton('fa-bolt', function () {
-    mrm.mainUserTrackPolyLine.setLatLngs(mrm.mainUserTrack);
-    mrm.bindPopup("Show track of this session").openPopup();
-    if (navigator.vibrate) {
-        // vibration API supported
-        // vibrate twice
-        navigator.vibrate([100, 100, 100]);
-    }
-
-}).addTo(map);
-console.log("Easy Buttons ready");
+// L.easyButton('fa-bolt', function () {
+//     mrm.mainUserTrackPolyLine.setLatLngs(mrm.mainUserTrack);
+//     mrm.bindPopup("Show track of this session").openPopup();
+//     if (navigator.vibrate) {
+//         // vibration API supported
+//         // vibrate twice
+//         navigator.vibrate([100, 100, 100]);
+//     }
+//
+// }).addTo(map);
+// console.log("Easy Buttons ready");
 
 
 /////////////////////////////
 // TEAM SCORE BOARD
 
-let teamScore = L.control();
+class ScoreControl {
+    onAdd(map) {
+        this._map = map;
+        this._div = document.createElement('div');
+        this._div.className = 'score-board';
+        this._div.textContent = 'Hello, world';
+        this.update();
+        return this._div;
+    }
 
-teamScore.onAdd = function () {
-    this._div = L.DomUtil.create('div', 'score-board'); // create a div with a class "score-board"
-    this.update();
-    return this._div;
-};
-
-// method that we will use to update the control based on feature properties passed
-teamScore.update = function (props) {
-    let html = '<h4>Team score</h4>';
-    if (props && props.team) {
-        for (let color in props.team) {
-            html += '<i style="background:' + color + '"></i> ' + props.team[color] + ' points<br>';
+    update(props) {
+        let html = '<h4>Team score</h4>';
+        if (props && props.team) {
+            for (let color in props.team) {
+                html += '<i style="background:' + color + '"></i> ' + props.team[color] + ' points<br>';
+            }
         }
+        // calculate total distance travelled
+        // let track = mrm.mainUserTrack;
+        // let total = 0;
+        // for (let i=0; i<track.length-1; i++) {
+        //     total += map.distance(track[i], track[i+1]);
+        // }
+        // html += Math.round(total)+' m travelled'
+        this._div.innerHTML = html;
     }
-    // calculate total distance travelled
-    let track = mrm.mainUserTrack;
-    let total = 0;
-    for (let i=0; i<track.length-1; i++) {
-        total += map.distance(track[i], track[i+1]);
+
+    onRemove() {
+        this._div.parentNode.removeChild(this._div);
+        this._map = undefined;
     }
-    html += Math.round(total)+' m travelled'
-    this._div.innerHTML = html;
-};
-
-teamScore.addTo(map);
-
-function resetScore() {
-    teamScore.update();
 }
 
 socket.on('new score', function(data) {
@@ -732,48 +620,182 @@ socket.on('new score', function(data) {
 
 
 
-////////////////
-// FINALIZE INIT
-//
-map.setView(mrm.getLatLng(), 18);
 
-// incoming websocket events
-socket.on('marker moved', function(data) {
-    console.log("Inbox received:  MM");
-    console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
-    let marker = markers[data.name];
-    if (marker) {
-        marker.setLatLng(L.latLng(data.lat, data.lng));
-        // var point = map.latLngToLayerPoint(L.latLng(data.lat, data.lng))
-        // var fx = new L.PosAnimation();
-        // console.log("fx go run.."+fx);
-        // fx.run(marker, point, 0.5);
-    } else
-        console.log("but marker not known before.. adding a new marker");
-        markers[data.name] = RacerMarker(data).addTo(map);
+
+
+//////////////////////
+// Create MapBox map - this is the main object of this whole app.
+// map = L.map('map',
+//     {
+//         dragging: true,
+//         // touchZoom: false,    // disable zooming on mobile
+//         // scrollWheelZoom: false,   // but not on PC
+//         doubleClickZoom: false,   // zoom on center, wherever you click
+//         fullscreenControl: true,
+//     }
+// );
+
+
+mapboxgl.accessToken = 'pk.eyJ1Ijoic3RlZmFhbmciLCJhIjoiY2l3ZGppeWJtMDA1MDJ5dW1nOGZwcnlyeSJ9.vGapFUQfn2vyM2RZv78-fw';
+map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/stefaang/ciyirbvik00592rmjlg8gjc7n',
+    center: [3.74, 51],
+    zoom: 17,   // initial zoomlvl
 });
 
-socket.on('marker added', function(data) {
-    console.log("Inbox received:  M+");
-    console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
-    let marker = markers[data.name];
-    if (!marker){
-        markers[data.name] = RacerMarker(data).addTo(map);
-    }
-    else
-        console.log('.. but we already had that marker')
+
+
+
+let racerGeoJSON = {
+    "type": "FeatureCollection",
+    "features": [],
+};
+
+flaskData.racers.forEach( function(racer) {
+    // check if it is the main user
+    // let r;
+    // if (racer.name === flaskData.username) {
+    //     // setup the main central Racer
+    //     r = new MainRacerMarker(racer);
+    // } else {
+    //     // setup the other nearby Racers
+    //     r = new RacerMarker(racer);
+    //     r.setup(racer);
+    // }
+    // r.setLngLat([racer.lng, racer.lat])
+    //     .addTo(map);
+    // markers[racer.name] = r;
+    racerGeoJSON.features.push({
+                "type": "Feature",
+                "properties": {
+                    "name": racer.name,
+                    "team": racer.color,
+                    "icon": 'harbor',
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [racer.lng, racer.lat]
+               }
+            })
 });
 
-socket.on('marker removed', function(data) {
-    console.log("Inbox received:  M-");
-    console.log("Inbox unpack..: "+data.name);
-    let marker = markers[data.name];
-    if (marker) {
-        map.removeLayer(marker);
-        delete markers[data.name];
-    } else {
-        console.log('.. but we don\'t know that marker?')
-    }
+let coinGeoJSON = {
+    "type": "FeatureCollection",
+    "features": [],
+};
 
+
+map.on('load', function() {
+    console.log("Leaflet Map ready");
+
+    map.addSource('racers', {
+        type: 'geojson',
+        data: racerGeoJSON,
+    });
+    map.addLayer({
+         'id': 'racers',
+            'type': 'symbol',
+            'source': 'racers',
+            'layout': {
+                'visibility': 'visible',
+                'icon-image': '{icon}-15',
+                'text-field': 'WOB-{name}'
+            },
+            // 'paint': {
+            //     'circle-radius': 20,
+            //     'circle-color': 'rgba(55,148,179,1)'
+            // },
+    });
+    console.log("Added racers layer ");
+    console.log(JSON.stringify(racerGeoJSON));
+
+    // map.addSource('coins', {type: 'geojson', data: coinGeoJSON});
+    // map.addLayer({
+    //      'id': 'coins',
+    //         'type': 'circle',
+    //         'source': 'coins',
+    //         'layout': {
+    //             'visibility': 'visible'
+    //         },
+    //         'paint': {
+    //             'circle-radius': 14,
+    //             'circle-color': 'orange'
+    //         },
+    // });
+    console.log("Added coins layer");
+
+
+    map.addControl(new ScoreControl());
+
+    // add button that searches your location
+    map.addControl(
+        new mapboxgl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true,
+                timeout: 6000},
+            watchPosition: true
+        })
+    );
+
+
+    ////////////////
+    // FINALIZE INIT
+    //
+    let mrm = racerGeoJSON.features[0];
+    map.setCenter(mrm.geometry.coordinates);
+    // map.setZoom(17);
+
+    // incoming websocket events
+    socket.on('marker moved', function(data) {
+        console.log("Inbox received:  MM");
+        console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
+        let marker = markers[data.name];
+        if (marker) {
+            marker.setLatLng(L.latLng(data.lat, data.lng));
+            // var point = map.latLngToLayerPoint(L.latLng(data.lat, data.lng))
+            // var fx = new L.PosAnimation();
+            // console.log("fx go run.."+fx);
+            // fx.run(marker, point, 0.5);
+        } else
+            console.log("but marker not known before.. adding a new marker");
+            markers[data.name] = RacerMarker(data).addTo(map);
+    });
+
+    socket.on('marker added', function(data) {
+        console.log("Inbox received:  M+");
+        console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
+        let marker = markers[data.name];
+        if (!marker){
+            markers[data.name] = RacerMarker(data).addTo(map);
+        }
+        else
+            console.log('.. but we already had that marker')
+    });
+
+    socket.on('marker removed', function(data) {
+        console.log("Inbox received:  M-");
+        console.log("Inbox unpack..: "+data.name);
+        let marker = markers[data.name];
+        if (marker) {
+            map.removeLayer(marker);
+            delete markers[data.name];
+        } else {
+            console.log('.. but we don\'t know that marker?')
+        }
+
+    });
 });
+
+// bind to main Racer .. TODO: set this in global module settings
+// mrm = markers[flaskData.username];
+// mainUserTeamColor = mrm.color;
+console.log('We are team '+mainUserTeamColor);
+
+//console.log('mainsusermarker iconsize '+mrm.options.icon.options.iconSize);
+//mrm.options.icon.options.iconSize = [50,50];
+
+console.log("Racer Markers ready");
+
+
 

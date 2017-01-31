@@ -37,8 +37,20 @@
 
 .ship-icon {
     /*background-image: url(../img/game-icons/drakkar-blue-64.png);*/
-    background-image: url(../img/pirate6-sm.png);
-    background-position: -0px -80px;
+    /*background-image: url(../img/pirate6-sm.png);*/
+    /*background-position: -0px -80px;*/
+    background-image: url(../img/flaticons/pirates/ship.png);
+    background-size: 80px 80px;
+}
+
+.coin-icon {
+    background-image: url(../img/flaticons/pirates/coin.png);
+    background-size: 40px 40px;
+}
+
+.bomb-icon {
+    background-image: url(../img/flaticons/pirates/bomb.png);
+    background-size: 60px 60px;
 }
 
 .flag-icon {
@@ -77,7 +89,7 @@
 }
 
 
-.bomb-icon {    /* 50x50*/
+.pirate-bomb-icon {    /* 50x50*/
     background-image: url(../img/game-icons/pirate-icons-sm.png);
     background-position: -100px -0px;
 }
