@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-    package.module
+    kingler.config
     ~~~~~~~~~~~~~~
 
-    A brief description goes here.
+    Definition of the main application configurations
 
     :copyright: (c) 2017 by Stefaan Ghysels
     :license: BSD, see LICENSE for more details.

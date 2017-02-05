@@ -16,10 +16,13 @@ How to run this?
 
 - Get these packages
 ```
-sudo apt-get install python27 python-virtualenv python-dev build-essential redis-server libgeos-dev
+sudo apt-get install python2.7 python-virtualenv python-dev build-essential redis-server libgeos-dev mongodb-server
 ```
 
-- Get MongoDB 2.6+
+- Make sure you have MongoDB 2.6+
+```
+mongod --version
+```
   [Instructions](https://www.digitalocean.com/community/tutorials/how-to-install-mongodb-on-ubuntu-16-04)
 
 - Setup Virtual environment

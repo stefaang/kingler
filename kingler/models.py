@@ -73,6 +73,14 @@ class MapEntity(db.Document):
 
     meta = {'allow_inheritance': True}
 
+    def get_info(self):
+        """returns a representation as dict"""
+        if isinstance(self.pos, tuple):
+            lng, lat = self.pos
+        else:
+            lng, lat = self.pos['coordinates']
+        return {'lat': lat, 'lng': lng, 'team': self.team, 'id': str(self.id)}
+
     def __repr__(self):
         """compact formatter"""
         return '<{} {}>'.format(self._cls, str(self.id), )
@@ -124,9 +132,9 @@ class Racer(MapEntity):
         self.modify(nearby=list())
 
     def get_info(self):
-        lng, lat = self.pos['coordinates']
-        return {'name': self.name, 'lat': lat, 'lng': lng,
-                'icon':ICONMAP[self.color], 'color': self.color}
+        d = super(Racer, self).get_info()
+        d.update({'name': self.name, 'icon':ICONMAP[self.color], 'color': self.color})
+        return d
 
     def get_nearby_stuff(self, info_only=True):
         oldnb = self.nearby
@@ -228,13 +236,6 @@ class Bomb(MapEntity):
             kwargs['owner'] = Racer.objects.get(id=kwargs['owner'])
         super(Bomb, self).__init__(**kwargs)
 
-    def get_info(self):
-        if isinstance(self.pos, tuple):
-            lng, lat = self.pos
-        else:
-            lng, lat = self.pos['coordinates']
-        return {'lat': lat, 'lng': lng, 'team': self.team, 'id': str(self.id)}
-
     def get_nearby_racers(self):
         allies = Racer.objects(pos__near=self.pos,
                                pos__max_distance=BOMB_ALLY_VISION,
@@ -297,8 +298,9 @@ class Flag(HoldableEntity):
         return self.modify({'state__ne': 'carried'}, state='carried', carrier=racer)
 
     def get_info(self):
-        lng, lat = self.pos['coordinates']
-        return {'id': str(self.id), 'lat':lat, 'lng':lng, 'team':self.team, 'state':self.state}
+        d = super(Flag, self).get_info()
+        d.update({'state':self.state})
+        return d
 
     def __repr__(self):
         return '<id {} team {} pos {}>'.format(self.id, self.team, self.pos['coordinates'])
@@ -308,6 +310,16 @@ class CopperCoin(MapEntity):
     value = db.IntField(default=0)
     active = db.BooleanField(default=True)
     team = db.StringField(default='black')
+
+
+class Beast(MapEntity):
+    name = db.StringField()
+    active = db.BooleanField(default=True)
+    team = db.StringField(default='black')
+    species = db.StringField()
+    track = db.LineStringField()
+    trackname = db.StringField()
+
 
 class Zone(db.Document):
     name = db.StringField()

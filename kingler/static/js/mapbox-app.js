@@ -82,10 +82,14 @@ class RacerMarker extends mapboxgl.Marker {
         el.className = 'ship-icon';
         // create the marker with this element
         super(el, {offset: [el.style.width/2, el.style.height/2]});
-        this.name = racer.title;
+        }
 
-        el.addEventListener('click', this.showRacerName);
-        el.addEventListener('dragend', this.pushLocation);
+    setup(racer) {
+        this.name = racer.title;
+        this.setLngLat([racer.lng, racer.lat])
+        this._element.addEventListener('click', this.showRacerName);
+        this._element.addEventListener('dragend', this.pushLocation);
+        return this;
     }
 
     showRacerName() {
@@ -98,7 +102,9 @@ class RacerMarker extends mapboxgl.Marker {
     }
 
     pushLocation() {
-        let pos = this.getLatLng();
+        console.log('puuuuuuush');
+        console.log(this);
+        let pos = this.getLngLat();
         let data = {name: this.name, lat: pos.lat, lng: pos.lng};
         console.log('Outbox: '+JSON.stringify(data));
         socket.emit('move marker', data);
@@ -113,8 +119,9 @@ class MainRacerMarker extends RacerMarker {
     }
 
     setup(racer) {
+        super.setup(racer);
         // always display the Main User on top
-        this.setZIndexOffset(900);
+        // this.setZIndexOffset(900);
 
         let colormap = {'red': '#A12F36', 'green': '#00934F', 'blue': '#0072B5'};
         this.styles = {
@@ -124,21 +131,30 @@ class MainRacerMarker extends RacerMarker {
 
         // track all movement of the main racer
         this.mainUserTrack = [];
-        this.mainUserTrackPolyLine = mapboxgl.polyline(this.getLatLng(), this.styles.default).addTo(map);
+        // this.mainUserTrackPolyLine = mapboxgl.polyline(this.getLngLat(), this.styles.default).addTo(map);
         // add a Circle that shows the action range
 
-        this.mainRange = mapboxgl.circle(this.getLatLng(), 35,
-            this.styles.default
-        ).addTo(map);
+        // TODO: replace by element
+        // this.mainRange = mapboxgl.circle(this.getLngLat(), 35,
+        //     this.styles.default
+        // ).addTo(map);
+        this.mainRange = document.createElement('svg')
 
-        // this circle needs to follow the main marker at all time
-        this.on('move', function (e) {
-            this.mainRange.setLatLng(e.latlng);
-            this.mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
+        // <svg height="100" width="100">
+        //   <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
+        // </svg>
+        // this._element.
+
+
+        this._element.addEventListener('move', function (e) {
+            let lnglat = [e.coords.longitude, e.coords.latitude];
+            this.mainRange.setLngLat(lnglat);
+            this.mainUserTrack.push(lnglat);    // this might get a bit fat in combination with dragging
         });
-        this.on('dragend', function() {
+        this._element.addEventListener('dragend', function() {
             teamScore.update()
         });
+        return this;
     }
 
     // add BombMode support
@@ -225,7 +241,7 @@ socket.on('flag dropped', function(data) {
     let racer = markers[data.name];
     if (flag) {
         // update position to drop site and add again to map
-        flag.setLatLng(racer.getLatLng()).addTo(map);
+        flag.setLngLat(racer.getLngLat()).addTo(map);
         // TODO: set icon to dropped mode
         // TODO: create icon dict.. no need to recreate all the time
         // flag.setIcon()
@@ -239,7 +255,7 @@ socket.on('flag returned', function(data) {
     let pos = [data.lat, data.lng];
     if (flag) {
         // update position to base
-        flag.setLatLng(pos);
+        flag.setLngLat(pos);
         // set flag to base mode
         flag.setIcon(
             L.divIcon({
@@ -257,7 +273,7 @@ socket.on('flag scored', function(data) {
     let pos = [data.lat, data.lng];
     if (flag) {
         // update position to base
-        flag.setLatLng(pos).addTo(map);
+        flag.setLngLat(pos).addTo(map);
         // set flag to base mode
         flag.setIcon(
             L.divIcon({
@@ -309,7 +325,7 @@ socket.on('coin pickup', function(data) {
     console.log("Inbox unpack..: "+data.id+" - "+data.value+"points coin");
     let coin = markers[data.id];
     if (coin) {
-        if (map.distance(coin.getLatLng(), mrm.getLatLng()) < 40) {
+        if (map.distance(coin.getLngLat(), mrm.getLngLat()) < 40) {
             // play the coin sound
             coinSound.play();
 
@@ -334,7 +350,7 @@ socket.on('coin pickup', function(data) {
 
 // A button to Add a Flag to the map (TODO: admin only)
 // L.easyButton( 'fa-flag',   function() {
-//         let pos = mrm.getLatLng();
+//         let pos = mrm.getLngLat();
 //         let data = {'lat':pos.lat, 'lng':pos.lng, 'team': mainUserTeamColor};
 //         socket.emit('add flag', data);
 //     }
@@ -343,7 +359,7 @@ socket.on('coin pickup', function(data) {
 
 // A button to Add a Coin to the map (TODO: admin only)
 // let addCoinButton = L.easyButton( 'fa-diamond',   function() {
-//         let pos = mrm.getLatLng();
+//         let pos = mrm.getLngLat();
 //         let data = {'lat':pos.lat, 'lng':pos.lng};
 //         socket.emit('add coin', data);
 //     }
@@ -357,67 +373,6 @@ socket.on('coin pickup', function(data) {
 
 
 
-//////////////////////////
-// LOCATION
-//
-//
-
-/////////////////////
-// prepare leaflet map.locate callback functions
-
-mrm.loctracker = {
-    prevPos : 0,
-    prevTime: 0
-};
-
-function onLocationFound(e) {
-    //
-    mrm.setLatLng(e.latlng);
-    map.setView(e.latlng);
-
-    // Store this point to the tracker
-    mrm.mainUserTrack.push(e.latlng);
-
-    if (e.latlng == mrm.loctracker.prevPos || e.timestamp < mrm.loctracker.prevTime + 5000){
-        // do nothing
-    } else {
-        mrm.pushLocation();
-        mrm.loctracker.prevPos = e.latlng;
-        mrm.loctracker.prevTime = e.timestamp;
-    }
-}
-
-function onLocationError() {
-    // console.log("Sorry no location found");
-    //map.setView(defaultPos, 13);
-    setFreeGeoIP();
-    // alert(e.message);
-}
-
-function setFreeGeoIP() {
-    // use jquery ajax call to lookup the geolocation based on your ipaddress
-    // max 10k requests per hour
-    $.getJSON("https://freegeoip.net/json/",
-        // when AJAX call is successful, run the following function
-        function (data) {
-            console.log("FreeGeoIP - "+data);
-            console.log("FreeGeoIP setting mainMarker location");
-            let pos = L.latLng(data.latitude, data.longitude);
-            // add a marker on the location of the resolved GeoIP
-            mrm.setLatLng(pos).bindPopup("Your GPS doesnt work yet..").openPopup();
-            // update position on server
-            mrm.pushLocation();
-            // update the map
-            map.setView(pos, 14);
-        }
-    );
-}
-
-// connect location events to callback functions
-// map.on('locationfound', onLocationFound);
-// map.on('locationerror', onLocationError);
-
-console.log("Leaflet location callbacks ready.. setView to main marker");
 
 
 
@@ -447,7 +402,7 @@ console.log("Leaflet location callbacks ready.. setView to main marker");
 //
 // bombButton.dropBomb = function (e) {
 //     console.log('Dropped a BOMB muhahaha');
-//     let pos = e.latlng;
+//     let pos = [e.coords.longitude, e.coords.latitude];
 //     let data = {lat: pos.lat, lng: pos.lng,}; // range: 200};
 //     socket.emit('add bomb', data);
 //     bombButton.teardownBombMode();
@@ -563,7 +518,7 @@ socket.on('bomb exploded', function(json) {
 // SHOW TRACK button
 
 // L.easyButton('fa-bolt', function () {
-//     mrm.mainUserTrackPolyLine.setLatLngs(mrm.mainUserTrack);
+//     mrm.mainUserTrackPolyLine.setLngLats(mrm.mainUserTrack);
 //     mrm.bindPopup("Show track of this session").openPopup();
 //     if (navigator.vibrate) {
 //         // vibration API supported
@@ -654,30 +609,29 @@ let racerGeoJSON = {
 
 flaskData.racers.forEach( function(racer) {
     // check if it is the main user
-    // let r;
-    // if (racer.name === flaskData.username) {
-    //     // setup the main central Racer
-    //     r = new MainRacerMarker(racer);
-    // } else {
-    //     // setup the other nearby Racers
-    //     r = new RacerMarker(racer);
-    //     r.setup(racer);
-    // }
-    // r.setLngLat([racer.lng, racer.lat])
-    //     .addTo(map);
-    // markers[racer.name] = r;
-    racerGeoJSON.features.push({
-                "type": "Feature",
-                "properties": {
-                    "name": racer.name,
-                    "team": racer.color,
-                    "icon": 'harbor',
-                },
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [racer.lng, racer.lat]
-               }
-            })
+    let r;
+    if (racer.name === flaskData.username) {
+        // setup the main central Racer
+        r = new MainRacerMarker(racer);
+    } else {
+        // setup the other nearby Racers
+        r = new RacerMarker(racer);
+    }
+    r.setup(racer);
+    r.addTo(map);
+    markers[racer.name] = r;
+    // racerGeoJSON.features.push({
+    //             "type": "Feature",
+    //             "properties": {
+    //                 "name": racer.name,
+    //                 "team": racer.color,
+    //                 "icon": 'ship',
+    //             },
+    //             "geometry": {
+    //                 "type": "Point",
+    //                 "coordinates": [racer.lng, racer.lat]
+    //            }
+    //         })
 });
 
 let coinGeoJSON = {
@@ -686,64 +640,103 @@ let coinGeoJSON = {
 };
 
 
-map.on('load', function() {
-    console.log("Leaflet Map ready");
+map.on('load', function mapLoaded() {
+    console.log("Map is loaded");
 
-    map.addSource('racers', {
-        type: 'geojson',
-        data: racerGeoJSON,
-    });
-    map.addLayer({
-         'id': 'racers',
-            'type': 'symbol',
-            'source': 'racers',
-            'layout': {
-                'visibility': 'visible',
-                'icon-image': '{icon}-15',
-                'text-field': 'WOB-{name}'
-            },
-            // 'paint': {
-            //     'circle-radius': 20,
-            //     'circle-color': 'rgba(55,148,179,1)'
-            // },
-    });
-    console.log("Added racers layer ");
-    console.log(JSON.stringify(racerGeoJSON));
-
-    // map.addSource('coins', {type: 'geojson', data: coinGeoJSON});
+    // map.addSource('racers', {type: 'geojson', data: racerGeoJSON});
+    //
     // map.addLayer({
-    //      'id': 'coins',
-    //         'type': 'circle',
-    //         'source': 'coins',
-    //         'layout': {
-    //             'visibility': 'visible'
-    //         },
-    //         'paint': {
-    //             'circle-radius': 14,
-    //             'circle-color': 'orange'
-    //         },
+    //     'id': 'racers',
+    //     'type': 'symbol',
+    //     'source': 'racers',
+    //     'layout': {
+    //         'icon-image' : '{icon}',
+    //         'icon-size': 0.2,
+    //     }
     // });
+
+    console.log("Added racers layer ");
+    // console.log(JSON.stringify(racerGeoJSON));
+
+    map.addSource('coins', {type: 'geojson', data: coinGeoJSON});
+    map.addLayer({
+         'id': 'coins',
+        'type': 'symbol',
+        'source': 'coins',
+        'layout': {
+            'icon-image' : 'coin',
+            'icon-size': 0.1,
+        }
+    });
     console.log("Added coins layer");
 
 
     map.addControl(new ScoreControl());
 
+
+
+    //////////////////////////
+    // LOCATION
+    //
+    //
+
     // add button that searches your location
-    map.addControl(
-        new mapboxgl.GeolocateControl({
+    let geolocateControl = new mapboxgl.GeolocateControl({
             positionOptions: {
                 enableHighAccuracy: true,
                 timeout: 6000},
             watchPosition: true
         })
-    );
+
+    map.addControl(geolocateControl);
+
+    /////////////////////
+    // prepare leaflet map.locate callback functions
+
+    geolocateControl.prev = {
+        prevPos : 0,
+        prevTime: 0
+    };
+
+    function onLocationFound(e) {
+        // unpack event data
+        console.log(e);
+        let lnglat = [e.coords.longitude, e.coords.latitude];
+        let now = e.timestamp;
+        mrm.setLngLat(lnglat);
+        map.setCenter(lnglat);
+
+        // Store this point to the tracker
+        //mrm.mainUserTrack.push(lnglat);
+        if (lnglat == geolocateControl.prev.prevPos || now < geolocateControl.prev.prevTime + 5000){
+            // do nothing
+        } else {
+            mrm.pushLocation();
+            geolocateControl.prev.prevPos = lnglat;
+            geolocateControl.prev.prevTime = now;
+        }
+    }
+
+    function onLocationError() {
+        // console.log("Sorry no location found");
+        //map.setView(defaultPos, 13);
+        //setFreeGeoIP();
+        alert(e.message);
+    }
+
+    // connect location events to callback functions
+    geolocateControl.on('geolocate', onLocationFound);
+    geolocateControl.on('error', onLocationError);
+
+    console.log("Leaflet location callbacks ready.. setView to main marker");
+
 
 
     ////////////////
     // FINALIZE INIT
     //
-    let mrm = racerGeoJSON.features[0];
-    map.setCenter(mrm.geometry.coordinates);
+    // let mrm = racerGeoJSON.features[0];
+    map.setCenter(mrm.getLngLat());
     // map.setZoom(17);
 
     // incoming websocket events
@@ -752,14 +745,14 @@ map.on('load', function() {
         console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
         let marker = markers[data.name];
         if (marker) {
-            marker.setLatLng(L.latLng(data.lat, data.lng));
+            marker.setLngLat([data.lng, data.lat]);
             // var point = map.latLngToLayerPoint(L.latLng(data.lat, data.lng))
             // var fx = new L.PosAnimation();
             // console.log("fx go run.."+fx);
             // fx.run(marker, point, 0.5);
         } else
             console.log("but marker not known before.. adding a new marker");
-            markers[data.name] = RacerMarker(data).addTo(map);
+            markers[data.name] = new RacerMarker(data).addTo(map);
     });
 
     socket.on('marker added', function(data) {
@@ -767,7 +760,7 @@ map.on('load', function() {
         console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
         let marker = markers[data.name];
         if (!marker){
-            markers[data.name] = RacerMarker(data).addTo(map);
+            markers[data.name] = new RacerMarker(data).addTo(map);
         }
         else
             console.log('.. but we already had that marker')
@@ -788,14 +781,6 @@ map.on('load', function() {
 });
 
 // bind to main Racer .. TODO: set this in global module settings
-// mrm = markers[flaskData.username];
+mrm = markers[flaskData.username];
 // mainUserTeamColor = mrm.color;
-console.log('We are team '+mainUserTeamColor);
-
-//console.log('mainsusermarker iconsize '+mrm.options.icon.options.iconSize);
-//mrm.options.icon.options.iconSize = [50,50];
-
-console.log("Racer Markers ready");
-
-
 
