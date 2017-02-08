@@ -564,7 +564,17 @@ socket.on('new score', function(data) {
 });
 
 
+class MyGeolocateControl extends mapboxgl.GeolocateControl {
+    // override the onSuccess method to disable the zoom, bearing and pitch reset
+    _onSuccess(position) {
+        this._map.jumpTo({
+            center: [position.coords.longitude, position.coords.latitude],
+        });
 
+        this.fire('geolocate', position);
+        this._finish();
+    }
+}
 
 
 
@@ -578,10 +588,11 @@ map = new mapboxgl.Map({
     style: 'mapbox://styles/stefaang/ciyirbvik00592rmjlg8gjc7n',
     center: [3.866, 51],
     zoom: 13,   // initial zoomlvl
+    pitch: 60,
+    bearing: 60,
 });
 
-class DraggingManager {
-}
+
 // setup dragging
 let canvas = map.getCanvasContainer();
 let isDragging = false;
@@ -602,6 +613,7 @@ class Racer extends Object {
     }
 
     _addToGeoJSON(racer) {
+        this._geoindex = Racer.geojson.features.length;
         Racer.geojson.features.push(Racer.createFeature(racer));
     }
 
@@ -632,21 +644,11 @@ class Racer extends Object {
     setLngLat(lngLat) {
         this.pos = lngLat;
         let map = this._map;
-        if (!map) {
+        if (!map || !Racer.geojson) {
             return
         }
-        let i = this.geojson.features.indexOf(function(r) {
-            return r.id === this.id
-        });
-        if (i > -1) {
-            console.log('setLL found '+i);
-            this.geojson.features[i] = this.asFeature();
-            console.log('setLL set ft');
-            map.getSource('racers').setData(Racer.geojson);
-            console.log('setLL set data');
-        } else {
-
-        }
+        Racer.geojson.features[this._geoindex].geometry.coordinates = lngLat;
+        map.getSource('racers').setData(Racer.geojson);
         return this;
     }
 
@@ -658,7 +660,7 @@ class Racer extends Object {
         return {
             "type": "Feature",
             "properties": {
-                //"id": racer.id,
+                "id": racer.id,
                 "name": racer.name || 'nobody',
                 "team": racer.color || 'black',
                 "icon": racer.icon || 'ship',
@@ -709,13 +711,18 @@ class MainRacer extends Racer {
     addTo(map) {
         this._map = map;
         this._canvas = map.getCanvasContainer();
-        console.log(this._)
         return this;
     }
 
     _addToGeoJSON(racer) {
         super._addToGeoJSON(racer);
         MainRacer.geojson.features.push(Racer.createFeature(racer));
+    }
+
+    setLngLat(lngLat) {
+        super.setLngLat(lngLat);
+        MainRacer.geojson.features[0].geometry.coordinates = lngLat;
+        this._map.getSource('mrm').setData(MainRacer.geojson);
     }
 
     get isCursorOverPoint() { return this._isCursorOverPoint;}
@@ -740,9 +747,6 @@ class MainRacer extends Racer {
 
     mouseDown(e) {
         // todo: move this function, because this = e.target = map
-        console.log('!!!mousedown - cursorOverPoint is '+mrm.isCursorOverPoint);
-        console.log('!!!mousedown - cursorOverPoint is '+e.target);
-        console.log(e.target === this);
 
         if (!mrm.isCursorOverPoint) return;
 
@@ -754,14 +758,10 @@ class MainRacer extends Racer {
         // Mouse events
         this.on('mousemove', mrm.onMove);
         this.once('mouseup', mrm.onUp);
-        console.log('!!!mousedown is over.. '+mrm._isDragging);
-
     }
 
     onMove(e) {
         // todo: move this function, because this = e.target = map
-
-        console.log('!on move');
         if (!mrm.isDragging) return;
 
         var coords = e.lngLat;
@@ -780,9 +780,7 @@ class MainRacer extends Racer {
 
     onUp(e) {
         // todo: move this function, because this = e.target = map
-
         if (!mrm.isDragging) return;
-        console.log('!!!racer released!!');
 
         var coords = e.lngLat;
 
@@ -790,7 +788,7 @@ class MainRacer extends Racer {
         mrm.isDragging = false;
 
         // Unbind mouse events
-        mrm._map.off('mousemove', mrm.onMove);
+        this.off('mousemove', mrm.onMove);
     }
 
 }
@@ -898,17 +896,12 @@ map.on('load', function mapLoaded() {
     map.addLayer({
         'id': 'racers',
         'source': 'racers',
-        // 'type': 'circle',
-        // "paint": {
-        //     "circle-radius": 1000,
-        //     "circle-color": "#FF0000"
-        // }
         'type': 'symbol',
         'layout': {
             'icon-image' : 'ship',
             'icon-size': 0.2,
         },
-        'sprite': 'static/img/flaticons/pirates'
+        // 'sprite': 'static/img/flaticons/pirates'
     });
     console.log("Added racers layer ");
     console.log(map.getLayer('racers'));
@@ -936,10 +929,11 @@ map.on('load', function mapLoaded() {
     //
 
     // add button that searches your location
-    let geolocateControl = new mapboxgl.GeolocateControl({
+    let geolocateControl = new MyGeolocateControl({
         positionOptions: {
             enableHighAccuracy: true,
-            timeout: 6000},
+            //timeout: 800
+        },
         watchPosition: true
     });
 
@@ -956,7 +950,6 @@ map.on('load', function mapLoaded() {
 
     function onLocationFound(e) {
         // unpack event data
-        console.log(e);
         if (!mrm) {
             return
         }
@@ -964,6 +957,7 @@ map.on('load', function mapLoaded() {
         let now = e.timestamp;
         mrm.setLngLat(lnglat);
         map.setCenter(lnglat);
+        console.log('set map center! '+lnglat);
 
         // Store this point to the tracker
         //mrm.mainUserTrack.push(lnglat);
@@ -976,11 +970,11 @@ map.on('load', function mapLoaded() {
         }
     }
 
-    function onLocationError() {
+    function onLocationError(e) {
         // console.log("Sorry no location found");
         //map.setView(defaultPos, 13);
         //setFreeGeoIP();
-        alert(e.message);
+        //alert(e.message);
     }
 
     // connect location events to callback functions
