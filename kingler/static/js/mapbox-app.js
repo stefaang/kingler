@@ -1,36 +1,22 @@
 'use strict';
 
 // show the setup data provided by the server
+console.log('Flaskdata:');
 console.log(flaskData);
+console.log('Flaskdata.racer[0]:');
 console.log(flaskData.racers[0]);
 
 // globals
 let map = null;
-let mrm = {};
+let mrm = null;
 let mainUserTeamColor = null;
 let markers = {};
 
 let socket = null;
 
-function inert(a) {
-  return JSON.parse(JSON.stringify(a))
-}
-
 //
 // WIP: put all this stuff in a module
 //
-
-class Dummy {
-    constructor(name) {
-        this.name = name;
-    }
-    printName() {
-        console.log('Hello there, '+this.name)
-    }
-}
-let d = new Dummy('derp');
-d.printName();
-console.log(d);
 
 // SocketIO for realtime bidirectional messages between client and server
 if (window.location.protocol == "https:") {
@@ -64,10 +50,10 @@ let coinSound = new Howl({
 
 //////////////////////
 //  MARKERS
-
+//
 // Prepare markers to use FontAwesome
 //L.ExtraMarkers.Icon.prototype.options.prefix = 'fa';
-
+//
 // the markers object keeps track of all markers (LOL)
 // it's a dictionary that maps objectID to a marker [except for racers.. they use racer name (todo rework.. or not)]
 
@@ -79,16 +65,24 @@ class RacerMarker extends mapboxgl.Marker {
 
         // create the element
         let el = document.createElement('div');
-        el.className = 'ship-icon';
+        let ic = document.createElement('div');  // icon
+        $(ic).addClass('ship-icon')
+            .html('')
+            .appendTo($(el));    // add to main element
+
         // create the marker with this element
         super(el, {offset: [el.style.width/2, el.style.height/2]});
-        }
+        this.icon = ic;
+    }
 
     setup(racer) {
-        this.name = racer.title;
-        this.setLngLat([racer.lng, racer.lat])
-        this._element.addEventListener('click', this.showRacerName);
-        this._element.addEventListener('dragend', this.pushLocation);
+        console.log('setup '+racer.name+' '+racer.id);
+        this.id = racer.id;
+        this.name = racer.name;
+        this.setLngLat([racer.lng, racer.lat]);
+        $(this)
+            .bind('click', this.showRacerName)
+            .bind('dragend', this.pushLocation);
         return this;
     }
 
@@ -102,7 +96,7 @@ class RacerMarker extends mapboxgl.Marker {
     }
 
     pushLocation() {
-        console.log('puuuuuuush');
+        console.log('puuuuuuush '+this.name);
         console.log(this);
         let pos = this.getLngLat();
         let data = {name: this.name, lat: pos.lat, lng: pos.lng};
@@ -138,17 +132,13 @@ class MainRacerMarker extends RacerMarker {
         // this.mainRange = mapboxgl.circle(this.getLngLat(), 35,
         //     this.styles.default
         // ).addTo(map);
-        this.mainRange = document.createElement('svg')
-
-        // <svg height="100" width="100">
-        //   <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
-        // </svg>
-        // this._element.
-
+        // $(this.icon).html('<svg height="100" width="100"> \
+        //   <circle cx="50" cy="50" r="40" stroke="black" stroke-width="2" fill="'+colormap[racer.color]+'" opacity=".6" stroke-opacity=".6"/> \
+        // </svg>')
 
         this._element.addEventListener('move', function (e) {
             let lnglat = [e.coords.longitude, e.coords.latitude];
-            this.mainRange.setLngLat(lnglat);
+            // this.mainRange.setLngLat(lnglat);
             this.mainUserTrack.push(lnglat);    // this might get a bit fat in combination with dragging
         });
         this._element.addEventListener('dragend', function() {
@@ -312,12 +302,16 @@ function addCoinMarker(coin) {
 socket.on('coin added', function(data) {
     console.log("Inbox received:  Coin Added");
     console.log("Inbox unpack..: "+data.id+" - "+data.value+"points coin");
-    let coin = markers[data.id];
-    if (coin) {
-        console.log(".. coin already existed");
-    } else {
-        addCoinMarker(data);
-    }
+    // classic style
+    // let coin = markers[data.id];
+    // if (coin) {
+    //     console.log(".. coin already existed");
+    // } else {
+    //     addCoinMarker(data);
+    // }
+    // fancy style
+
+    coinGeoJSON.features.push(createCoinFeature(data));
 });
 
 socket.on('coin pickup', function(data) {
@@ -347,7 +341,7 @@ socket.on('coin pickup', function(data) {
 
 ////////////////////////
 //  BUTTONS
-
+//
 // A button to Add a Flag to the map (TODO: admin only)
 // L.easyButton( 'fa-flag',   function() {
 //         let pos = mrm.getLngLat();
@@ -355,8 +349,8 @@ socket.on('coin pickup', function(data) {
 //         socket.emit('add flag', data);
 //     }
 // ).addTo(map);
-
-
+//
+//
 // A button to Add a Coin to the map (TODO: admin only)
 // let addCoinButton = L.easyButton( 'fa-diamond',   function() {
 //         let pos = mrm.getLngLat();
@@ -375,13 +369,10 @@ socket.on('coin pickup', function(data) {
 
 
 
-
-
-
 ///////////////////////////////////
 /// BOMBS AWAAAAY
 //-------------------------------//
-
+//
 // let bombButton = L.easyButton({
 //     states : [
 //         {
@@ -516,7 +507,7 @@ socket.on('bomb exploded', function(json) {
 
 ///////////////////////////////
 // SHOW TRACK button
-
+//
 // L.easyButton('fa-bolt', function () {
 //     mrm.mainUserTrackPolyLine.setLngLats(mrm.mainUserTrack);
 //     mrm.bindPopup("Show track of this session").openPopup();
@@ -580,115 +571,380 @@ socket.on('new score', function(data) {
 
 //////////////////////
 // Create MapBox map - this is the main object of this whole app.
-// map = L.map('map',
-//     {
-//         dragging: true,
-//         // touchZoom: false,    // disable zooming on mobile
-//         // scrollWheelZoom: false,   // but not on PC
-//         doubleClickZoom: false,   // zoom on center, wherever you click
-//         fullscreenControl: true,
-//     }
-// );
-
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoic3RlZmFhbmciLCJhIjoiY2l3ZGppeWJtMDA1MDJ5dW1nOGZwcnlyeSJ9.vGapFUQfn2vyM2RZv78-fw';
 map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/stefaang/ciyirbvik00592rmjlg8gjc7n',
-    center: [3.74, 51],
-    zoom: 17,   // initial zoomlvl
+    center: [3.866, 51],
+    zoom: 13,   // initial zoomlvl
 });
 
+class DraggingManager {
+}
+// setup dragging
+let canvas = map.getCanvasContainer();
+let isDragging = false;
+let isCursorOverPoint = false;
 
 
 
-let racerGeoJSON = {
-    "type": "FeatureCollection",
-    "features": [],
-};
-
-flaskData.racers.forEach( function(racer) {
-    // check if it is the main user
-    let r;
-    if (racer.name === flaskData.username) {
-        // setup the main central Racer
-        r = new MainRacerMarker(racer);
-    } else {
-        // setup the other nearby Racers
-        r = new RacerMarker(racer);
+class Racer extends Object {
+    // class that adds some functions to manage racers on the client
+    constructor (racer){
+        super()
+        this.id = racer.id;
+        this.name = racer.name;
+        this.icon = racer.icon;
+        this.pos = [racer.lng, racer.lat];
+        this.type = 'racer';
+        this._addToGeoJSON(racer);
     }
-    r.setup(racer);
-    r.addTo(map);
-    markers[racer.name] = r;
-    // racerGeoJSON.features.push({
-    //             "type": "Feature",
-    //             "properties": {
-    //                 "name": racer.name,
-    //                 "team": racer.color,
-    //                 "icon": 'ship',
-    //             },
-    //             "geometry": {
-    //                 "type": "Point",
-    //                 "coordinates": [racer.lng, racer.lat]
-    //            }
-    //         })
-});
 
-let coinGeoJSON = {
+    _addToGeoJSON(racer) {
+        Racer.geojson.features.push(Racer.createFeature(racer));
+    }
+
+    // when deleting a racer it must be removed from the geojson tracker
+    delete() {
+        let index = Racer.geojson.features.indexOf(function(ft){
+            ft.id === this.id
+        });
+        if (index > -1){
+            Racer.geojson.features.splice(index, 1);
+            return true
+        } else
+            return false
+    }
+
+    get lng() { return this.pos[0]}
+    get lat() { return this.pos[1];}
+
+    addTo(map) {
+        this._map = map;
+        return this;
+    }
+
+    asFeature() {
+        return Racer.createFeature(self);
+    }
+
+    setLngLat(lngLat) {
+        this.pos = lngLat;
+        let map = this._map;
+        if (!map) {
+            return
+        }
+        let i = this.geojson.features.indexOf(function(r) {
+            return r.id === this.id
+        });
+        if (i > -1) {
+            console.log('setLL found '+i);
+            this.geojson.features[i] = this.asFeature();
+            console.log('setLL set ft');
+            map.getSource('racers').setData(Racer.geojson);
+            console.log('setLL set data');
+        } else {
+
+        }
+        return this;
+    }
+
+    getLngLat() {
+        return this.pos;
+    }
+
+    static createFeature(racer) {
+        return {
+            "type": "Feature",
+            "properties": {
+                //"id": racer.id,
+                "name": racer.name || 'nobody',
+                "team": racer.color || 'black',
+                "icon": racer.icon || 'ship',
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [racer.lng, racer.lat]
+           }
+        }
+    }
+
+    showRacerName() {
+        let popup = this.getPopup();
+        if (!popup) {
+            this.setPopup(this.options.title).openPopup();
+        } else {
+            popup.setContent(this.options.title).openPopup();
+        }
+    }
+
+    pushLocation() {
+        console.log('puuuuuuush '+this.name);
+        console.log(this);
+        let pos = this.getLngLat();
+        let data = {name: this.name, lat: pos.lat, lng: pos.lng};
+        console.log('Outbox: '+JSON.stringify(data));
+        socket.emit('move marker', data);
+    }
+}
+
+// static object that tracks all Racers, usable as mapboxgl source
+Racer.geojson = {
     "type": "FeatureCollection",
     "features": [],
 };
 
+
+class MainRacer extends Racer {
+    // class to manage the main racer
+    constructor (racer) {
+        super(racer);
+        this._map = null;
+        this._canvas = null;
+        this._isDragging = false;
+        this._isCursorOverPoint = false;
+    }
+
+    addTo(map) {
+        this._map = map;
+        this._canvas = map.getCanvasContainer();
+        console.log(this._)
+        return this;
+    }
+
+    _addToGeoJSON(racer) {
+        super._addToGeoJSON(racer);
+        MainRacer.geojson.features.push(Racer.createFeature(racer));
+    }
+
+    get isCursorOverPoint() { return this._isCursorOverPoint;}
+
+    set isCursorOverPoint(b) { this._isCursorOverPoint = b;}
+
+    get isDragging() {return this._isDragging;}
+    set isDragging(b) {this._isDragging = b;}
+
+    // add BombMode support
+    activateBombMode(dropBomb, teardown) {
+        this.mainRange.setRadius(50);
+        this.mainRange.setStyle(this.styles.bombmodeEnabled);
+        this.mainRange.once('click', dropBomb);
+    };
+
+    deactivateBombMode(){
+        this.mainRange.setRadius(35);
+        this.mainRange.setStyle(this.styles.default);
+        this.mainRange.off('click');
+    }
+
+    mouseDown(e) {
+        // todo: move this function, because this = e.target = map
+        console.log('!!!mousedown - cursorOverPoint is '+mrm.isCursorOverPoint);
+        console.log('!!!mousedown - cursorOverPoint is '+e.target);
+        console.log(e.target === this);
+
+        if (!mrm.isCursorOverPoint) return;
+
+        mrm.isDragging = true;
+
+        // Set a cursor indicator
+        mrm._canvas.style.cursor = 'grab';
+
+        // Mouse events
+        this.on('mousemove', mrm.onMove);
+        this.once('mouseup', mrm.onUp);
+        console.log('!!!mousedown is over.. '+mrm._isDragging);
+
+    }
+
+    onMove(e) {
+        // todo: move this function, because this = e.target = map
+
+        console.log('!on move');
+        if (!mrm.isDragging) return;
+
+        var coords = e.lngLat;
+        // console.log('!!!racer moving!! to '+coords[0]+' '+coords[1]);
+
+        // Set a UI indicator for dragging.
+        mrm._canvas.style.cursor = 'grabbing';
+
+        // Update the Point feature in `geojson` coordinates
+        // and call setData to the source layer `point` on it.
+        Racer.geojson.features[0].geometry.coordinates = [coords.lng, coords.lat];
+        this.getSource('racers').setData(Racer.geojson);
+        MainRacer.geojson.features[0].geometry.coordinates = [coords.lng, coords.lat];
+        this.getSource('mrm').setData(MainRacer.geojson);
+    }
+
+    onUp(e) {
+        // todo: move this function, because this = e.target = map
+
+        if (!mrm.isDragging) return;
+        console.log('!!!racer released!!');
+
+        var coords = e.lngLat;
+
+        mrm._canvas.style.cursor = '';
+        mrm.isDragging = false;
+
+        // Unbind mouse events
+        mrm._map.off('mousemove', mrm.onMove);
+    }
+
+}
+MainRacer.geojson = {
+    "type": "FeatureCollection",
+    "features": [],
+};
+MainRacer.rangejson = {
+    "type": "FeatureCollection",
+    "features": [],
+};
+
+
+class Coin {
+    constructor (coin) {
+        this.id = coin.id;
+        this.name = coin.name;
+        this.icon = coin.icon;
+        this.pos = [coin.lng, coin.lat];
+        this.type = 'coin';
+
+    }
+
+    _addToGeoJSON(coin) {
+        Coin.geojson.features.push(Coin.createFeature(coin));
+    }
+
+    get lng() { return this.pos[0]}
+    get lat() { return this.pos[1];}
+
+    asFeature() {
+        return Coin.createFeature(self);
+    }
+
+    static createFeature(coin) {
+        return {
+            "type": "Feature",
+            "properties": {
+                "id": coin.id,
+                "value": coin.value,
+                "icon": coin.icon
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [coin.lng, coin.lat]
+           }
+        }
+    }
+}
+Coin.geojson = {
+    "type": "FeatureCollection",
+    "features": null,
+};
+
+console.log('setup racers');
+flaskData.racers.forEach(function(racer) {
+    if (racer.name === flaskData.username) {
+        console.log('create mrm racer');
+        markers[racer.id] = new MainRacer(racer).addTo(map);
+        mrm = markers[racer.id];
+        console.log('mrm racer created');
+    } else {
+        console.log('create racer');
+        markers[racer.id] = new Racer(racer).addTo(map);
+        console.log('racer created');
+    }
+});
+
+console.log('setup racers done');
 
 map.on('load', function mapLoaded() {
     console.log("Map is loaded");
 
-    // map.addSource('racers', {type: 'geojson', data: racerGeoJSON});
-    //
-    // map.addLayer({
-    //     'id': 'racers',
-    //     'type': 'symbol',
-    //     'source': 'racers',
-    //     'layout': {
-    //         'icon-image' : '{icon}',
-    //         'icon-size': 0.2,
-    //     }
-    // });
+    // get the racers
+    console.log(JSON.stringify(Racer.geojson));
 
-    console.log("Added racers layer ");
-    // console.log(JSON.stringify(racerGeoJSON));
+    map.addSource('racers', {'type': 'geojson', 'data': Racer.geojson});
+    console.log('Added racers source');
+    console.log(map.getSource('racers'));
+    console.log('Racer loaded? '+map.isSourceLoaded('racers'));
 
-    map.addSource('coins', {type: 'geojson', data: coinGeoJSON});
+    map.addSource('mrm', {'type': 'geojson', 'data': MainRacer.geojson});
+
+    const mrmradius = 150;
+    const metersToPixelsAtMaxZoom = (meters, latitude) => meters / 0.075 / Math.cos(latitude * Math.PI / 180);
     map.addLayer({
-         'id': 'coins',
-        'type': 'symbol',
-        'source': 'coins',
-        'layout': {
-            'icon-image' : 'coin',
-            'icon-size': 0.1,
+        'id': 'mrm-range',
+        'source': 'mrm',
+        'type': 'circle',
+        'paint': {
+            'circle-radius': {
+                stops: [
+                    [0, 1],
+                    [20, metersToPixelsAtMaxZoom(mrmradius, mrm.lat)]
+                ],
+                base: 2
+            },
+            'circle-color': "#FF0000",
+            'circle-opacity': 0.2,
+            'circle-stroke-opacity': 1
         }
     });
-    console.log("Added coins layer");
+    console.log('Added mrm');
 
+    map.addLayer({
+        'id': 'racers',
+        'source': 'racers',
+        // 'type': 'circle',
+        // "paint": {
+        //     "circle-radius": 1000,
+        //     "circle-color": "#FF0000"
+        // }
+        'type': 'symbol',
+        'layout': {
+            'icon-image' : 'ship',
+            'icon-size': 0.2,
+        },
+        'sprite': 'static/img/flaticons/pirates'
+    });
+    console.log("Added racers layer ");
+    console.log(map.getLayer('racers'));
 
+    // map.addSource('coins', {'type': 'geojson', 'data': Coin.createGeoJSON([])});
+    // map.addLayer({
+    //      'id': 'coins',
+    //     'source': 'coins',
+    //     'type': 'symbol',
+    //     'layout': {
+    //         'icon-image' : 'coin',
+    //         'icon-size': 0.1,
+    //     },
+    //     'sprite': 'static/img/flaticons/pirates'
+    // });
+    // console.log("Added coins layer");
+
+    // Add score board control
     map.addControl(new ScoreControl());
 
-
+    map.addControl(new mapboxgl.NavigationControl());
 
     //////////////////////////
     // LOCATION
     //
-    //
 
     // add button that searches your location
     let geolocateControl = new mapboxgl.GeolocateControl({
-            positionOptions: {
-                enableHighAccuracy: true,
-                timeout: 6000},
-            watchPosition: true
-        })
+        positionOptions: {
+            enableHighAccuracy: true,
+            timeout: 6000},
+        watchPosition: true
+    });
 
     map.addControl(geolocateControl);
+    console.log('Added controls');
 
     /////////////////////
     // prepare leaflet map.locate callback functions
@@ -701,6 +957,9 @@ map.on('load', function mapLoaded() {
     function onLocationFound(e) {
         // unpack event data
         console.log(e);
+        if (!mrm) {
+            return
+        }
         let lnglat = [e.coords.longitude, e.coords.latitude];
         let now = e.timestamp;
         mrm.setLngLat(lnglat);
@@ -730,13 +989,14 @@ map.on('load', function mapLoaded() {
 
     console.log("Leaflet location callbacks ready.. setView to main marker");
 
-
-
     ////////////////
     // FINALIZE INIT
     //
     // let mrm = racerGeoJSON.features[0];
+    console.log('finalizzzze');
+    console.log(mrm.getLngLat());
     map.setCenter(mrm.getLngLat());
+    console.log('Set map center');
     // map.setZoom(17);
 
     // incoming websocket events
@@ -776,11 +1036,37 @@ map.on('load', function mapLoaded() {
         } else {
             console.log('.. but we don\'t know that marker?')
         }
-
     });
+
+    // If a feature is found on map movement,
+    // set a flag to permit a mousedown events.
+    map.on('mousemove', function(e) {
+        let features = map.queryRenderedFeatures(e.point, { layers: ['mrm-range'] });
+        let canvas = map.getCanvasContainer();
+        // Change point and cursor style as a UI indicator
+        // and set a flag to enable other mouse events.
+        if (features.length) {
+            map.setPaintProperty('mrm-range', 'circle-color', '#3bb2d0');
+            canvas.style.cursor = 'move';
+            mrm.isCursorOverPoint = true;
+            map.dragPan.disable();
+        } else {
+            map.setPaintProperty('mrm-range', 'circle-color', '#3887be');
+            canvas.style.cursor = '';
+            mrm.isCursorOverPoint = false;
+            map.dragPan.enable();
+        }
+    });
+
+    // Set `true` to dispatch the event before other functions call it. This
+    // is necessary for disabling the default map dragging behaviour.
+    map.on('mousedown', mrm.mouseDown, true);
 });
 
 // bind to main Racer .. TODO: set this in global module settings
-mrm = markers[flaskData.username];
+if (mrm) {
+    console.log('Main Racer Marker setup OKAY')
+} else {
+    console.log('Main Racer Marker setup failed...')
+}
 // mainUserTeamColor = mrm.color;
-

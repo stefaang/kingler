@@ -40,7 +40,9 @@
     /*background-image: url(../img/pirate6-sm.png);*/
     /*background-position: -0px -80px;*/
     background-image: url(../img/flaticons/pirates/ship.png);
-    background-size: 80px 80px;
+    background-size: 100%;
+    width: 80px;
+    height: 80px;
 }
 
 .coin-icon {

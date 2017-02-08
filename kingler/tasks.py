@@ -204,3 +204,27 @@ def update_scores(racers):
 
     for racer in racers:
         socketio.emit('new score', data, room=racer.name)
+
+
+
+@celery.task
+def moveBeasts():
+    beasts = Beast.objects(trackname__ne=None)
+    for b in beasts:
+        # unpack geojson linestring
+        track = b.track['coordinates']
+        pos = b.pos['coordinates']
+        if pos in track:
+            i = track.index(pos)
+            n = len(track)
+            if i > 0:
+                print 'set pos to index %s at %s' % (i, pos)
+                b.modify(pos=track[(i - 1) % n])
+            elif i == 0:
+                rev_track = list(reversed(track))
+                print 'flip track woohoo %s' % rev_track
+                b.modify(track=rev_track)
+        else:
+            print 'we are off the track uggh'
+            b.modify(pos=track[0])
+    moveBeasts.apply_async((), countdown=5)
