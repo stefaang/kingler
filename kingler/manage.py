@@ -50,7 +50,8 @@ def loadCoinsFromFile(fname='coindump.txt'):
         data = f.read()
     positions = json.loads(data)
     for pos in positions:
-        CopperCoin(pos=pos, value=10)
+        CopperCoin(pos=pos, value=10).save()
+    print CopperCoin.objects.count(), 'coins in database'
 
 if __name__ == '__main__':
     deleteAllFlags()
