@@ -16,17 +16,6 @@ let socket = null;
 // WIP: put all this stuff in a module
 //
 
-class Dummy {
-    constructor(name) {
-        this.name = name;
-    }
-    printName() {
-        console.log('Hello there, '+this.name)
-    }
-}
-let d = new Dummy('derp');
-d.printName();
-console.log(d);
 
 // SocketIO for realtime bidirectional messages between client and server
 if (window.location.protocol == "https:") {
@@ -162,8 +151,6 @@ class RacerMarker extends L.Marker {
     get name() {
         return this.options.title;
     }
-
-
 }
 
 class MainRacerMarker extends RacerMarker {
@@ -217,16 +204,16 @@ for (let i = 0 ; i < flaskData.racers.length; i++) {
     if (ismainmarker) {
         // setup the main central Racer
         markers[racer.id] = new MainRacerMarker(racer).addTo(map);
+        mrm = markers[racer.id];
+        mainUserTeamColor = mrm.color;
+        // bind to main Racer .. TODO: set this in global module settings
+        console.log('We are team '+mainUserTeamColor);
     } else {
         // setup the other nearby Racers
         markers[racer.id] = new RacerMarker(racer).addTo(map);
     }
 }
 
-// bind to main Racer .. TODO: set this in global module settings
-mrm = markers[flaskData.username];
-mainUserTeamColor = mrm.color;
-console.log('We are team '+mainUserTeamColor);
 
 //console.log('mainsusermarker iconsize '+mrm.options.icon.options.iconSize);
 //mrm.options.icon.options.iconSize = [50,50];
