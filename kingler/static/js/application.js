@@ -750,7 +750,7 @@ socket.on('marker moved', function(data) {
         // fx.run(marker, point, 0.5);
     } else
         console.log("but marker not known before.. adding a new marker");
-        markers[data.name] = RacerMarker(data).addTo(map);
+        markers[data.name] = new RacerMarker(data).addTo(map);
 });
 
 socket.on('marker added', function(data) {
@@ -758,7 +758,7 @@ socket.on('marker added', function(data) {
     console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
     let marker = markers[data.name];
     if (!marker){
-        markers[data.name] = RacerMarker(data).addTo(map);
+        markers[data.name] = new RacerMarker(data).addTo(map);
     }
     else
         console.log('.. but we already had that marker')

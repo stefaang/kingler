@@ -310,8 +310,10 @@ socket.on('coin added', function(data) {
     //     addCoinMarker(data);
     // }
     // fancy style
-
-    coinGeoJSON.features.push(createCoinFeature(data));
+    if (data && data.id) {
+        let coin = new Coin(data).addTo(map);
+        markers[data.id] = coin;
+    };
 });
 
 socket.on('coin pickup', function(data) {
@@ -588,9 +590,10 @@ map = new mapboxgl.Map({
     style: 'mapbox://styles/stefaang/ciyirbvik00592rmjlg8gjc7n',
     center: [3.866, 51],
     zoom: 13,   // initial zoomlvl
-    pitch: 60,
-    bearing: 60,
+    // pitch: 60,
+    // bearing: 60,
 });
+map.dragPan.disable();
 
 
 // setup dragging
@@ -598,62 +601,98 @@ let canvas = map.getCanvasContainer();
 let isDragging = false;
 let isCursorOverPoint = false;
 
-
-
-class Racer extends Object {
-    // class that adds some functions to manage racers on the client
-    constructor (racer){
-        super()
-        this.id = racer.id;
-        this.name = racer.name;
-        this.icon = racer.icon;
-        this.pos = [racer.lng, racer.lat];
-        this.type = 'racer';
-        this._addToGeoJSON(racer);
+class MapObject {
+    constructor (o) {
+        this.id = o.id;
+        this._lngLat = [o.lng, o.lat];
     }
 
-    _addToGeoJSON(racer) {
-        this._geoindex = Racer.geojson.features.length;
-        Racer.geojson.features.push(Racer.createFeature(racer));
-    }
+    get lng() { return this.getLngLat()[0]}
+    get lat() { return this.getLngLat()[1];}
+    getLngLat() { return this._lngLat}
 
-    // when deleting a racer it must be removed from the geojson tracker
-    delete() {
-        let index = Racer.geojson.features.indexOf(function(ft){
-            ft.id === this.id
-        });
-        if (index > -1){
-            Racer.geojson.features.splice(index, 1);
-            return true
-        } else
-            return false
-    }
-
-    get lng() { return this.pos[0]}
-    get lat() { return this.pos[1];}
+    get geojson() {return MapObject.geojson}
 
     addTo(map) {
+        this._addToGeoJSON();
         this._map = map;
         return this;
     }
 
-    asFeature() {
-        return Racer.createFeature(self);
+    _addToGeoJSON() {
+        this._geoindex = this.geojson.features.length;
+        this.geojson.features.push(this.asFeature());
     }
 
+    remove() {
+        this._map = null;
+        if (this._geoindex < Racer.geojson.features.length){
+            Racer.geojson.features.splice(this._geoindex, 1);
+            this._map.getSource('racers').setData(Racer.geojson);
+        } else {
+            console.log('Failed to remove coin. Geo index too high.');
+        }
+    }
+}
+MapObject.geojson = {
+    features: [],
+    type: 'FeatureCollection'
+};
+
+class Racer extends MapObject {
+    // class that adds some functions to manage racers on the client
+    constructor (racer){
+        super(racer);
+        this.id = racer.id;
+        this.name = racer.name;
+        this.icon = racer.icon;
+        this._lngLat = [racer.lng, racer.lat];
+        this.type = 'racer';
+    }
+    get geojson() {return Racer.geojson}
+
     setLngLat(lngLat) {
-        this.pos = lngLat;
+        if (typeof lngLat === 'object') {
+            lngLat = [lngLat.lng, lngLat.lat];
+        }
+        this._lngLat = lngLat;
+        this._update();
+    }
+
+    _update() {
         let map = this._map;
         if (!map || !Racer.geojson) {
-            return
+            return;
         }
-        Racer.geojson.features[this._geoindex].geometry.coordinates = lngLat;
+        // todo: use asFeature to get all updates
+        Racer.geojson.features[this._geoindex].geometry.coordinates = this._lngLat;
         map.getSource('racers').setData(Racer.geojson);
+        return;
+    }
+
+    _addToGeoJSON() {
+        this._geoindex = Racer.geojson.features.length;
+        Racer.geojson.features.push(this.asFeature());
+    }
+
+    addTo(map) {
+        this._addToGeoJSON();
+        this._map = map;
         return this;
     }
 
-    getLngLat() {
-        return this.pos;
+    remove() {
+        this._map = null;
+        if (this._geoindex < Racer.geojson.features.length){
+            Racer.geojson.features.splice(this._geoindex, 1);
+            this._map.getSource('racers').setData(Racer.geojson);
+        } else {
+            console.log('Failed to remove coin. Geo index too high.');
+        }
+    }
+
+    asFeature() {
+        return Racer.createFeature(self);
     }
 
     static createFeature(racer) {
@@ -683,9 +722,7 @@ class Racer extends Object {
 
     pushLocation() {
         console.log('puuuuuuush '+this.name);
-        console.log(this);
-        let pos = this.getLngLat();
-        let data = {name: this.name, lat: pos.lat, lng: pos.lng};
+        let data = {name: this.name, lat: this.lat, lng: this.lng};
         console.log('Outbox: '+JSON.stringify(data));
         socket.emit('move marker', data);
     }
@@ -699,7 +736,7 @@ Racer.geojson = {
 
 
 class MainRacer extends Racer {
-    // class to manage the main racer
+    // singular class to manage the main racer
     constructor (racer) {
         super(racer);
         this._map = null;
@@ -708,18 +745,22 @@ class MainRacer extends Racer {
         this._isCursorOverPoint = false;
     }
 
+    _addToGeoJSON() {
+        super._addToGeoJSON();
+        MainRacer.geojson.features.push(this.asFeature());
+    }
+
     addTo(map) {
-        this._map = map;
+        super.addTo(map);
         this._canvas = map.getCanvasContainer();
         return this;
     }
 
-    _addToGeoJSON(racer) {
-        super._addToGeoJSON(racer);
-        MainRacer.geojson.features.push(Racer.createFeature(racer));
-    }
 
     setLngLat(lngLat) {
+        if(!typeof lngLat === 'list') {
+            lngLat = [lngLat.lng, lngLat.lat];
+        }
         super.setLngLat(lngLat);
         MainRacer.geojson.features[0].geometry.coordinates = lngLat;
         this._map.getSource('mrm').setData(MainRacer.geojson);
@@ -745,51 +786,6 @@ class MainRacer extends Racer {
         this.mainRange.off('click');
     }
 
-    mouseDown(e) {
-        // todo: move this function, because this = e.target = map
-
-        if (!mrm.isCursorOverPoint) return;
-
-        mrm.isDragging = true;
-
-        // Set a cursor indicator
-        mrm._canvas.style.cursor = 'grab';
-
-        // Mouse events
-        this.on('mousemove', mrm.onMove);
-        this.once('mouseup', mrm.onUp);
-    }
-
-    onMove(e) {
-        // todo: move this function, because this = e.target = map
-        if (!mrm.isDragging) return;
-
-        var coords = e.lngLat;
-        // console.log('!!!racer moving!! to '+coords[0]+' '+coords[1]);
-
-        // Set a UI indicator for dragging.
-        mrm._canvas.style.cursor = 'grabbing';
-
-        // Update the Point feature in `geojson` coordinates
-        // and call setData to the source layer `point` on it.
-        Racer.geojson.features[0].geometry.coordinates = [coords.lng, coords.lat];
-        this.getSource('racers').setData(Racer.geojson);
-        MainRacer.geojson.features[0].geometry.coordinates = [coords.lng, coords.lat];
-        this.getSource('mrm').setData(MainRacer.geojson);
-    }
-
-    onUp(e) {
-        // todo: move this function, because this = e.target = map
-        if (!mrm.isDragging) return;
-
-        var coords = e.lngLat;
-
-        mrm._canvas.style.cursor = '';
-        mrm.isDragging = false;
-
-        // Unbind mouse events
-        this.off('mousemove', mrm.onMove);
-    }
 
 }
 MainRacer.geojson = {
@@ -802,25 +798,39 @@ MainRacer.rangejson = {
 };
 
 
-class Coin {
+class Coin extends MapObject {
     constructor (coin) {
+        super(coin);
         this.id = coin.id;
         this.name = coin.name;
         this.icon = coin.icon;
-        this.pos = [coin.lng, coin.lat];
+        this.lngLat = [coin.lng, coin.lat];
         this.type = 'coin';
+    }
+    get geojson() {return Coin.geojson}
 
+    get lng() { return this.lngLat[0]}
+    get lat() { return this.lngLat[1];}
+
+    addTo(map) {
+        this._map = map;
+        this._addToGeoJSON();
+        map.getSource('coins').setData(Coin.geojson);
+        console.log(Coin.geojson);
     }
 
-    _addToGeoJSON(coin) {
-        Coin.geojson.features.push(Coin.createFeature(coin));
+    remove() {
+        this._map = null;
+        if (this._geoindex < Coin.geojson.features.length){
+            Coin.geojson.features.splice(this._geoindex, 1);
+            this._map.getSource('coins').setData(Coin.geojson);
+        } else {
+            console.log('Failed to remove coin. Geo index too high.');
+        }
     }
-
-    get lng() { return this.pos[0]}
-    get lat() { return this.pos[1];}
 
     asFeature() {
-        return Coin.createFeature(self);
+        return Coin.createFeature(this);
     }
 
     static createFeature(coin) {
@@ -840,7 +850,7 @@ class Coin {
 }
 Coin.geojson = {
     "type": "FeatureCollection",
-    "features": null,
+    "features": [],
 };
 
 console.log('setup racers');
@@ -886,8 +896,7 @@ map.on('load', function mapLoaded() {
                 ],
                 base: 2
             },
-            'circle-color': "#FF0000",
-            'circle-opacity': 0.2,
+            'circle-color': "rgba(20, 30, 230, 0.2)",
             'circle-stroke-opacity': 1
         }
     });
@@ -900,6 +909,10 @@ map.on('load', function mapLoaded() {
         'layout': {
             'icon-image' : 'ship',
             'icon-size': 0.2,
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true,
+            "text-allow-overlap": true,
+            "text-optional": true,
         },
         // 'sprite': 'static/img/flaticons/pirates'
     });
@@ -950,7 +963,7 @@ map.on('load', function mapLoaded() {
 
     function onLocationFound(e) {
         // unpack event data
-        if (!mrm) {
+        if (!mrm || !e.coords) {
             return
         }
         let lnglat = [e.coords.longitude, e.coords.latitude];
@@ -1043,18 +1056,66 @@ map.on('load', function mapLoaded() {
             map.setPaintProperty('mrm-range', 'circle-color', '#3bb2d0');
             canvas.style.cursor = 'move';
             mrm.isCursorOverPoint = true;
-            map.dragPan.disable();
+            //map.dragPan.disable();
         } else {
             map.setPaintProperty('mrm-range', 'circle-color', '#3887be');
             canvas.style.cursor = '';
             mrm.isCursorOverPoint = false;
-            map.dragPan.enable();
+            //map.dragPan.enable();
         }
     });
 
+    function mouseDown(e) {
+        // todo: move this function, because this = e.target = map
+
+        if (!mrm.isCursorOverPoint) return;
+
+        mrm.isDragging = true;
+
+        // Set a cursor indicator
+        mrm._canvas.style.cursor = 'grab';
+        console.log('!!! mousedown')
+        console.log(e)
+        // Mouse events
+        map.on('mousemove', onMove);
+        map.once('mouseup', onUp);
+    }
+
+    function onMove(e) {
+        // todo: move this function, because this = e.target = map
+        console.log('!!! mousemove')
+        console.log(e.lngLat);
+        if (!mrm.isDragging) return;
+        console.log('coords: ');
+
+        // Set a UI indicator for dragging.
+        mrm._canvas.style.cursor = 'grabbing';
+
+        // Move the marker position
+        var coords = e.lngLat;
+        mrm.setLngLat(coords);
+
+    }
+
+    function onUp(e) {
+        // todo: move this function, because this = e.target = map
+        if (!mrm.isDragging) return;
+
+        var coords = e.lngLat;
+
+        mrm._canvas.style.cursor = '';
+        mrm.isDragging = false;
+
+        mrm.pushLocation();
+
+        // Unbind mouse events
+        this.off('mousemove', onMove);
+    }
+
+
     // Set `true` to dispatch the event before other functions call it. This
     // is necessary for disabling the default map dragging behaviour.
-    map.on('mousedown', mrm.mouseDown, true);
+    map.on('mousedown', mouseDown, true);
 });
 
 // bind to main Racer .. TODO: set this in global module settings

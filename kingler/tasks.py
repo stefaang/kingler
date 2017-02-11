@@ -74,7 +74,6 @@ def do_bomb_explode(bombid):
     # show new scores to spectators
     # TODO: put this in a separate task.. update_scores around pos
     if victims:
-        # spectators = [r.reload() for r in spectators]  # load the new scores
         update_scores(spectators)
     else:
         app.logger.debug('no score changes')
@@ -152,8 +151,7 @@ def update_racer_pos(data):
 
     # get nearby racers
     spectators = Racer.objects(pos__near=movedracer.pos,
-                               pos__max_distance=GLOBAL_RANGE,
-                               is_online=True)
+                               pos__max_distance=GLOBAL_RANGE )
     for event in events:
         eventtype = event['type']
         # let them update their flags (TODO: broadcast in cell)
@@ -164,12 +162,12 @@ def update_racer_pos(data):
         # adjust scores if necessary
         if eventtype == 'flag scored':
             movedracer.modify(inc__score=5) # TODO: check for more atoms
-            update_scores(spectators.reload())
+            update_scores(spectators)
 
     # D. Show new coins
     coins = (o for o in set(after) - set(before) if isinstance(o, CopperCoin) and o.team != movedracer.color)
     for coin in coins:
-        print '%s coin, %s racer' % (coin.team, movedracer.color)
+        # app.logger.info('%s coin, %s racer' % (coin.team, movedracer.color))
         lng, lat = coin.pos['coordinates']
         info = {'lng':lng, 'lat':lat, 'value': coin.value, 'id': str(coin.id)}
         emit('coin added', info, room=mr['name'])
@@ -179,6 +177,7 @@ def update_racer_pos(data):
                                pos__max_distance=PICKUP_RANGE,
                                team__ne=movedracer.color)
     for coin in coins:
+        app.logger.info('racer %s picks up a %sp %s coin' % (movedracer.name, coin.value, coin.team))
         info = {'value': coin.value, 'id': str(coin.id)}
         emit('coin pickup', info, room=mr['name'])
 
@@ -188,14 +187,16 @@ def update_racer_pos(data):
         coin.modify(team=movedracer.color)
         # add the points
         movedracer.modify(inc__score=coin.value)
-    if coins:
-        update_scores(spectators.reload())
+
+        app.logger.info('racer %s scores for coinssss', movedracer.name)
+        update_scores(spectators)
 
 
 def update_scores(racers):
-    app.logger.debug('calculate new scores for %s', racers)
+    app.logger.info('calculate new scores for %s', racers)
     data = {'individual': {}, 'team': {}}
     for racer in racers:
+        racer.reload('score')
         data['individual'][racer.name] = racer.score
 
         # this can be done client side..
