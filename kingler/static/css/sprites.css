@@ -6,15 +6,46 @@
     /*background: white;*/
     /*background: rgba(255,255,255,0.8);*/
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
-    border: 16px solid transparent;
-    border-image: url(../img/kenney/Colored/blue.png) 30% fill round;
     /*border-radius: 5px;*/
     line-height: 18px;
 }
 
-.score-board:hover {
+.score-board.red {
+    border: 16px solid transparent;
+    border-image: url(../img/kenney/Colored/red.png) 30% fill round;
+}
+
+.score-board:hover.red {
+    border-image: url(../img/kenney/Colored/red_pressed.png) 30% fill round;
+}
+
+.score-board.green {
+    border: 16px solid transparent;
+    border-image: url(../img/kenney/Colored/green.png) 30% fill round;
+}
+
+.score-board.green:hover {
+    border-image: url(../img/kenney/Colored/green_pressed.png) 30% fill round;
+}
+
+.score-board.blue{
+    border: 16px solid transparent;
+    border-image: url(../img/kenney/Colored/blue.png) 30% fill round;
+}
+
+.score-board.blue:hover{
     border-image: url(../img/kenney/Colored/blue_pressed.png) 30% fill round;
 }
+
+.score-board.grey {
+    border: 16px solid transparent;
+    border-image: url(../img/kenney/Colored/grey.png) 30% fill round;
+}
+
+.score-board.grey:hover {
+    border-image: url(../img/kenney/Colored/grey_pressed.png) 30% fill round;
+}
+
 
 .score-board h4 {
     margin: 0 0 5px;
@@ -45,15 +76,45 @@
     height: 80px;
 }
 
-.coin-icon {
-    background-image: url(../img/flaticons/pirates/coin.png);
-    background-size: 40px 40px;
-}
 
 .bomb-icon {
     background-image: url(../img/flaticons/pirates/bomb.png);
     background-size: 60px 60px;
 }
+.coin-icon {
+    background-image: url(../img/flaticons/pirates/coin.png);
+    background-size: 40px 40px;
+}
+
+.map-icon {
+    background-image: url(../img/flaticons/pirates/treasure-map.png);
+    background-size: 50px 50px;
+}
+
+.rum-icon {
+    background-image: url(../img/flaticons/pirates/rum.png);
+    background-size: 40px 40px;
+}
+.skull-icon {
+    background-image: url(../img/flaticons/pirates/skull-1.png);
+    background-size: 50px 50px;
+}
+
+.tortoise-icon {
+    background-image: url(../img/flaticons/pirates/tortoise.png);
+    background-size: 50px 50px;
+}
+.treasure-icon {
+    background-image: url(../img/flaticons/pirates/treasure.png);
+    background-size: 40px 40px;
+}
+.whale-icon {
+    background-image: url(../img/flaticons/pirates/whale.png);
+    background-size: 50px 50px;
+}
+
+
+
 
 .flag-icon {
     background-image: url(../img/game-icons/tower-flag-white.svg);
@@ -73,40 +134,40 @@
     background-image: url(../img/game-icons/tower-flag-base.png);
 }
 
-.anker-icon {   /* 50x50*/
-    background-image: url(../img/game-icons/pirate-icons-sm.png);
-    background-position: -0px -0px;
-}
-
-.rope-icon {    /* 50x50*/
-    background-image: url(../img/game-icons/pirate-icons-sm.png);
-    background-position: -50px -0px;
-}
-
-.moneybag-icon {    /* 50x50*/
+/*.anker-icon {   !* 50x50*!*/
     /*background-image: url(../img/game-icons/pirate-icons-sm.png);*/
-    /*background-position: -100px -100px;*/
-    background-image: url(../img/pirate6-sm.png);
-    background-position: -80px -0px;
-}
+    /*background-position: -0px -0px;*/
+/*}*/
+
+/*.rope-icon {    !* 50x50*!*/
+    /*background-image: url(../img/game-icons/pirate-icons-sm.png);*/
+    /*background-position: -50px -0px;*/
+/*}*/
+
+/*.moneybag-icon {    !* 50x50*!*/
+    /*!*background-image: url(../img/game-icons/pirate-icons-sm.png);*!*/
+    /*!*background-position: -100px -100px;*!*/
+    /*background-image: url(../img/pirate6-sm.png);*/
+    /*background-position: -80px -0px;*/
+/*}*/
 
 
-.pirate-bomb-icon {    /* 50x50*/
-    background-image: url(../img/game-icons/pirate-icons-sm.png);
-    background-position: -100px -0px;
-}
+/*.pirate-bomb-icon {    !* 50x50*!*/
+    /*background-image: url(../img/game-icons/pirate-icons-sm.png);*/
+    /*background-position: -100px -0px;*/
+/*}*/
 
-.chest-icon {    /* 50x50*/
-    background-image: url(../img/game-icons/pirate-icons-sm.png);
-    background-position: -200px -100px;
-}
+/*.chest-icon {    !* 50x50*!*/
+    /*background-image: url(../img/game-icons/pirate-icons-sm.png);*/
+    /*background-position: -200px -100px;*/
+/*}*/
 
-.crate-icon {    /* 50x50*/
-    background-image: url(../img/game-icons/pirate-icons-sm.png);
-    background-position: -250px -100px;
-}
+/*.crate-icon {    !* 50x50*!*/
+    /*background-image: url(../img/game-icons/pirate-icons-sm.png);*/
+    /*background-position: -250px -100px;*/
+/*}*/
 
-.wheel-icon {    /* 50x50*/
-    background-image: url(../img/game-icons/pirate-icons-sm.png);
-    background-position: -300px -100px;
-}
+/*.wheel-icon {    !* 50x50*!*/
+    /*background-image: url(../img/game-icons/pirate-icons-sm.png);*/
+    /*background-position: -300px -100px;*/
+/*}*/

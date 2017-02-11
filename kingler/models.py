@@ -320,6 +320,10 @@ class Beast(MapEntity):
     track = db.LineStringField()
     trackname = db.StringField()
 
+    def get_info(self):
+        d = super(Beast, self).get_info()
+        d.update({'species': self.species})
+        return d
 
 class Zone(db.Document):
     name = db.StringField()

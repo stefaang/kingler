@@ -115,19 +115,19 @@ def update_racer_pos(data):
     mr = movedracer.get_info()
 
     # A.1 Create markers for the new racers in range
-    racers = (o.get_info() for o in set(after) - set(before) if isinstance(o, Racer))
+    racers = (o.get_info() for o in set(after) - set(before) if isinstance(o, Racer) or isinstance(o, Beast))
     for racer in racers:
         emit('marker added', mr, room=racer['name'])
         emit('marker added', racer, room=mr['name'])
 
     # A.2 Move the position of known racers in range
-    racers = (o.get_info() for o in set(after) | set(before) if isinstance(o, Racer))
+    racers = (o.get_info() for o in set(after) | set(before) if isinstance(o, Racer) or isinstance(o, Beast))
     for racer in racers:
         emit('marker moved', mr, room=racer['name'])
         emit('marker moved', racer, room=mr['name'])
 
     # A.3 Remove the racers who are out of range
-    racers = (o.get_info() for o in set(before) - set(after) if isinstance(o, Racer))
+    racers = (o.get_info() for o in set(before) - set(after) if isinstance(o, Racer) or isinstance(o, Beast))
     for racer in racers:
         emit('marker removed', mr, room=racer['name'])
         emit('marker removed', racer, room=mr['name'])
@@ -214,7 +214,7 @@ def moveBeasts():
     for b in beasts:
         # unpack geojson linestring
         track = b.track['coordinates']
-        pos = b.pos['coordinates']
+        oldpos = pos = b.pos['coordinates']
         if pos in track:
             i = track.index(pos)
             n = len(track)
@@ -228,4 +228,7 @@ def moveBeasts():
         else:
             print 'we are off the track uggh'
             b.modify(pos=track[0])
+        # update the racers
+        Racer.objects(pos__near=b.pos,
+                      pos__max_distance=VISION_RANGE)
     moveBeasts.apply_async((), countdown=5)
