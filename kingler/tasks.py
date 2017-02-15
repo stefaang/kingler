@@ -114,23 +114,39 @@ def update_racer_pos(data):
     #app.logger.info('NearbyStuff went from %s to %s', before, after)
     mr = movedracer.get_info()
 
+    # A. Communication to both nearby Racers and the Moving Racer
     # A.1 Create markers for the new racers in range
-    racers = (o.get_info() for o in set(after) - set(before) if isinstance(o, Racer) or isinstance(o, Beast))
+    racers = (o.get_info() for o in set(after) - set(before) if isinstance(o, Racer))
     for racer in racers:
         emit('marker added', mr, room=racer['name'])
         emit('marker added', racer, room=mr['name'])
 
     # A.2 Move the position of known racers in range
-    racers = (o.get_info() for o in set(after) | set(before) if isinstance(o, Racer) or isinstance(o, Beast))
+    racers = (o.get_info() for o in set(after) | set(before) if isinstance(o, Racer))
     for racer in racers:
         emit('marker moved', mr, room=racer['name'])
         emit('marker moved', racer, room=mr['name'])
 
     # A.3 Remove the racers who are out of range
-    racers = (o.get_info() for o in set(before) - set(after) if isinstance(o, Racer) or isinstance(o, Beast))
+    racers = (o.get_info() for o in set(before) - set(after) if isinstance(o, Racer))
     for racer in racers:
         emit('marker removed', mr, room=racer['name'])
         emit('marker removed', racer, room=mr['name'])
+
+    # A.4
+    beasts = (o.get_info() for o in set(after) - set(before) if isinstance(o, Beast))
+    for beast in beasts:
+        emit('marker added', beast, room=mr['name'])
+
+    # A.5 Move the position of known racers in range
+    beasts = (o.get_info() for o in set(after) | set(before) if isinstance(o, Beast))
+    for beast in beasts:
+        emit('marker moved', beast, room=mr['name'])
+
+    # A.6 Remove the beasts who are out of range
+    beasts = (o.get_info() for o in set(before) - set(after) if isinstance(o, Beast))
+    for beast in beasts:
+        emit('marker removed', beast, room=mr['name'])
 
     # B. Show new bombs (we don't remove bombs.. they disappear after explosion) TODO: but do they see the explosion??
     bombs = (o for o in set(after) - set(before) if isinstance(o, Bomb))
@@ -218,17 +234,33 @@ def moveBeasts(endtime):
         if pos in track:
             i = track.index(pos)
             n = len(track)
-            print 'set pos to index %s at %s' % (i, pos)
-            b.modify(pos=track[(i + 1) % n])
+            newpos = track[(i + 1) % n]
+            print 'set pos to index %s at %s' % ((i+1)%n, newpos)
+            b.modify(pos=newpos)
         else:
             print 'we are off the track uggh'
             b.modify(pos=track[0])
+            return
+
         # update the racers
-        racers = Racer.objects(pos__near=b.pos,
-                               pos__max_distance=VISION_RANGE)
+        before = Racer.objects(pos__geo_within_center=[oldpos, VISION_RANGE])
+        after = Racer.objects(pos__geo_within_center=[newpos, VISION_RANGE])
+
+        # racers that have to add the beast
+        racers = set(after) - set(before)
+        for racer in racers:
+            app.logger.info('hello racer %s, beast added %s', racer.name, b.get_info())
+            socketio.emit('marker added', b.get_info(), room=racer.name)
+
+        racers = set(after) | set(before)
         for racer in racers:
             app.logger.info('hello racer %s, beast moved %s', racer.name, b.get_info())
             socketio.emit('marker moved', b.get_info(), room=racer.name)
+
+        racers = set(before) - set(after)
+        for racer in racers:
+            app.logger.info('hello racer %s, beast removed %s', racer.name, b.get_info())
+            socketio.emit('marker removed', b.get_info(), room=racer.name)
 
     if time.time() < endtime:
         moveBeasts.apply_async((endtime,), countdown=3)
