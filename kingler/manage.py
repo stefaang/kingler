@@ -39,9 +39,11 @@ def setBeastAtBottles():
             b = Beast(pos=[lng, lat], species='whale', name=str(coin.id)[:6])
             
             # a LineString needs 2 coordinates!!! OMG. Use MultiPoint next time
+
             # let the beast circle the bottle, N points at radius R, offset K
-            N = 16
-            R = 0.002   # this is about 120m
+            R = 0.002 * random.random() + 0.001   # this is about 120m
+            # larger radius requires more points. about 50 points for 0.002...
+            N = int(25000 * R)
             K = random.random() * 2*pi
            
             b.track = [[lng+R*cos(i*2*pi/N+K), lat+R*cos(radians(lat))*sin(i*2*pi/N+K)] for i in range(N)]
