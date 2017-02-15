@@ -29,6 +29,7 @@ def distance(hier, daar):
 
 
 
+
 if __name__ == '__main__':
     # b = Beast.objects(name='sharky')
     # if b:
@@ -47,4 +48,4 @@ if __name__ == '__main__':
     #
     #     b.modify(track=track, trackname='the shark road')
 
-    moveBeasts.apply_async((time.time()+200, ), countdown=3)
+    move_beasts.apply_async((time.time()+200, ), countdown=3)

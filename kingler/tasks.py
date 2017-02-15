@@ -225,7 +225,7 @@ def update_scores(racers):
 
 
 @celery.task
-def moveBeasts(endtime):
+def move_beasts():
     beasts = Beast.objects(active=True)
     for b in beasts:
         # unpack geojson linestring
@@ -262,5 +262,9 @@ def moveBeasts(endtime):
             app.logger.info('hello racer %s, beast removed %s', racer.name, b.get_info())
             socketio.emit('marker removed', b.get_info(), room=racer.name)
 
-    if time.time() < endtime:
-        moveBeasts.apply_async((endtime,), countdown=3)
+
+
+@celery.on_after_configure.connect
+def setup_periodic_tasks(sender, **kwargs):
+    sender.add_periodic_task(3.0, move_beasts.s(), name='move beasts every 3 seconds')
+    # sender.add_periodic_task(4.0, move_racers.s(), name='move racers every 3 seconds')
