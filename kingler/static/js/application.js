@@ -158,14 +158,6 @@ function addRacerMarker(racer, options) {
         console.log('Outbox: '+JSON.stringify(data));
         socket.emit('move marker', data);
     };
-    r.showRacerName = function() {
-        let popup = this.getPopup();
-        if (!popup) {
-            this.bindPopup(this.name).openPopup();
-        } else {
-            popup.setContent(this.name).openPopup();
-        }
-    };
     r.moveTo = function(newPos) {
         // Normalize the transition speed from vertex to vertex
         let speed = Math.min( this._latlng.distanceTo(newPos) * 200, 3000);
@@ -178,7 +170,6 @@ function addRacerMarker(racer, options) {
         this.setLatLng(newPos);
     };
     r.on('dragend', r.pushLocation);
-    r.on('click', r.showRacerName);
 
     r.color = r.options.icon.options.color;
     r.name = r.options.title;

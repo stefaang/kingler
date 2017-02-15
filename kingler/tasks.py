@@ -243,8 +243,12 @@ def move_beasts():
             return
 
         # update the racers
-        before = Racer.objects(pos__geo_within_center=[oldpos, VISION_RANGE], is_online=True)
-        after = Racer.objects(pos__geo_within_center=[newpos, VISION_RANGE], is_online=True)
+        before = Racer.objects(pos__near=oldpos,
+                               pos__max_distance=VISION_RANGE,
+                               is_online=True)
+        after = Racer.objects(pos__near=newpos,
+                              pos__max_distance=VISION_RANGE,
+                              is_online=True)
 
         # racers that have to add the beast
         racers = set(after) - set(before)
@@ -252,11 +256,13 @@ def move_beasts():
             app.logger.info('hello racer %s, beast added %s', racer.name, b.get_info())
             socketio.emit('marker added', b.get_info(), room=racer.name)
 
+        # racers that have to move the beast
         racers = set(after) | set(before)
         for racer in racers:
             app.logger.info('hello racer %s, beast moved %s', racer.name, b.get_info())
             socketio.emit('marker moved', b.get_info(), room=racer.name)
 
+        # racers that have to remove the beast (out of range)
         racers = set(before) - set(after)
         for racer in racers:
             app.logger.info('hello racer %s, beast removed %s', racer.name, b.get_info())
