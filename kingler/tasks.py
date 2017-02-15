@@ -210,7 +210,7 @@ def update_scores(racers):
 
 @celery.task
 def moveBeasts(endtime):
-    beasts = Beast.objects(trackname__ne=None)
+    beasts = Beast.objects(active=True)
     for b in beasts:
         # unpack geojson linestring
         track = b.track['coordinates']

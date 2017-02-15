@@ -168,12 +168,12 @@ function addRacerMarker(racer, options) {
     };
     r.moveTo = function(newPos) {
         // Normalize the transition speed from vertex to vertex
-        let speed = this._latlng.distanceTo(newPos) * 10;
-
+        let speed = Math.min( this._latlng.distanceTo(newPos) * 200, 3000);
+        
         // Only if CSS3 transitions are supported
         if (L.DomUtil.TRANSITION) {
-          if (this._icon) { this._icon.style[L.DomUtil.TRANSITION] = ('all ' + speed + 'ms linear'); }
-          if (this._shadow) { this._shadow.style[L.DomUtil.TRANSITION] = 'all ' + speed + 'ms linear'; }
+          if (this._icon) { this._icon.style[L.DomUtil.TRANSITION] = ('all ' + speed + 'ms ease-in-out'); }
+          if (this._shadow) { this._shadow.style[L.DomUtil.TRANSITION] = 'all ' + speed + 'ms ease-in-out'; }
         }
         this.setLatLng(newPos);
     };
@@ -461,7 +461,7 @@ function addBeastMarker(beast) {
     marker.setIcon(whaleIcon);
     marker.moveTo = function(newPos) {
         // Normalize the transition speed from vertex to vertex
-        let speed = this._latlng.distanceTo(newPos) * 200;
+        let speed = Math.min( this._latlng.distanceTo(newPos) * 200, 3000);
 
         // Only if CSS3 transitions are supported
         if (L.DomUtil.TRANSITION) {
