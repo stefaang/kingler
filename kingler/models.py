@@ -111,7 +111,7 @@ class Racer(MapEntity):
 
     # tracking params
     date_lastseen = db.DateTimeField
-    is_online = db.BooleanField(default=False)              # currently unused
+    is_online = db.BooleanField(default=False)
     nearby = db.ListField(db.ReferenceField('MapEntity'))   # track nearby Racers, Bombs, ...
 
     # stats
@@ -164,6 +164,7 @@ class Racer(MapEntity):
         newnearby = list(others)+list(items)
         # now finally update the nearby list
         self.nearby = newnearby
+        self.is_online = True
         self.date_lastseen = dt.now()
         self.save()
 

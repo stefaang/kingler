@@ -231,7 +231,7 @@ def move_beasts():
         # unpack geojson linestring
         track = b.track['coordinates']
         oldpos = pos = b.pos['coordinates']
-        if pos in track:
+        if oldpos in track:
             i = track.index(pos)
             n = len(track)
             newpos = track[(i + 1) % n]
@@ -243,8 +243,8 @@ def move_beasts():
             return
 
         # update the racers
-        before = Racer.objects(pos__geo_within_center=[oldpos, VISION_RANGE])
-        after = Racer.objects(pos__geo_within_center=[newpos, VISION_RANGE])
+        before = Racer.objects(pos__geo_within_center=[oldpos, VISION_RANGE], is_online=True)
+        after = Racer.objects(pos__geo_within_center=[newpos, VISION_RANGE], is_online=True)
 
         # racers that have to add the beast
         racers = set(after) - set(before)

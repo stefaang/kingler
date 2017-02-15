@@ -40,6 +40,9 @@ def handle_connect():
         app.logger.info('New connection received: %s', session['username'])
         # register the handler
         join_room(str(session['username']))
+        r = Racer.objects(name=session['username']).first()
+        if r:
+            r.modify(is_online=True)
     else:
         app.logger.warning('New connection but no username in session')
     app.logger.info('New conn rooms: %s', rooms())
