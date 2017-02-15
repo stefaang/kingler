@@ -7,7 +7,7 @@ console.log(flaskData.racers[0]);
 // globals
 let map = null;
 let mrm = null;
-let mainUserTeamColor = null;
+let mrmColor = null;
 let markers = {};
 
 let socket = null;
@@ -52,6 +52,7 @@ let coinSound = new Howl({
 let shipIcon = L.divIcon({
     className: 'ship-icon',
     iconSize: [80,80],
+    iconAnchor: [40,75],
 });
 
 let coinIcon = L.divIcon({
@@ -66,7 +67,7 @@ let rumIcon = L.divIcon({
 
 let whaleIcon = L.divIcon({
     className: 'whale-icon',
-    iconSize: [80,80],
+    iconSize: [120,120],
 });
 
 
@@ -99,7 +100,7 @@ map = L.map('map',
 // Alternative tileset by MapBox
 
 L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
-   maxZoom: 18,
+   maxZoom: 19,
    attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
                 'Imagery © <a href="http://mapbox.com">Mapbox</a>',
    id: 'mapbox.streets'
@@ -138,14 +139,25 @@ function addRacerMarker(racer, options) {
         draggable: true,
         zIndexOffset: 400
     });
+    // let icon = L.divIcon({
+    //     className: 'ship-icon',
+    //     iconSize: [80,80],
+    //     html: '<div><></div>'
+    //
+    //         racer.name,
+    // });
     r.setIcon(shipIcon);
-
+    r.bindTooltip(racer.name, {
+        // permanent : true,
+        direction: 'bottom',
+        offset: [0,5]
+    });
     r.pushLocation = function() {
         let pos = this.getLatLng();
         let data = {name: this.name, lat: pos.lat, lng: pos.lng};
         console.log('Outbox: '+JSON.stringify(data));
         socket.emit('move marker', data);
-    }
+    };
     r.showRacerName = function() {
         let popup = this.getPopup();
         if (!popup) {
@@ -153,7 +165,18 @@ function addRacerMarker(racer, options) {
         } else {
             popup.setContent(this.name).openPopup();
         }
-    }
+    };
+    r.moveTo = function(newPos) {
+        // Normalize the transition speed from vertex to vertex
+        let speed = this._latlng.distanceTo(newPos) * 10;
+
+        // Only if CSS3 transitions are supported
+        if (L.DomUtil.TRANSITION) {
+          if (this._icon) { this._icon.style[L.DomUtil.TRANSITION] = ('all ' + speed + 'ms linear'); }
+          if (this._shadow) { this._shadow.style[L.DomUtil.TRANSITION] = 'all ' + speed + 'ms linear'; }
+        }
+        this.setLatLng(newPos);
+    };
     r.on('dragend', r.pushLocation);
     r.on('click', r.showRacerName);
 
@@ -167,8 +190,9 @@ function addMainRacerMarker(racer, options)  {
     var r = addRacerMarker(racer, {shape: 'circle'});
     // always display the Main User on top
     r.setZIndexOffset(900);
-
+    const DEFAULT_RANGE = 20;
     let colormap = {'red': '#A12F36', 'green': '#00934F', 'blue': '#0072B5'};
+
     r.styles = {
         bombmodeEnabled: { color: '#2E2E2E', weight: 1, stroke: true,},
         default: { color: colormap[racer.color], weight: 2, stroke: true,},
@@ -179,7 +203,7 @@ function addMainRacerMarker(racer, options)  {
     r.mainUserTrackPolyLine = L.polyline(r.getLatLng(), r.styles.default).addTo(map);
     // add a Circle that shows the action range
 
-    r.mainRange = L.circle(r.getLatLng(), 35,
+    r.mainRange = L.circle(r.getLatLng(), DEFAULT_RANGE,
         r.styles.default
     ).addTo(map);
 
@@ -193,7 +217,7 @@ function addMainRacerMarker(racer, options)  {
 
     // add BombMode support
     r.activateBombMode = (function(dropBomb, teardown) {
-        this.mainRange.setRadius(50);
+        this.mainRange.setRadius(DEFAULT_RANGE);
         this.mainRange.setStyle(this.styles.bombmodeEnabled);
         this.mainRange.once('click', dropBomb);
     });
@@ -214,10 +238,17 @@ for (let i = 0 ; i < flaskData.racers.length; i++) {
         // setup the main central Racer
         markers[racer.id] = addMainRacerMarker(racer); // .addTo(map);
         mrm = markers[racer.id];
-        mainUserTeamColor = racer.color;
+        mrmColor = racer.color;
         // bind to main Racer .. TODO: set this in global module settings
-        console.log('We are team '+mainUserTeamColor);
+        console.log('We are team '+mrmColor);
         console.log(mrm);
+        var sheet = document.getElementById('mystyle').sheet;
+        sheet.insertRule('.leaflet-bar, .leaflet-touch .leaflet-bar {    ' +
+            'border: 4px solid transparent;' +
+            'border-image: url(../img/kenney/Colored/'+mrmColor+'.png) 10% fill round; ' +
+            'background-color: transparent;' +
+            '}', 1);
+        console.log(sheet.cssRules);
     } else {
         // setup the other nearby Racers
         markers[racer.id] = addRacerMarker(racer); //.addTo(map);
@@ -354,12 +385,13 @@ function addCoinMarker(coin) {
     let marker = L.marker([coin.lat, coin.lng], {
         title: title,
         zIndexOffset: 20
-    }).on('click', function (e) {
-        this.togglePopup();
     });
+    marker.bindTooltip(title, {direction:'bottom'});
+
     marker.setIcon(coinIcon);
     if (coin.id.slice(-1) === '0'){
         marker.setIcon(rumIcon);
+        marker.bindPopup('Drink this and go catch a whale!');
     }
     markers[coin.id] = marker.addTo(map);
 }
@@ -420,23 +452,36 @@ let lastBeast = '58989eacf8ae2a7051122fca';
 function addBeastMarker(beast) {
     let title = beast.name;
     let marker = L.marker([beast.lat, beast.lng], {
+        autoStart: false,
         title: title,
-        zIndexOffset: 60
+        zIndexOffset: 990
     }).on('click', function (e) {
         this.togglePopup();
     });
     marker.setIcon(whaleIcon);
+    marker.moveTo = function(newPos) {
+        // Normalize the transition speed from vertex to vertex
+        let speed = this._latlng.distanceTo(newPos) * 200;
+
+        // Only if CSS3 transitions are supported
+        if (L.DomUtil.TRANSITION) {
+          if (this._icon) { this._icon.style[L.DomUtil.TRANSITION] = ('all ' + speed + 'ms ease-in-out'); }
+          if (this._shadow) { this._shadow.style[L.DomUtil.TRANSITION] = 'all ' + speed + 'ms ease-in-out'; }
+        }
+        this.setLatLng(newPos);
+    }
     markers[beast.id] = marker.addTo(map);
     lastBeast = beast.id;
+    return marker;
 }
 
-// A button to Add a Coin to the map (TODO: admin only)
+// A button to Add a Beast Stop to the map (TODO: admin only)
 let addBeastStopButton = L.easyButton( 'fa-ship',   function() {
-        let pos = mrm.getLatLng();
-        let data = {'lat':pos.lat, 'lng':pos.lng, 'id': lastBeast};
-        socket.emit('add beaststop', data);
-    }
-).addTo(map);
+    let pos = mrm.getLatLng();
+    let data = {'lat':pos.lat, 'lng':pos.lng, 'id': lastBeast};
+    console.log('Add Beast Stop for '+ lastBeast +' at '+pos);
+    socket.emit('add beast stop', data);
+}).addTo(map);
 
 map.on('keypress',  function listenToButtonS(e) {
     if (e.originalEvent.key == 's')
@@ -489,7 +534,7 @@ L.easyButton({
 // A button to Add a Flag to the map (TODO: admin only)
 // L.easyButton( 'fa-flag',   function() {
 //         let pos = mrm.getLatLng();
-//         let data = {'lat':pos.lat, 'lng':pos.lng, 'team': mainUserTeamColor};
+//         let data = {'lat':pos.lat, 'lng':pos.lng, 'team': mrmColor};
 //         socket.emit('add flag', data);
 //     }
 // ).addTo(map);
@@ -719,8 +764,8 @@ console.log("Easy Buttons ready");
 teamScore = L.control();
 teamScore.onAdd = function () {
     this._div = L.DomUtil.create('div', 'score-board'); // create a div with a class "score-board"
-    console.log('add a color to scoreboard '+mainUserTeamColor);
-    this._div.className += ' '+mainUserTeamColor;
+    console.log('add a color to scoreboard '+mrmColor);
+    this._div.className += ' '+mrmColor;
     this.update();
     return this._div;
 };
@@ -751,8 +796,8 @@ function resetScore() {
 
 socket.on('new score', function(data) {
     console.log("Inbox received:  T+");
-    console.log("Inbox unpack..: "+data.team[mainUserTeamColor]+" "+data.individual[flaskData.username]);
-    if(data && data.team[mainUserTeamColor]){
+    console.log("Inbox unpack..: "+data.team[mrmColor]+" "+data.individual[flaskData.username]);
+    if(data && data.team[mrmColor]){
         teamScore.update(data);
     }
 });
@@ -763,7 +808,7 @@ socket.on('new score', function(data) {
 ////////////////
 // FINALIZE INIT
 //
-map.setView(mrm.getLatLng(), 16);
+map.setView(mrm.getLatLng(), 17);
 
 // incoming websocket events
 socket.on('marker moved', function(data) {
@@ -771,9 +816,14 @@ socket.on('marker moved', function(data) {
     console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
     let marker = markers[data.id];
     if (marker) {
-        markers[data.id] = marker.setLatLng([data.lat, data.lng]);
+        if (marker.moveTo) {
+            marker.moveTo([data.lat, data.lng]);
+        } else {
+            marker.setLatLng([data.lat, data.lng]);
+        }
+
     } else {
-        console.log("but marker not known before.. adding a new marker");
+        console.log("but marker not known before.. adding a new marker for "+data.id);
         if ('species' in data) {
             // Beast marker
             markers[data.id] = addBeastMarker(data);

@@ -17,7 +17,7 @@ from datetime import datetime as dt
 
 
 GLOBAL_RANGE = 10000
-VISION_RANGE = 100
+VISION_RANGE = 200
 PICKUP_RANGE = 20
 
 ALLIED_RANGE = GLOBAL_RANGE
@@ -322,7 +322,8 @@ class Beast(MapEntity):
 
     def get_info(self):
         d = super(Beast, self).get_info()
-        d.update({'species': self.species})
+        d.update({'name': self.name,
+                  'species': self.species})
         return d
 
 class Zone(db.Document):

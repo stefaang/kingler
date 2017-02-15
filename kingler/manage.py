@@ -19,12 +19,28 @@ def deleteAllFlags():
 def deleteAllRacers():
     Racer.objects.delete()
 
+def resetRacers():
+    Racer.objects.update(score=0)
+
 def rainRandomCoins(n):
     # add 100 new coins to the database with random value 5 - 10 - 15 - 20
     for i in range(n):
         randpos = [3.72 + .04*random.random(), 51.0 + .025*random.random()]
         c = CopperCoin(pos=randpos, value=5*random.randint(1,5))
         c.save()
+
+def setBeastAtBottles():
+    coins = CopperCoin.objects()
+    for coin in coins:
+        if str(coin.id).endswith('f'):
+            print coin
+            pos = coin.pos['coordinates']
+            b = Beast(pos=pos, species='whale', name=str(coin.id)[:6])
+            x, y = pos
+            # a LineString needs 2 coordinates!!! OMG. Use MultiPoint next time
+            b.track = [[x-.00001, y], [x+.00001, y]]
+            b.save()
+
 
 def deleteAllCoins():
     CopperCoin.objects.delete()

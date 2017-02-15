@@ -149,6 +149,45 @@ def handle_addcoin(data):
         app.logger.warn('add coin request denied: too close to existing coin')
 
 
+@socketio.on('add beast stop')
+def handle_add_beast_stop(data):
+    from math import cos, sqrt, radians
+    def distance(hier, daar):
+        lon1, lat1 = (radians(degree) for degree in hier)
+        lon2, lat2 = (radians(degree) for degree in daar)
+        R = 6371008  # radius of the earth in m
+        x = (lon2 - lon1) * cos(0.5 * (lat2 + lat1))
+        y = lat2 - lat1
+        return R * sqrt(x * x + y * y)
+
+
+    SPD = 10
+    app.logger.debug('add beast stop received')
+    if 'lng' not in data or 'lat' not in data:
+        app.logger.warn('Failed to add beast stop: lat/lng not found in data')
+        return
+    lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
+    beast = Beast.objects.get(pk=data['id'])
+    if [lng, lat] not in beast.track['coordinates']:
+        app.logger.info('add a point to track')
+        track = beast.track['coordinates']
+        hier = track[-1]
+        daar = [lng, lat]
+        d = distance(hier, daar)
+        app.logger.debug('mind the gap of %sm', d)
+        while d > SPD:
+            a = SPD/d
+            hier = [hier[0]+a*(daar[0]-hier[0]), hier[1]+a*(daar[1]-hier[1])]
+            track.append(hier)
+            d = distance(hier, daar)
+        app.logger.info('final track lenght: %s', len(track))
+        beast.track = track
+    else:
+        app.logger.info('delete first point!!')
+        beast.track = beast.track['coordinates'][1:]
+    beast.save()
+
+
 # room support
 @socketio.on('join')
 def on_join(data):

@@ -347,7 +347,7 @@ socket.on('coin pickup', function(data) {
 // A button to Add a Flag to the map (TODO: admin only)
 // L.easyButton( 'fa-flag',   function() {
 //         let pos = mrm.getLngLat();
-//         let data = {'lat':pos.lat, 'lng':pos.lng, 'team': mainUserTeamColor};
+//         let data = {'lat':pos.lat, 'lng':pos.lng, 'team': mrmColor};
 //         socket.emit('add flag', data);
 //     }
 // ).addTo(map);
@@ -1124,4 +1124,4 @@ if (mrm) {
 } else {
     console.log('Main Racer Marker setup failed...')
 }
-// mainUserTeamColor = mrm.color;
+// mrmColor = mrm.color;

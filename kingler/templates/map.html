@@ -17,10 +17,11 @@
     <!-- get Leaflet awesome markers -->
     <link rel="stylesheet" href="static/css/leaflet.extra-markers.min.css">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.css" />
+{#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.css" />#}
+    <link href='static/css/leaflet.fullscreen.css' rel='stylesheet' />
 
     <!-- pokemon fantasy -->
-    <link rel="stylesheet" href="static/css/sprites.css">
+    <link rel="stylesheet" id="mystyle" href="static/css/sprites.css">
 
     <script>
         var flaskData = {{ flaskData|tojson|safe }};
@@ -44,9 +45,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
     <!-- leaflet maps with several plugins -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.js"></script>
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.js"></script>#}
+    <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
     <script src="static/js/easy-button.js"></script>
     <script src="static/js/leaflet.extra-markers.min.js"></script>
+    <script src="static/js/leaflet-animated-marker.js"></script>
+
     <!-- audio fixes for mobile -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.0.2/howler.core.min.js"></script>
     <!-- jquery helps with ajax -->

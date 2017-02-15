@@ -8,7 +8,7 @@
     :copyright: (c) 2017 by Stefaan Ghysels
     :license: BSD, see LICENSE for more details.
 """
-
+import time
 from app import app, socketio
 from celery import Celery
 from models import *
@@ -111,7 +111,7 @@ def update_racer_pos(data):
 
     # get all the new nearby stuff for the new position
     before, after = movedracer.get_nearby_stuff()   # todo: move nearby stuff to cache memory?
-    app.logger.info('NearbyStuff went from %s to %s', before, after)
+    #app.logger.info('NearbyStuff went from %s to %s', before, after)
     mr = movedracer.get_info()
 
     # A.1 Create markers for the new racers in range
@@ -209,7 +209,7 @@ def update_scores(racers):
 
 
 @celery.task
-def moveBeasts():
+def moveBeasts(endtime):
     beasts = Beast.objects(trackname__ne=None)
     for b in beasts:
         # unpack geojson linestring
@@ -218,17 +218,17 @@ def moveBeasts():
         if pos in track:
             i = track.index(pos)
             n = len(track)
-            if i > 0:
-                print 'set pos to index %s at %s' % (i, pos)
-                b.modify(pos=track[(i - 1) % n])
-            elif i == 0:
-                rev_track = list(reversed(track))
-                print 'flip track woohoo %s' % rev_track
-                b.modify(track=rev_track)
+            print 'set pos to index %s at %s' % (i, pos)
+            b.modify(pos=track[(i + 1) % n])
         else:
             print 'we are off the track uggh'
             b.modify(pos=track[0])
         # update the racers
-        Racer.objects(pos__near=b.pos,
-                      pos__max_distance=VISION_RANGE)
-    moveBeasts.apply_async((), countdown=5)
+        racers = Racer.objects(pos__near=b.pos,
+                               pos__max_distance=VISION_RANGE)
+        for racer in racers:
+            app.logger.info('hello racer %s, beast moved %s', racer.name, b.get_info())
+            socketio.emit('marker moved', b.get_info(), room=racer.name)
+
+    if time.time() < endtime:
+        moveBeasts.apply_async((endtime,), countdown=3)
