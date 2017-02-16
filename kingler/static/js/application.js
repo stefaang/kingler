@@ -91,6 +91,7 @@ map = L.map('map',
         // scrollWheelZoom: false,   // but not on PC
         doubleClickZoom: false,   // zoom on center, wherever you click
         fullscreenControl: true,
+        markerZoomAnimation: false,
     }
 );
 
