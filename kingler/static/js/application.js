@@ -86,10 +86,10 @@ let krakenIcon = L.divIcon({
 // Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
 map = L.map('map',
     {
-        dragging: true,
+        dragging: false,
         // touchZoom: false,    // disable zooming on mobile
         // scrollWheelZoom: false,   // but not on PC
-        doubleClickZoom: false,   // zoom on center, wherever you click
+        doubleClickZoom: true,   // zoom on center, wherever you click
         fullscreenControl: true,
         markerZoomAnimation: false,
     }
@@ -101,22 +101,22 @@ map = L.map('map',
 
 
 // Add CartoDB tiles to the map. Styles must be dark/light + _ + all / nolabels / only_labels
-// L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
-//    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
-//     maxZoom: 21,
-//     maxNativeZoom: 18,  // this allows to use a deeper maxZoom
-//     id: 'carto.dark'
-// }).addTo(map);
-
+let darkLayer = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png', {
+   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 21,
+    maxNativeZoom: 18,  // this allows to use a deeper maxZoom
+    id: 'carto.dark'
+});
 
 // Alternative tileset by MapBox
 
-L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
+let streetLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
    maxZoom: 19,
    attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
                 'Imagery © <a href="http://mapbox.com">Mapbox</a>',
    id: 'mapbox.streets'
-}).addTo(map);
+});
+streetLayer.addTo(map);
 
 
 // Alternative tileset by thunderforest --> very detailed
@@ -277,6 +277,67 @@ for (let i = 0 ; i < flaskData.racers.length; i++) {
 
 console.log("Racer Markers ready");
 
+// incoming websocket events
+socket.on('marker moved', function(data) {
+    console.log("Inbox received:  MM");
+    console.log("Inbox unpack..: "+data.name+" "+data.id+" "+data.lat+" "+data.lng);
+    let marker = markers[data.id];
+    if (marker) {
+        if (marker.moveTo) {
+            marker.moveTo([data.lat, data.lng]);
+        } else {
+            marker.setLatLng([data.lat, data.lng]);
+        }
+
+    } else {
+        console.log("but marker not known before.. adding a new marker for "+data.id);
+        if ('species' in data) {
+            // Beast marker
+            markers[data.id] = addBeastMarker(data);
+
+        } else {
+            // normal Racer marker
+            markers[data.id] = addRacerMarker(data); //.addTo(map);
+        }
+    }
+});
+
+socket.on('marker added', function(data) {
+    console.log("Inbox received:  M+");
+    console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
+    let marker = markers[data.id];
+    if (!marker){
+        if ('species' in data) {
+            // Beast marker
+            markers[data.id] = addBeastMarker(data);
+        } else {
+            // normal Racer marker
+            markers[data.id] = addRacerMarker(data); //.addTo(map);
+        }
+    } else {
+        console.log('.. but we already had that marker')
+    }
+
+});
+
+socket.on('marker removed', function(data) {
+    console.log("Inbox received:  M-");
+    console.log("Inbox unpack..: "+data.name);
+    let marker = markers[data.id];
+    if (marker) {
+        if (marker.fadeOut()) {
+            setTimeout(function(){
+                map.removeLayer(marker);
+                delete markers[data.id];
+            }, 2000);
+        } else {
+            map.removeLayer(marker);
+            delete markers[data.id];
+        }
+    } else {
+        console.log('.. but we don\'t know that marker?')
+    }
+});
 
 
 
@@ -479,7 +540,7 @@ function addBeastMarker(beast) {
     if (beast.species === 'kraken'){
         marker.setIcon(krakenIcon);
     }
-    marker.bindTooltip('blub', {direction:'bottom'});
+    marker.bindTooltip('blub', {direction:'top'});
 
     marker.moveTo = function(newPos) {
         // Normalize the transition speed from vertex to vertex
@@ -596,19 +657,6 @@ let locateBtn = L.easyButton({
         }
     ]
 });
-
-if (mrm.name === 'admin'){
-    locateBtn.addTo(map);
-} else {
-    // force locator for others
-    console.log("Start using Leaflet Location");
-    map.locate({
-        watch: true,                // keep tracking
-        enableHighAccuracy: true,   // enable GPS
-        timeout: 30000
-    });
-}
-
 
 mrm.loctracker = {
     prevPos : 0,
@@ -822,11 +870,25 @@ helpButton._currentState.onClick();
 
 L.easyButton('fa-bolt', function () {
     mrm.mainUserTrackPolyLine.setLatLngs(mrm.mainUserTrack);
+    console.log('Do i have ssttttrreets')
+    console.log(map.hasLayer(streetLayer));
+
     mrm.bindPopup("What a wild ride!").openPopup();
+    setTimeout(function(){
+        mrm.unbindPopup();
+    }, 3000);
     if (navigator.vibrate) {
         // vibration API supported
         // vibrate twice
         navigator.vibrate([100, 100, 100]);
+    }
+    console.log('Do i have streets? '+map.hasLayer(streetLayer));
+    if (map.hasLayer(streetLayer)){
+        streetLayer.remove();
+        darkLayer.addTo(map);
+    } else {
+        darkLayer.remove();
+        streetlayer.addTo(map);
     }
 
 }).addTo(map);
@@ -843,6 +905,7 @@ teamScore.onAdd = function () {
     for (let color in this._scores) {
         let panel = L.DomUtil.create('div', 'score-board-panel', this._div);
         L.DomUtil.addClass(panel, color);
+        L.DomUtil.create('div', 'coin-icon', panel);
         this._panels[color] = panel;
     }
     this.update();
@@ -900,64 +963,16 @@ distanceTracker.update = function (props) {
 //
 map.setView(mrm.getLatLng(), 17);
 
-// incoming websocket events
-socket.on('marker moved', function(data) {
-    console.log("Inbox received:  MM");
-    console.log("Inbox unpack..: "+data.name+" "+data.id+" "+data.lat+" "+data.lng);
-    let marker = markers[data.id];
-    if (marker) {
-        if (marker.moveTo) {
-            marker.moveTo([data.lat, data.lng]);
-        } else {
-            marker.setLatLng([data.lat, data.lng]);
-        }
 
-    } else {
-        console.log("but marker not known before.. adding a new marker for "+data.id);
-        if ('species' in data) {
-            // Beast marker
-            markers[data.id] = addBeastMarker(data);
-
-        } else {
-            // normal Racer marker
-            markers[data.id] = addRacerMarker(data); //.addTo(map);
-        }
-    }
-});
-
-socket.on('marker added', function(data) {
-    console.log("Inbox received:  M+");
-    console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
-    let marker = markers[data.id];
-    if (!marker){
-        if ('species' in data) {
-            // Beast marker
-            markers[data.id] = addBeastMarker(data);
-        } else {
-            // normal Racer marker
-            markers[data.id] = addRacerMarker(data); //.addTo(map);
-        }
-    } else {
-        console.log('.. but we already had that marker')
-    }
-
-});
-
-socket.on('marker removed', function(data) {
-    console.log("Inbox received:  M-");
-    console.log("Inbox unpack..: "+data.name);
-    let marker = markers[data.id];
-    if (marker) {
-        if (marker.fadeOut()) {
-            setTimeout(function(){
-                map.removeLayer(marker);
-                delete markers[data.id];
-            }, 2000);
-        } else {
-            map.removeLayer(marker);
-            delete markers[data.id];
-        }
-    } else {
-        console.log('.. but we don\'t know that marker?')
-    }
-});
+if (mrm.name === 'admin'){
+    locateBtn.addTo(map);
+    map.dragging.enable();
+} else {
+    // force locator for others
+    console.log("Start using Leaflet Location");
+    map.locate({
+        watch: true,                // keep tracking
+        enableHighAccuracy: true,   // enable GPS
+        timeout: 30000
+    });
+}

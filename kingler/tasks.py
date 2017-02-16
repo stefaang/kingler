@@ -246,10 +246,10 @@ def move_beasts():
             i = track.index(pos)
             n = len(track)
             newpos = track[(i + 1) % n]
-            print 'set pos to index %s at %s' % ((i+1)%n, newpos)
+            app.logger.info('move %s to index %s at %s' % (b.name, (i+1)%n, newpos))
             b.modify(pos=newpos)
         else:
-            print 'we are off the track uggh'
+            app.logger.warn('Beast %s is off the track uggh', b.id)
             b.modify(pos=track[0])
             return
 
