@@ -82,19 +82,6 @@ let krakenIcon = L.divIcon({
 });
 
 
-//////////////////////
-// Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
-map = L.map('map',
-    {
-        dragging: false,
-        // touchZoom: false,    // disable zooming on mobile
-        // scrollWheelZoom: false,   // but not on PC
-        doubleClickZoom: true,   // zoom on center, wherever you click
-        fullscreenControl: true,
-        markerZoomAnimation: false,
-    }
-);
-
 // Stamen Tileset only works for bike routes as it doesn't scale deep enough
 //L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
 //    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>',
@@ -116,8 +103,20 @@ let streetLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.
                 'Imagery © <a href="http://mapbox.com">Mapbox</a>',
    id: 'mapbox.streets'
 });
-streetLayer.addTo(map);
 
+//////////////////////
+// Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
+map = L.map('map',
+    {
+        dragging: false,
+        // touchZoom: false,    // disable zooming on mobile
+        // scrollWheelZoom: false,   // but not on PC
+        doubleClickZoom: true,   // zoom on center, wherever you click
+        fullscreenControl: true,
+        markerZoomAnimation: false,
+        layers: [streetLayer, darkLayer],
+    }
+);
 
 // Alternative tileset by thunderforest --> very detailed
 
@@ -533,6 +532,7 @@ function addBeastMarker(beast) {
         autoStart: false,
         title: title,
         zIndexOffset: 990,
+        interactive: false,
     });
     marker.setIcon(whaleIcon);
     marker.species = beast.species;
@@ -870,9 +870,6 @@ helpButton._currentState.onClick();
 
 L.easyButton('fa-bolt', function () {
     mrm.mainUserTrackPolyLine.setLatLngs(mrm.mainUserTrack);
-    console.log('Do i have ssttttrreets')
-    console.log(map.hasLayer(streetLayer));
-
     mrm.bindPopup("What a wild ride!").openPopup();
     setTimeout(function(){
         mrm.unbindPopup();
@@ -882,22 +879,15 @@ L.easyButton('fa-bolt', function () {
         // vibrate twice
         navigator.vibrate([100, 100, 100]);
     }
-    console.log('Do i have streets? '+map.hasLayer(streetLayer));
-    if (map.hasLayer(streetLayer)){
-        streetLayer.remove();
-        darkLayer.addTo(map);
-    } else {
-        darkLayer.remove();
-        streetlayer.addTo(map);
-    }
-
 }).addTo(map);
 console.log("Easy Buttons ready");
 
+// Layers
+L.control.layers({'Light':streetLayer, 'Dark':darkLayer},{}).addTo(map);
 
 /////////////////////////////
 // TEAM SCORE BOARD
-teamScore = L.control();
+teamScore = L.control({position: 'bottomleft'});
 teamScore.onAdd = function () {
     this._div = L.DomUtil.create('div', 'score-board'); // create a div with a class "score-board"
     this._scores={'red':0, 'green':0, 'blue':0};

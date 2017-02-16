@@ -207,16 +207,20 @@ def update_racer_pos(data):
         app.logger.info('racer %s scores for coinssss', movedracer.name)
         update_scores(spectators)
 
-    # E. Touch beasts
-    beasts = Beast.objects(pos__near=movedracer.pos,
-                           pos__max_distance=PICKUP_RANGE)
-    for beast in beasts:
-        app.logger.info('racer %s hits up a %s beast' % (movedracer.name, beast.species))
-        info = {'beast': str(beast.id), 'racer': str(movedracer.id)}
-        emit('beast hit', info, room=mr['name'])
-        # todo: warn others
-        movedracer.modify(dec__score=50)
-        update_scores(spectators)
+    if movedracer.is_alive:
+        # E. Touch beasts
+        beasts = Beast.objects(pos__near=movedracer.pos,
+                               pos__max_distance=BEAST_EAT_RANGE)
+        if beasts:
+            movedracer.modify(is_alive=False)
+            revive_racer.apply_async((str(movedracer.id),), countdown=movedracer.deathduration)
+        for beast in beasts:
+            app.logger.info('racer %s hits up a %s beast' % (movedracer.name, beast.species))
+            info = {'beast': str(beast.id), 'racer': str(movedracer.id)}
+            emit('beast hit', info, room=mr['name'])
+            # todo: warn others
+            movedracer.modify(dec__score=50)
+            update_scores(spectators)
 
 
 def update_scores(racers):

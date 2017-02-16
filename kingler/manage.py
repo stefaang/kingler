@@ -32,21 +32,29 @@ def rainRandomCoins(n):
 def setBeastAtBottles():
     from math import cos, sin, radians, pi
     coins = CopperCoin.objects()
+    rand = random.random
     for coin in coins:
         if str(coin.id).endswith('0'):
             print coin
             lng, lat = coin.pos['coordinates']
-            b = Beast(pos=[lng, lat], species='whale', name=str(coin.id)[:6])
-            
+            b = Beast(pos=[lng, lat],
+                      species='whale' if rand() > .3 else 'kraken',
+                      name=str(coin.id)[:6])
+
             # a LineString needs 2 coordinates!!! OMG. Use MultiPoint next time
 
             # let the beast circle the bottle, N points at radius R, offset K
-            R = 0.002 * random.random() + 0.001   # this is about 120m
+            R = 0.002 * rand() + 0.001   # this is about 120m
             # larger radius requires more points. about 50 points for 0.002...
             N = int(25000 * R)
-            K = random.random() * 2*pi
-           
-            b.track = [[lng+R*cos(i*2*pi/N+K), lat+R*cos(radians(lat))*sin(i*2*pi/N+K)] for i in range(N)]
+            K = rand() * 2*pi
+            b.track = []
+
+            for i in range(N):
+                v = (rand() - 0.5) * 3 / N      # add some extra variance
+                _lng = lng + R * (1-v)                     * cos(i*2*pi/N+K)
+                _lat = lat + R * (1-v) * cos(radians(lat)) * sin(i*2*pi/N+K)
+                b.track.append([_lng, _lat ])
 
             b.save()
 
