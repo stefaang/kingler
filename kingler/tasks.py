@@ -149,36 +149,36 @@ def update_racer_pos(data):
         emit('marker removed', beast, room=mr['name'])
 
     # B. Show new bombs (we don't remove bombs.. they disappear after explosion) TODO: but do they see the explosion??
-    bombs = (o for o in set(after) - set(before) if isinstance(o, Bomb))
-    for bomb in bombs:
-        emit('bomb added', bomb.get_info(), room=mr['name'])
-        # trigger enemy bombs
-        if bomb.team != movedracer.color:
-            do_bomb_explode.apply_async((str(bomb.id),), countdown=bomb.trigger_time)
+    # bombs = (o for o in set(after) - set(before) if isinstance(o, Bomb))
+    # for bomb in bombs:
+    #     emit('bomb added', bomb.get_info(), room=mr['name'])
+    #     # trigger enemy bombs
+    #     if bomb.team != movedracer.color:
+    #         do_bomb_explode.apply_async((str(bomb.id),), countdown=bomb.trigger_time)
 
     # C. Show new flags (we don't remove flags)
-    flags = (o for o in set(after) - set(before) if isinstance(o, Flag))
-    for flag in flags:
-        emit('flag added', flag.get_info(), room=mr['name'])
-        # trigger enemy bombs
-
-    # C.2 Interact with existing flags
-    events = movedracer.handle_flags()
-
-    # get nearby racers
+    # flags = (o for o in set(after) - set(before) if isinstance(o, Flag))
+    # for flag in flags:
+    #     emit('flag added', flag.get_info(), room=mr['name'])
+    #     # trigger enemy bombs
+    #
+    # # C.2 Interact with existing flags
+    # events = movedracer.handle_flags()
+    #
+    # # get nearby racers
     spectators = Racer.objects(pos__near=movedracer.pos,
                                pos__max_distance=GLOBAL_RANGE )
-    for event in events:
-        eventtype = event['type']
-        # let them update their flags (TODO: broadcast in cell)
-        app.logger.info('WUP, i have to send %s', event)
-        for racer in spectators:
-            emit(eventtype, event, room=racer['name'])
-
-        # adjust scores if necessary
-        if eventtype == 'flag scored':
-            movedracer.modify(inc__score=5) # TODO: check for more atoms
-            update_scores(spectators)
+    # for event in events:
+    #     eventtype = event['type']
+    #     # let them update their flags (TODO: broadcast in cell)
+    #     app.logger.info('WUP, i have to send %s', event)
+    #     for racer in spectators:
+    #         emit(eventtype, event, room=racer['name'])
+    #
+    #     # adjust scores if necessary
+    #     if eventtype == 'flag scored':
+    #         movedracer.modify(inc__score=5) # TODO: check for more atoms
+    #         update_scores(spectators)
 
     # D. Show new coins
     coins = (o for o in set(after) - set(before) if isinstance(o, CopperCoin) and o.team != movedracer.color)
@@ -205,6 +205,17 @@ def update_racer_pos(data):
         movedracer.modify(inc__score=coin.value)
 
         app.logger.info('racer %s scores for coinssss', movedracer.name)
+        update_scores(spectators)
+
+    # E. Touch beasts
+    beasts = Beast.objects(pos__near=movedracer.pos,
+                           pos__max_distance=PICKUP_RANGE)
+    for beast in beasts:
+        app.logger.info('racer %s hits up a %s beast' % (movedracer.name, beast.species))
+        info = {'beast': str(beast.id), 'racer': str(movedracer.id)}
+        emit('beast hit', info, room=mr['name'])
+        # todo: warn others
+        movedracer.modify(dec__score=50)
         update_scores(spectators)
 
 

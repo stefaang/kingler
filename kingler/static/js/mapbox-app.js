@@ -11,6 +11,11 @@ let map = null;
 let mrm = null;
 let mainUserTeamColor = null;
 let markers = {};
+let colormap = {
+    'red': '#A12F36',
+    'green': '#00934F',
+    'blue': '#0072B5'
+};
 
 let socket = null;
 
@@ -117,7 +122,6 @@ class MainRacerMarker extends RacerMarker {
         // always display the Main User on top
         // this.setZIndexOffset(900);
 
-        let colormap = {'red': '#A12F36', 'green': '#00934F', 'blue': '#0072B5'};
         this.styles = {
             bombmodeEnabled: { color: '#2E2E2E', weight: 1, stroke: true,},
             default: { color: colormap[racer.color], weight: 2, stroke: true,},

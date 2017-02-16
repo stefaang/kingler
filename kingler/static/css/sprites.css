@@ -1,68 +1,21 @@
-/* score board */
-.score-board {
-    padding: 6px 8px;
-    color: #FFF;
-    font: 14px/16px "Arial Black", Gadget, sans-serif;
-    /*background: white;*/
-    /*background: rgba(255,255,255,0.8);*/
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
-    /*border-radius: 5px;*/
-    line-height: 18px;
-}
-
-/*.leaflet-bar, .leaflet-touch .leaflet-bar {*/
-    /*border: 4px solid transparent;*/
-    /*border-image: url(../img/kenney/Colored/red.png) 10% fill round;*/
-    /*background-color: transparent;*/
-/*}*/
-
+/* the UI*/
 .leaflet-bar a, .leaflet-bar button {
     background-color: transparent;
     color: white;
 }
 
 
-
-.score-board.red {
-    border: 16px solid transparent;
-    border-image: url(../img/kenney/Colored/red.png) 30% fill round;
-}
-
-.score-board:hover.red {
-    border-image: url(../img/kenney/Colored/red_pressed.png) 30% fill round;
-}
-
-.score-board.green {
-    border: 16px solid transparent;
-    border-image: url(../img/kenney/Colored/green.png) 30% fill round;
-}
-
-.score-board.green:hover {
-    border-image: url(../img/kenney/Colored/green_pressed.png) 30% fill round;
-}
-
-.score-board.blue{
-    border: 16px solid transparent;
-    border-image: url(../img/kenney/Colored/blue.png) 30% fill round;
-}
-
-.score-board.blue:hover{
-    border-image: url(../img/kenney/Colored/blue_pressed.png) 30% fill round;
-}
-
-.score-board.grey {
-    border: 16px solid transparent;
-    border-image: url(../img/kenney/Colored/grey.png) 30% fill round;
-}
-
-.score-board.grey:hover {
-    border-image: url(../img/kenney/Colored/grey_pressed.png) 30% fill round;
-}
-
-
-.score-board h4 {
-    margin: 0 0 5px;
-    /*color: #777;*/
+/* score board */
+.score-board {
+    padding: 6px 8px;
+    color: #FFFBF0;
+    background: #FFFBF0;
+    /*background: rgba(255,255,255,0.8);*/
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    min-width: 300px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
 }
 
 .score-board i {
@@ -72,6 +25,26 @@
     margin-right: 8px;
     opacity: 0.7;
 }
+
+.score-board-panel {
+    flex: 1 100%;
+    font: 20px/24px Tahoma, Geneva, sans-serif;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    background-color: #666;
+}
+
+.score-board .red{
+    background-color: #A12F36;
+}
+.score-board .green{
+    background-color: #00934F;
+}
+.score-board .blue{
+    background-color: #0072B5;
+}
+
 
 /* increase font for awesome-markers */
 .awesome-marker i {
@@ -88,6 +61,16 @@
     margin: 0px 0px;
 }
 
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+    animation: fadein 2s;
+}
+
+@keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
 
 .bomb-icon {
     background-image: url(../img/flaticons/pirates/bomb.png);
@@ -97,7 +80,10 @@
     background-image: url(../img/flaticons/pirates/coin.png);
     background-size: 40px 40px;
 }
-
+.kraken-icon {
+    background-image: url(../img/flaticons/pirates/kraken.png);
+    background-size: 120px 120px;
+}
 .map-icon {
     background-image: url(../img/flaticons/pirates/treasure-map.png);
     background-size: 50px 50px;
