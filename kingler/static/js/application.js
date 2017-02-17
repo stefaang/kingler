@@ -88,22 +88,46 @@ let krakenIcon = L.divIcon({
 
 
 // Add CartoDB tiles to the map. Styles must be dark/light + _ + all / nolabels / only_labels
-let darkLayer = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png', {
-   attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
-                'Imagery © <a href="http://carto.com">Carto</a>',
-    maxZoom: 21,
-    maxNativeZoom: 18,  // this allows to use a deeper maxZoom
-    id: 'carto.dark'
+// let darkLayer = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png', {
+//    attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
+//                 'Imagery © <a href="http://carto.com">Carto</a>',
+//     maxZoom: 21,
+//     maxNativeZoom: 18,  // this allows to use a deeper maxZoom
+//     id: 'carto.dark'
+// });
+
+// Lite Pirate tileset by thunderforest. It's awesome but a bit heavy on data (jpg)
+
+let liteLayer = L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
+    maxZoom: 18,
+    attribution: 'Thunderforest',
+    id: 'tf.pioneer',
 });
+
+// Dark (but not too dark) tileset by thunderforest. Would be 10/10 if labels were optional.
+
+let darkLayer = L.tileLayer('https://{s}.tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
+    maxZoom: 18,
+    attribution: 'Thunderforest',
+    id: 'tf.pioneer',
+});
+
+// Alternative tileset by thunderforest --> very detailed
+//
+//let forestLayer = L.tileLayer('https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
+//    maxZoom: 18,
+//    attribution: 'Thunderforest',
+// });
 
 // Alternative tileset by MapBox
 
-let streetLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
-   maxZoom: 19,
-   attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
-                'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-   id: 'mapbox.streets'
-});
+// let liteLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
+//    maxZoom: 19,
+//    attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
+//                 'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+//    id: 'mapbox.streets'
+// });
+
 
 //////////////////////
 // Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
@@ -115,19 +139,9 @@ map = L.map('map',
         doubleClickZoom: true,   // zoom on center, wherever you click
         fullscreenControl: true,
         markerZoomAnimation: false,
-        layers: [streetLayer, darkLayer],
+        layers: [liteLayer, darkLayer],
     }
 );
-
-// Alternative tileset by thunderforest --> very detailed
-
-// L.tileLayer('https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
-//    maxZoom: 18,
-//    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-//        '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-//        'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-//    id: 'mapbox.streets'
-// }).addTo(map);
 
 console.log("Leaflet Map ready");
 
@@ -884,7 +898,7 @@ L.easyButton('fa-bolt', function () {
 console.log("Easy Buttons ready");
 
 // Layers
-let layersControl = L.control.layers({'Light':streetLayer, 'Dark':darkLayer},{});
+let layersControl = L.control.layers({'Light':liteLayer, 'Dark':darkLayer},{});
 layersControl.addTo(map);
 
 
@@ -909,7 +923,7 @@ teamScore.onAdd = function () {
 teamScore.update = function (data) {
     for (let color in this._scores) {
         // update the score in the tracker
-        if (data && data.team) {
+        if (data && data.team && data.team[color]) {
             this._scores[color] = data.team[color];
         }
         this._panels[color].innerHTML = this._scores[color];
