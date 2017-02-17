@@ -222,7 +222,7 @@ function addMainRacerMarker(racer, options)  {
     var r = addRacerMarker(racer, {shape: 'circle'});
     // always display the Main User on top
     r.setZIndexOffset(900);
-    const DEFAULT_RANGE = 20;
+    var DEFAULT_RANGE = 20;
 
     r.styles = {
         bombmodeEnabled: { color: '#2E2E2E', weight: 1, stroke: true,},
