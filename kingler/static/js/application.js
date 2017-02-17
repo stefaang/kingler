@@ -5,19 +5,19 @@ console.log(flaskData);
 console.log(flaskData.racers[0]);
 
 // globals
-let map = null;
-let mrm = null;
-let mrmColor = null;
-let markers = {};
-let colormap = {
+var map = null;
+var mrm = null;
+var mrmColor = null;
+var markers = {};
+var colormap = {
     'red': '#A12F36',
     'green': '#00934F',
     'blue': '#0072B5'
 };
 
-let socket = null;
+var socket = null;
 
-let teamScore = null;
+var teamScore = null;
 
 //
 // WIP: put all this stuff in a module
@@ -45,7 +45,7 @@ navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mo
 // enable sound support
 // user interaction is required on mobile devices --> a splash screen to activate sound
 // for now, you just need to tap the map once
-let sounds = {
+var sounds = {
     'bomb': new Howl({src: ['static/sound/bomb.mp3']}),
     'coin': new Howl({src: ['static/sound/coin.mp3']}),
     'whale': new Howl({src: ['static/sound/monster.mp3']}),
@@ -55,28 +55,28 @@ let sounds = {
 
 
 // Icon definitions
-let shipIcon = L.divIcon({
+var shipIcon = L.divIcon({
     className: 'ship-icon',
     iconSize: [80,80],
     iconAnchor: [40,65],
 });
 
-let coinIcon = L.divIcon({
+var coinIcon = L.divIcon({
     className: 'coin-icon',
     iconSize: [40,40],
 });
 
-let rumIcon = L.divIcon({
+var rumIcon = L.divIcon({
     className: 'rum-icon',
     iconSize: [40,40],
 });
 
-let whaleIcon = L.divIcon({
+var whaleIcon = L.divIcon({
     className: 'whale-icon',
     iconSize: [120,120],
 });
 
-let krakenIcon = L.divIcon({
+var krakenIcon = L.divIcon({
     className: 'kraken-icon',
     iconSize: [120,120],
 });
@@ -88,7 +88,7 @@ let krakenIcon = L.divIcon({
 
 
 // Add CartoDB tiles to the map. Styles must be dark/light + _ + all / nolabels / only_labels
-// let darkLayer = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png', {
+// var darkLayer = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png', {
 //    attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
 //                 'Imagery © <a href="http://carto.com">Carto</a>',
 //     maxZoom: 21,
@@ -98,7 +98,7 @@ let krakenIcon = L.divIcon({
 
 // Lite Pirate tileset by thunderforest. It's awesome but a bit heavy on data (jpg)
 
-let liteLayer = L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
+var liteLayer = L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
     maxZoom: 18,
     attribution: 'Thunderforest',
     id: 'tf.pioneer',
@@ -106,7 +106,7 @@ let liteLayer = L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/
 
 // Dark (but not too dark) tileset by thunderforest. Would be 10/10 if labels were optional.
 
-let darkLayer = L.tileLayer('https://{s}.tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
+var darkLayer = L.tileLayer('https://{s}.tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
     maxZoom: 18,
     attribution: 'Thunderforest',
     id: 'tf.pioneer',
@@ -114,14 +114,14 @@ let darkLayer = L.tileLayer('https://{s}.tile.thunderforest.com/transport-dark/{
 
 // Alternative tileset by thunderforest --> very detailed
 //
-//let forestLayer = L.tileLayer('https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
+//var forestLayer = L.tileLayer('https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
 //    maxZoom: 18,
 //    attribution: 'Thunderforest',
 // });
 
 // Alternative tileset by MapBox
 
-// let liteLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
+// var liteLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
 //    maxZoom: 19,
 //    attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
 //                 'Imagery © <a href="http://mapbox.com">Mapbox</a>',
@@ -130,7 +130,7 @@ let darkLayer = L.tileLayer('https://{s}.tile.thunderforest.com/transport-dark/{
 
 
 //////////////////////
-// Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
+// Create Leafvar map - this is the main object of this whole app... but where do I have to put this :-S
 map = L.map('map',
     {
         dragging: false,
@@ -143,7 +143,7 @@ map = L.map('map',
     }
 );
 
-console.log("Leaflet Map ready");
+console.log("Leafvar Map ready");
 
 //////////////////////
 //  MARKERS
@@ -160,12 +160,12 @@ function addRacerMarker(racer, options) {
     //   name, lat, lng, color, icon
     console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng);
     // create the L.marker
-    let r = L.marker([racer.lat, racer.lng], {
+    var r = L.marker([racer.lat, racer.lng], {
         title: racer.name,
         draggable: true,
         zIndexOffset: 400
     });
-    // let icon = L.divIcon({
+    // var icon = L.divIcon({
     //     className: 'ship-icon',
     //     iconSize: [80,80],
     //     html: '<div><></div>'
@@ -179,14 +179,14 @@ function addRacerMarker(racer, options) {
         offset: [0,20]
     });
     r.pushLocation = function() {
-        let pos = this.getLatLng();
-        let data = {name: this.name, lat: pos.lat, lng: pos.lng};
+        var pos = this.getLatLng();
+        var data = {name: this.name, lat: pos.lat, lng: pos.lng};
         console.log('Outbox: '+JSON.stringify(data));
         socket.emit('move marker', data);
     };
     r.moveTo = function(newPos) {
         // Normalize the transition speed from vertex to vertex
-        let speed = Math.min( this._latlng.distanceTo(newPos) * 200, 3000);
+        var speed = Math.min( this._latlng.distanceTo(newPos) * 200, 3000);
         
         // Only if CSS3 transitions are supported
         if (L.DomUtil.TRANSITION) {
@@ -197,7 +197,7 @@ function addRacerMarker(racer, options) {
     };
     r.fadeOut = function() {
         if (L.DomUtil.TRANSITION) {
-            let speed = 2000;
+            var speed = 2000;
             if (this._icon) {
                 this._icon.style[L.DomUtil.TRANSITION] = 'all ' + speed + 'ms linear';
             }
@@ -262,9 +262,9 @@ function addMainRacerMarker(racer, options)  {
     return r;
 }
 
-for (let i = 0 ; i < flaskData.racers.length; i++) {
-    let racer = flaskData.racers[i];
-    let ismainmarker = racer.name === flaskData.username;
+for (var i = 0 ; i < flaskData.racers.length; i++) {
+    var racer = flaskData.racers[i];
+    var ismainmarker = racer.name === flaskData.username;
     if (ismainmarker) {
         // setup the main central Racer
         markers[racer.id] = addMainRacerMarker(racer); // .addTo(map);
@@ -274,7 +274,7 @@ for (let i = 0 ; i < flaskData.racers.length; i++) {
         console.log('We are team '+mrmColor);
         console.log(mrm);
         var sheet = document.getElementById('mystyle').sheet;
-        sheet.insertRule('.leaflet-bar, .leaflet-touch .leaflet-bar {    ' +
+        sheet.insertRule('.leafvar-bar, .leafvar-touch .leafvar-bar {    ' +
             'border: 4px solid '+colormap[mrmColor]+';' +
             'background-color: '+colormap[mrmColor]+';' +
             '}', 1);
@@ -295,7 +295,7 @@ console.log("Racer Markers ready");
 socket.on('marker moved', function(data) {
     console.log("Inbox received:  MM");
     console.log("Inbox unpack..: "+data.name+" "+data.id+" "+data.lat+" "+data.lng);
-    let marker = markers[data.id];
+    var marker = markers[data.id];
     if (marker) {
         if (marker.moveTo) {
             marker.moveTo([data.lat, data.lng]);
@@ -319,7 +319,7 @@ socket.on('marker moved', function(data) {
 socket.on('marker added', function(data) {
     console.log("Inbox received:  M+");
     console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
-    let marker = markers[data.id];
+    var marker = markers[data.id];
     if (!marker){
         if ('species' in data) {
             // Beast marker
@@ -337,16 +337,16 @@ socket.on('marker added', function(data) {
 socket.on('marker removed', function(data) {
     console.log("Inbox received:  M-");
     console.log("Inbox unpack..: "+data.name);
-    let marker = markers[data.id];
+    var marker = markers[data.id];
     if (marker) {
         if (marker.fadeOut()) {
             setTimeout(function(){
                 map.removeLayer(marker);
-                delete markers[data.id];
+                devare markers[data.id];
             }, 2000);
         } else {
             map.removeLayer(marker);
-            delete markers[data.id];
+            devare markers[data.id];
         }
     } else {
         console.log('.. but we don\'t know that marker?')
@@ -366,13 +366,13 @@ socket.on('marker removed', function(data) {
 //     //     markerColor: flag.team,
 //     //     shape: 'circle',
 //     // });
-//     let icon = L.divIcon({
+//     var icon = L.divIcon({
 //         className: 'flag-icon '+ flag.team,
 //         iconSize: [58, 58],
 //         //html:'<i class="fa fa-fw fa-2x fa-flag flag-icon"></i>'
 //     });
-//     let title = flag.team.charAt(0).toUpperCase() + flag.team.slice(1) + ' flag';
-//     let marker = L.marker([flag.lat, flag.lng], {    // TODO: subclass
+//     var title = flag.team.charAt(0).toUpperCase() + flag.team.slice(1) + ' flag';
+//     var marker = L.marker([flag.lat, flag.lng], {    // TODO: subclass
 //         icon: icon,
 //         title: title,
 //         draggable: false,
@@ -383,8 +383,8 @@ socket.on('marker removed', function(data) {
 //     markers[flag.id] = marker.addTo(map);
 // }
 //
-// for (let i = 0; i < flaskData.flags.length; i++) {
-//     let flag = flaskData.flags[i];
+// for (var i = 0; i < flaskData.flags.length; i++) {
+//     var flag = flaskData.flags[i];
 //     addFlagMarker(flag);
 //     // hide the carried flag - one of the racers has it!
 //     if (flag.state == 'carried')
@@ -394,7 +394,7 @@ socket.on('marker removed', function(data) {
 // socket.on('flag added', function(data) {
 //     console.log("Inbox received:  Flag Added");
 //     console.log("Inbox unpack..: "+data.id+" - "+data.team+" flag");
-//     let flag = markers[data.id];
+//     var flag = markers[data.id];
 //     if (flag) {
 //         console.log(".. flag already existed");
 //     } else {
@@ -406,7 +406,7 @@ socket.on('marker removed', function(data) {
 //     console.log("Inbox received:  Flag Grab");
 //     console.log("Inbox unpack..: "+data.name+" grabbed "+data.target);
 //     // set marker[data.name] icon to flag mode
-//     let flag = markers[data.target];
+//     var flag = markers[data.target];
 //     if (flag) {
 //         flag.setIcon(
 //             L.divIcon({
@@ -420,8 +420,8 @@ socket.on('marker removed', function(data) {
 // socket.on('flag dropped', function(data) {
 //     console.log("Inbox received:  Flag Drop");
 //     console.log("Inbox unpack..: "+data.racername+" dropped "+data.target);
-//     let flag = markers[data.target];
-//     let racer = markers[data.racerid];
+//     var flag = markers[data.target];
+//     var racer = markers[data.racerid];
 //     if (flag) {
 //         // update position to drop site and add again to map
 //         flag.setLatLng(racer.getLatLng()).addTo(map);
@@ -434,8 +434,8 @@ socket.on('marker removed', function(data) {
 // socket.on('flag returned', function(data) {
 //     console.log("Inbox received:  Flag Returned");
 //     console.log("Inbox unpack..: "+data.name+" returned "+data.target+". Now back to "+data.lat+','+data.lng);
-//     let flag = markers[data.target];
-//     let pos = [data.lat, data.lng];
+//     var flag = markers[data.target];
+//     var pos = [data.lat, data.lng];
 //     if (flag) {
 //         // update position to base
 //         flag.setLatLng(pos);
@@ -452,8 +452,8 @@ socket.on('marker removed', function(data) {
 // socket.on('flag scored', function(data) {
 //     console.log("Inbox received:  Flag Score");
 //     console.log("Inbox unpack..: "+data.name+" scored "+data.target+". Now back to "+data.lat+','+data.lng);
-//     let flag = markers[data.target];
-//     let pos = [data.lat, data.lng];
+//     var flag = markers[data.target];
+//     var pos = [data.lat, data.lng];
 //     if (flag) {
 //         // update position to base
 //         flag.setLatLng(pos).addTo(map);
@@ -472,8 +472,8 @@ socket.on('marker removed', function(data) {
 // COINS
 
 function addCoinMarker(coin) {
-    let title = coin.value+'p';
-    let marker = L.marker([coin.lat, coin.lng], {
+    var title = coin.value+'p';
+    var marker = L.marker([coin.lat, coin.lng], {
         title: title,
         zIndexOffset: 20
     });
@@ -490,7 +490,7 @@ function addCoinMarker(coin) {
 socket.on('coin added', function(coin) {
     console.log("Inbox received:  Coin Added");
     console.log("Inbox unpack..: "+coin.id+" - "+coin.value+"points coin");
-    let marker = markers[coin.id];
+    var marker = markers[coin.id];
     if (marker) {
         console.log(".. coin already existed");
     } else {
@@ -501,7 +501,7 @@ socket.on('coin added', function(coin) {
 socket.on('coin pickup', function(coin) {
     console.log("Inbox received:  Coin Pickup");
     console.log("Inbox unpack..: "+coin.id+" - "+coin.value+"points coin");
-    let marker = markers[coin.id];
+    var marker = markers[coin.id];
     if (marker) {
         if (map.distance(marker.getLatLng(), mrm.getLatLng()) < 40) {
             // play the coin sound
@@ -514,7 +514,7 @@ socket.on('coin pickup', function(coin) {
         }
         // remove the coin from the map
         map.removeLayer(marker);
-        delete markers[coin.id];
+        devare markers[coin.id];
     } else {
         console.log(".. coin not found");
     }
@@ -522,9 +522,9 @@ socket.on('coin pickup', function(coin) {
 
 if (mrm.name === 'admin'){
     // A button to Add a Coin to the map (TODO: admin only)
-    let addCoinButton = L.easyButton( 'fa-diamond',   function() {
-            let pos = mrm.getLatLng();
-            let data = {'lat':pos.lat, 'lng':pos.lng};
+    var addCoinButton = L.easyButton( 'fa-diamond',   function() {
+            var pos = mrm.getLatLng();
+            var data = {'lat':pos.lat, 'lng':pos.lng};
             socket.emit('add coin', data);
         }
     ).addTo(map);
@@ -540,10 +540,10 @@ if (mrm.name === 'admin'){
 
 
 // BEASTS
-let lastBeast = '58989eacf8ae2a7051122fca';
+var lastBeast = '58989eacf8ae2a7051122fca';
 function addBeastMarker(beast) {
-    let title = beast.name;
-    let marker = L.marker([beast.lat, beast.lng], {
+    var title = beast.name;
+    var marker = L.marker([beast.lat, beast.lng], {
         autoStart: false,
         title: title,
         zIndexOffset: 990,
@@ -559,7 +559,7 @@ function addBeastMarker(beast) {
 
     marker.moveTo = function(newPos) {
         // Normalize the transition speed from vertex to vertex
-        let speed = Math.min( this._latlng.distanceTo(newPos) * 200, 3000);
+        var speed = Math.min( this._latlng.distanceTo(newPos) * 200, 3000);
 
         // Only if CSS3 transitions are supported
         if (L.DomUtil.TRANSITION) {
@@ -570,7 +570,7 @@ function addBeastMarker(beast) {
     };
     marker.fadeOut = function() {
         if (L.DomUtil.TRANSITION) {
-            let speed = 2000;
+            var speed = 2000;
             if (this._icon) {
                 this._icon.style[L.DomUtil.TRANSITION] = ('all ' + speed + 'ms linear');
             }
@@ -589,7 +589,7 @@ function addBeastMarker(beast) {
 }
 
 socket.on('beast hit', function(data){
-    let marker = markers[data.beast];
+    var marker = markers[data.beast];
     if (marker && marker.species){
         sounds[marker.species].play();
     } else {
@@ -599,9 +599,9 @@ socket.on('beast hit', function(data){
 
 if (mrm.name === 'admin'){
     // A button to Add a Beast Stop to the map (TODO: admin only)
-    let addBeastStopButton = L.easyButton( 'fa-ship',   function() {
-        let pos = mrm.getLatLng();
-        let data = {'lat':pos.lat, 'lng':pos.lng, 'id': lastBeast};
+    var addBeastStopButton = L.easyButton( 'fa-ship',   function() {
+        var pos = mrm.getLatLng();
+        var data = {'lat':pos.lat, 'lng':pos.lng, 'id': lastBeast};
         console.log('Add Beast Stop for '+ lastBeast +' at '+pos);
         socket.emit('add beast stop', data);
     }).addTo(map);
@@ -623,8 +623,8 @@ if (mrm.name === 'admin'){
 
 // A button to Add a Flag to the map (TODO: admin only)
 // L.easyButton( 'fa-flag',   function() {
-//         let pos = mrm.getLatLng();
-//         let data = {'lat':pos.lat, 'lng':pos.lng, 'team': mrmColor};
+//         var pos = mrm.getLatLng();
+//         var data = {'lat':pos.lat, 'lng':pos.lng, 'team': mrmColor};
 //         socket.emit('add flag', data);
 //     }
 // ).addTo(map);
@@ -638,10 +638,10 @@ if (mrm.name === 'admin'){
 //
 
 /////////////////////
-// prepare leaflet map.locate callback functions
+// prepare leafvar map.locate callback functions
 
 // add button that searches your location
-let locateBtn = L.easyButton({
+var locateBtn = L.easyButton({
     position: 'topleft',
     states : [
         {
@@ -650,7 +650,7 @@ let locateBtn = L.easyButton({
             onClick: function (btn, map) {
                 // mrm.bindPopup("Enabled Locator").openPopup();
 
-                console.log("Start using Leaflet Location");
+                console.log("Start using Leafvar Location");
                 map.locate({
                     watch: true,                // keep tracking
                     enableHighAccuracy: true,   // enable GPS
@@ -665,7 +665,7 @@ let locateBtn = L.easyButton({
             onClick: function (btn, map) {
                 // mrm.bindPopup("Disabled Locator").openPopup();
 
-                console.log("Stop using Leaflet Location");
+                console.log("Stop using Leafvar Location");
                 map.stopLocate();
                 btn.state('locator-disabled');
             }
@@ -710,7 +710,7 @@ function setFreeGeoIP() {
         function (data) {
             console.log("FreeGeoIP - "+data);
             console.log("FreeGeoIP setting mainMarker location");
-            let pos = L.latLng(data.latitude, data.longitude);
+            var pos = L.latLng(data.latitude, data.longitude);
             // add a marker on the location of the resolved GeoIP
             mrm.setLatLng(pos).bindPopup("Your GPS doesnt work yet..").openPopup();
             // update position on server
@@ -725,7 +725,7 @@ function setFreeGeoIP() {
 map.on('locationfound', onLocationFound);
 map.on('locationerror', onLocationError);
 
-console.log("Leaflet location callbacks ready.. setView to main marker");
+console.log("Leafvar location callbacks ready.. setView to main marker");
 
 
 
@@ -735,7 +735,7 @@ console.log("Leaflet location callbacks ready.. setView to main marker");
 /// BOMBS AWAAAAY
 //-------------------------------//
 
-// let bombButton = L.easyButton({
+// var bombButton = L.easyButton({
 //     states : [
 //         {
 //             stateName: 'bombmode-off',
@@ -755,8 +755,8 @@ console.log("Leaflet location callbacks ready.. setView to main marker");
 //
 // bombButton.dropBomb = function (e) {
 //     console.log('Dropped a BOMB muhahaha');
-//     let pos = e.latlng;
-//     let data = {lat: pos.lat, lng: pos.lng,}; // range: 200};
+//     var pos = e.latlng;
+//     var data = {lat: pos.lat, lng: pos.lng,}; // range: 200};
 //     socket.emit('add bomb', data);
 //     bombButton.teardownBombMode();
 // };
@@ -787,8 +787,8 @@ console.log("Leaflet location callbacks ready.. setView to main marker");
 //
 //
 // function addBombMarker(bomb) {
-//     let pos = (bomb.pos) ? bomb.pos : [bomb.lat, bomb.lng];
-//     let marker = L.marker(pos, {
+//     var pos = (bomb.pos) ? bomb.pos : [bomb.lat, bomb.lng];
+//     var marker = L.marker(pos, {
 //         // icon: L.ExtraMarkers.icon({
 //         //     icon: 'fa-bomb',
 //         //     markerColor: 'black',  //json.team
@@ -806,7 +806,7 @@ console.log("Leaflet location callbacks ready.. setView to main marker");
 // socket.on('bomb added', function(bomb) {
 //     console.log("Inbox received:  B+");
 //     console.log("Inbox unpack..: "+bomb.lat+" "+bomb.lng);
-//     let marker = markers[bomb.id];
+//     var marker = markers[bomb.id];
 //     if (!marker)
 //         addBombMarker(bomb);
 //     else
@@ -818,20 +818,20 @@ console.log("Leaflet location callbacks ready.. setView to main marker");
 //     console.log("Inbox unpack..: bomb "+bomb.id+" at "+bomb.lat+" "+bomb.lng+" R: "+bomb.range);
 //
 //     // get the bomb position
-//     let latlng = [bomb.lat, bomb.lng];
+//     var latlng = [bomb.lat, bomb.lng];
 //
 //     // check if we have a bomb marker on the screen and remove it
-//     let marker = markers[bomb.id];
+//     var marker = markers[bomb.id];
 //     if (marker) {
 //         map.removeLayer(marker);
-//         delete markers[bomb.id];
+//         devare markers[bomb.id];
 //     } else {
 //         console.log('Oh... what was that');
 //     }
 //
-//     // use a Leaflet Circle to get the proper size in meters (a marker doesn't follow scale)
-//     let radius = 10;
-//     let damageRange = L.circle( latlng, radius,
+//     // use a Leafvar Circle to get the proper size in meters (a marker doesn't follow scale)
+//     var radius = 10;
+//     var damageRange = L.circle( latlng, radius,
 //             {
 //                 interactive: false,
 //                 stroke: true,
@@ -843,7 +843,7 @@ console.log("Leaflet location callbacks ready.. setView to main marker");
 //
 //     // make the circle grow in size to simulate an actual explosion
 //     setTimeout( function(){
-//         let id = setInterval(function(){
+//         var id = setInterval(function(){
 //             // bomb explosion radius is part of json data
 //             radius += bomb.range / 10;
 //             if (radius <= bomb.range) {
@@ -869,11 +869,11 @@ console.log("Leaflet location callbacks ready.. setView to main marker");
 // SHOW HELP button
 
 // A button to Add a Coin to the map (TODO: admin only)
-let helpButton = L.easyButton( 'fa-question',   function() {
-    let helptext = "AARRRRR AHOI!!! " +
+var helpButton = L.easyButton( 'fa-question',   function() {
+    var helptext = "AARRRRR AHOI!!! " +
             "De achterdeur van mijn schip stond open en nu ben ik al mijn centjes verrrloren, verhip!"+ "<br/>" +
             "RRRRaap jij ze weer op, maatje?";
-    let popup = mrm.unbindPopup();
+    var popup = mrm.unbindPopup();
     mrm.bindPopup(helptext).openPopup();
 }).addTo(map);
 
@@ -898,7 +898,7 @@ L.easyButton('fa-bolt', function () {
 console.log("Easy Buttons ready");
 
 // Layers
-let layersControl = L.control.layers({'Light':liteLayer, 'Dark':darkLayer},{});
+var layersControl = L.control.layers({'Light':liteLayer, 'Dark':darkLayer},{});
 layersControl.addTo(map);
 
 
@@ -909,8 +909,8 @@ teamScore.onAdd = function () {
     this._div = L.DomUtil.create('div', 'score-board'); // create a div with a class "score-board"
     this._scores={'red':0, 'green':0, 'blue':0};
     this._panels = {}
-    for (let color in this._scores) {
-        let panel = L.DomUtil.create('div', 'score-board-panel', this._div);
+    for (var color in this._scores) {
+        var panel = L.DomUtil.create('div', 'score-board-panel', this._div);
         L.DomUtil.addClass(panel, color);
         L.DomUtil.create('div', 'coin-icon', panel);
         this._panels[color] = panel;
@@ -921,7 +921,7 @@ teamScore.onAdd = function () {
 
 // fills in the score panels with new data or cached data
 teamScore.update = function (data) {
-    for (let color in this._scores) {
+    for (var color in this._scores) {
         // update the score in the tracker
         if (data && data.team && data.team[color]) {
             this._scores[color] = data.team[color];
@@ -945,7 +945,7 @@ socket.on('new score', function(data) {
 /////////////////////
 // DISTANCE TRACKER
 
-let distanceTracker = L.control();
+var distanceTracker = L.control();
 distanceTracker.onAdd = function() {
     this._div = L.DomUtil.create('div', 'distance-tracker');
     this.update();
@@ -953,12 +953,12 @@ distanceTracker.onAdd = function() {
 };
 distanceTracker.update = function (props) {
     // calculate total distance travelled
-    let track = mrm.mainUserTrack;
-    let total = 0;
-    for (let i=0; i<track.length-1; i++) {
+    var track = mrm.mainUserTrack;
+    var total = 0;
+    for (var i=0; i<track.length-1; i++) {
         total += map.distance(track[i], track[i+1]);
     }
-    let html = Math.round(total)+' m travelled';
+    var html = Math.round(total)+' m travelled';
     this._div.innerHTML = html;
 };
 
@@ -976,7 +976,7 @@ if (mrm.name === 'admin'){
     map.dragging.enable();
 } else {
     // force locator for others
-    console.log("Start using Leaflet Location");
+    console.log("Start using Leafvar Location");
     map.locate({
         watch: true,                // keep tracking
         enableHighAccuracy: true,   // enable GPS
