@@ -3,7 +3,19 @@
     background-color: transparent;
     color: white;
 }
+.leaflet-container .leaflet-control-attribution {
+    background: rgba(122,98,72,0.4);
+}
 
+.leaflet-control-layers .red{
+    background-color: #A12F36;
+}
+.leaflet-control-layers .green{
+    background-color: #00934F;
+}
+.leaflet-control-layers .blue{
+    background-color: #0072B5;
+}
 
 /* score board */
 .score-board {

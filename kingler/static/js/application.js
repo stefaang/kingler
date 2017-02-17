@@ -89,7 +89,8 @@ let krakenIcon = L.divIcon({
 
 // Add CartoDB tiles to the map. Styles must be dark/light + _ + all / nolabels / only_labels
 let darkLayer = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png', {
-   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+   attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
+                'Imagery © <a href="http://carto.com">Carto</a>',
     maxZoom: 21,
     maxNativeZoom: 18,  // this allows to use a deeper maxZoom
     id: 'carto.dark'
@@ -883,11 +884,13 @@ L.easyButton('fa-bolt', function () {
 console.log("Easy Buttons ready");
 
 // Layers
-L.control.layers({'Light':streetLayer, 'Dark':darkLayer},{}).addTo(map);
+let layersControl = L.control.layers({'Light':streetLayer, 'Dark':darkLayer},{});
+layersControl.addTo(map);
+
 
 /////////////////////////////
 // TEAM SCORE BOARD
-teamScore = L.control({position: 'bottomleft'});
+teamScore = L.control({position: 'bottomright'});
 teamScore.onAdd = function () {
     this._div = L.DomUtil.create('div', 'score-board'); // create a div with a class "score-board"
     this._scores={'red':0, 'green':0, 'blue':0};
