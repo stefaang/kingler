@@ -274,7 +274,7 @@ for (var i = 0 ; i < flaskData.racers.length; i++) {
         console.log('We are team '+mrmColor);
         console.log(mrm);
         var sheet = document.getElementById('mystyle').sheet;
-        sheet.insertRule('.leafvar-bar, .leafvar-touch .leafvar-bar {    ' +
+        sheet.insertRule('.leaflet-bar, .leaflet-touch .leaflet-bar {    ' +
             'border: 4px solid '+colormap[mrmColor]+';' +
             'background-color: '+colormap[mrmColor]+';' +
             '}', 1);
@@ -295,6 +295,7 @@ console.log("Racer Markers ready");
 socket.on('marker moved', function(data) {
     console.log("Inbox received:  MM");
     console.log("Inbox unpack..: "+data.name+" "+data.id+" "+data.lat+" "+data.lng);
+    if (!markers) return;
     var marker = markers[data.id];
     if (marker) {
         if (marker.moveTo) {
@@ -319,7 +320,9 @@ socket.on('marker moved', function(data) {
 socket.on('marker added', function(data) {
     console.log("Inbox received:  M+");
     console.log("Inbox unpack..: "+data.name+" "+data.lat+" "+data.lng);
+    if (!markers) return;
     var marker = markers[data.id];
+
     if (!marker){
         if ('species' in data) {
             // Beast marker
@@ -337,16 +340,17 @@ socket.on('marker added', function(data) {
 socket.on('marker removed', function(data) {
     console.log("Inbox received:  M-");
     console.log("Inbox unpack..: "+data.name);
+    if (!markers) return;
     var marker = markers[data.id];
     if (marker) {
         if (marker.fadeOut()) {
             setTimeout(function(){
                 map.removeLayer(marker);
-                devare markers[data.id];
+                delete markers[data.id];
             }, 2000);
         } else {
             map.removeLayer(marker);
-            devare markers[data.id];
+            delete markers[data.id];
         }
     } else {
         console.log('.. but we don\'t know that marker?')
@@ -490,6 +494,7 @@ function addCoinMarker(coin) {
 socket.on('coin added', function(coin) {
     console.log("Inbox received:  Coin Added");
     console.log("Inbox unpack..: "+coin.id+" - "+coin.value+"points coin");
+    if (!markers) return;
     var marker = markers[coin.id];
     if (marker) {
         console.log(".. coin already existed");
@@ -501,6 +506,8 @@ socket.on('coin added', function(coin) {
 socket.on('coin pickup', function(coin) {
     console.log("Inbox received:  Coin Pickup");
     console.log("Inbox unpack..: "+coin.id+" - "+coin.value+"points coin");
+    if (!markers) return;
+
     var marker = markers[coin.id];
     if (marker) {
         if (map.distance(marker.getLatLng(), mrm.getLatLng()) < 40) {
@@ -514,7 +521,7 @@ socket.on('coin pickup', function(coin) {
         }
         // remove the coin from the map
         map.removeLayer(marker);
-        devare markers[coin.id];
+        delete markers[coin.id];
     } else {
         console.log(".. coin not found");
     }
@@ -589,6 +596,7 @@ function addBeastMarker(beast) {
 }
 
 socket.on('beast hit', function(data){
+    if (!markers) return;
     var marker = markers[data.beast];
     if (marker && marker.species){
         sounds[marker.species].play();
@@ -824,7 +832,7 @@ console.log("Leafvar location callbacks ready.. setView to main marker");
 //     var marker = markers[bomb.id];
 //     if (marker) {
 //         map.removeLayer(marker);
-//         devare markers[bomb.id];
+//         delete markers[bomb.id];
 //     } else {
 //         console.log('Oh... what was that');
 //     }
@@ -935,6 +943,7 @@ teamScore.addTo(map);
 socket.on('new score', function(data) {
     console.log("Inbox received:  T+");
     console.log("Inbox unpack..: "+data.team[mrmColor]+" "+data.individual[flaskData.username]);
+
     if(data && data.team){
         teamScore.update(data);
     }
