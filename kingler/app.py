@@ -226,8 +226,8 @@ def login():
     if request.method == 'POST':
         if not request.form['username']:
             return render_template('login.html', error='You must fill in a Username')
-        if not request.form['username'].isalnum():
-            return render_template('login.html', error='Only use letters and numbers in your Username')
+        if not all(c.isalnum() or c.isspace() for c in request.form['username']):
+            return render_template('login.html', error='Only use letters, numbers and spaces in your Username')
         username = session['username'] = escape(request.form['username'])
         color = session['color'] = request.form['color']
 

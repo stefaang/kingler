@@ -51,7 +51,7 @@ def setBeastAtBottles():
             b.track = []
 
             for i in range(N):
-                v = (rand() - 0.5) * 3 / N      # add some extra variance
+                v = (rand() - 0.5) * 10/N      # add some extra variance
                 _lng = lng + R * (1-v)                     * cos(i*2*pi/N+K)
                 _lat = lat + R * (1-v) * cos(radians(lat)) * sin(i*2*pi/N+K)
                 b.track.append([_lng, _lat ])
@@ -65,7 +65,21 @@ def deleteAllCoins():
 def resetCoins():
     """Reset the team on all coins back to black"""
     c = CopperCoin.objects()
-    c.update(team='black', value=10)
+    c.update(team='black', value=10, icon='')
+
+def shuffleCoins():
+    coins = list(CopperCoin.objects.all())
+
+    items = { 'compass': 2, 'hook': 2, 'rum': 15, 'barrel': 8, 'chest': 4, 'leg': 1, 'spy': 1,
+          'bottle': 1, 'sword': 8, 'helm': 5, 'map': 5, 'anchor': 4, 'sabre': 8
+    }
+    random.shuffle(coins)
+    for item, amount in items.iteritems():
+        for i in range(amount):
+            coin = coins.pop()
+            coin.update(icon=item)
+
+
 
 def dumpCoinsToFile(fname='coindump.txt'):
     """Dump all the coin position to a file"""

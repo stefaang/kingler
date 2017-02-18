@@ -7,6 +7,10 @@
     background: rgba(122,98,72,0.4);
 }
 
+.leaflet-popup {
+    font: 16px/20px Tahoma, Geneva, sans-serif;
+}
+
 .leaflet-control-layers .red{
     background-color: #A12F36;
 }
@@ -25,7 +29,12 @@
     background: rgba(122,98,72,0.4);
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     min-width: 270px;
-    display: flex;
+
+    display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+    display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+    display: -ms-flexbox;      /* TWEENER - IE 10 */
+    display: -webkit-flex;     /* NEW - Chrome */
+    display: flex;             /* NEW, Spec - Opera 12.1, Firefox 20+ */
     flex-direction: row;
     justify-content: space-around;
 }
@@ -64,14 +73,6 @@
     margin-top: 8px;
 }
 
-.ship-icon {
-    /*background-image: url(../img/game-icons/drakkar-blue-64.png);*/
-    /*background-image: url(../img/pirate6-sm.png);*/
-    /*background-position: -0px -80px;*/
-    background-image: url(../img/flaticons/pirates/ship.png);
-    background-size: 80px 80px;
-    margin: 0px 0px;
-}
 
 .leaflet-marker-icon,
 .leaflet-marker-shadow {
@@ -83,46 +84,72 @@
     to   { opacity: 1; }
 }
 
-
-.bomb-icon {
+.pirate-icon {
+    background-size: 100%;
+}
+.pirate-icon.barrel {
+    background-image: url(../img/flaticons/pirates/barrel.png);
+}
+.pirate-icon.bomb {
     background-image: url(../img/flaticons/pirates/bomb.png);
-    background-size: 60px 60px;
 }
-.coin-icon {
+.pirate-icon.bottle {
+    background-image: url(../img/flaticons/pirates/ship-in-a-bottle.png);
+}
+.pirate-icon.coin {
     background-image: url(../img/flaticons/pirates/coin.png);
-    background-size: 40px 40px;
 }
-.kraken-icon {
-    background-image: url(../img/flaticons/pirates/kraken.png);
-    background-size: 120px 120px;
-}
-.map-icon {
-    background-image: url(../img/flaticons/pirates/treasure-map.png);
-    background-size: 50px 50px;
-}
-
-.rum-icon {
-    background-image: url(../img/flaticons/pirates/rum.png);
-    background-size: 40px 40px;
-}
-.skull-icon {
-    background-image: url(../img/flaticons/pirates/skull-1.png);
-    background-size: 50px 50px;
-}
-
-.tortoise-icon {
-    background-image: url(../img/flaticons/pirates/tortoise.png);
-    background-size: 80px 80px;
-}
-.treasure-icon {
+.pirate-icon.chest {
     background-image: url(../img/flaticons/pirates/treasure.png);
-    background-size: 40px 40px;
 }
-.whale-icon {
+.pirate-icon.compass {
+    background-image: url(../img/flaticons/pirates/compass.png);
+}
+.pirate-icon.helm {
+    background-image: url(../img/flaticons/pirates/helm.png);
+}
+.pirate-icon.hook {
+    background-image: url(../img/flaticons/pirates/hook.png);
+}
+.pirate-icon.kraken {
+    background-image: url(../img/flaticons/pirates/kraken.png);
+}
+.pirate-icon.leg {
+    background-image: url(../img/flaticons/pirates/wooden-leg.png);
+}
+.pirate-icon.map {
+    background-image: url(../img/flaticons/pirates/treasure-map.png);
+}
+.pirate-icon.parrot {
+    background-image: url(../img/flaticons/pirates/parrot.png);
+}
+.pirate-icon.pipe {
     background-image: url(../img/flaticons/pirates/whale.png);
-    background-size: 120px 120px;
 }
-
+.pirate-icon.rum {
+    background-image: url(../img/flaticons/pirates/rum.png);
+}
+.pirate-icon.skull {
+    background-image: url(../img/flaticons/pirates/skull-1.png);
+}
+.pirate-icon.saber {
+    background-image: url(../img/flaticons/pirates/saber.png);
+}
+.pirate-icon.spy {
+    background-image: url(../img/flaticons/pirates/spyglass.png);
+}
+.pirate-icon.ship {
+    background-image: url(../img/flaticons/pirates/ship.png);
+}
+.pirate-icon.tortoise {
+    background-image: url(../img/flaticons/pirates/tortoise.png);
+}
+.pirate-icon.treasure {
+    background-image: url(../img/flaticons/pirates/treasure.png);
+}
+.pirate-icon.whale {
+    background-image: url(../img/flaticons/pirates/whale.png);
+}
 
 
 

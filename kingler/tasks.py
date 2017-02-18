@@ -185,8 +185,7 @@ def update_racer_pos(data):
     for coin in coins:
         # app.logger.info('%s coin, %s racer' % (coin.team, movedracer.color))
         lng, lat = coin.pos['coordinates']
-        info = {'lng':lng, 'lat':lat, 'value': coin.value, 'id': str(coin.id)}
-        emit('coin added', info, room=mr['name'])
+        emit('coin added', coin.get_info(), room=mr['name'])
 
     # D.2 Pickup nearby coins, set the team
     coins = CopperCoin.objects(pos__near=movedracer.pos,

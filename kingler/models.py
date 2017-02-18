@@ -312,6 +312,12 @@ class CopperCoin(MapEntity):
     value = db.IntField(default=0)
     active = db.BooleanField(default=True)
     team = db.StringField(default='black')
+    icon = db.StringField()
+
+    def get_info(self):
+        d = super(CopperCoin, self).get_info()
+        d.update({'icon': self.icon, 'value': self.value})
+        return d
 
 
 class Beast(MapEntity):
@@ -327,6 +333,7 @@ class Beast(MapEntity):
         d.update({'name': self.name,
                   'species': self.species})
         return d
+
 
 class Zone(db.Document):
     name = db.StringField()

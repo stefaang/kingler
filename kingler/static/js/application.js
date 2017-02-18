@@ -55,31 +55,28 @@ var sounds = {
 
 
 // Icon definitions
-var shipIcon = L.divIcon({
-    className: 'ship-icon',
-    iconSize: [80,80],
-    iconAnchor: [40,65],
-});
+var icons = {
+    'ship':     L.divIcon({className: 'pirate-icon ship',    iconSize: [80,80], iconAnchor: [40,65], }),
+    'whale':    L.divIcon({className: 'pirate-icon whale',   iconSize: [120,120], }),
+    'kraken':   L.divIcon({className: 'pirate-icon kraken',  iconSize: [120,120], }),
+    'parrot':   L.divIcon({className: 'pirate-icon parrot',  iconSize: [80,80], }),
+    'octopus':  L.divIcon({className: 'pirate-icon octopus', iconSize: [120,120], }),
+    'coin':     L.divIcon({className: 'pirate-icon coin',    iconSize: [36,36], }),
+    'rum':      L.divIcon({className: 'pirate-icon rum',     iconSize: [40,40], }),
+    'bottle':   L.divIcon({className: 'pirate-icon bottle',  iconSize: [50,50], }),
+    'spy':      L.divIcon({className: 'pirate-icon spy',     iconSize: [50,50], }),
+    'leg':      L.divIcon({className: 'pirate-icon spy',     iconSize: [50,50], }),
+    'hook':     L.divIcon({className: 'pirate-icon hook',    iconSize: [40,40], }),
+    'helm':     L.divIcon({className: 'pirate-icon helm',    iconSize: [40,40], }),
+    'map':      L.divIcon({className: 'pirate-icon map',     iconSize: [40,40], }),
+    'anchor':   L.divIcon({className: 'pirate-icon anchor',  iconSize: [40,40], }),
+    'chest':    L.divIcon({className: 'pirate-icon chest',   iconSize: [40,40], }),
+    'barrel':   L.divIcon({className: 'pirate-icon barrel',  iconSize: [45,45], }),
+    'sword':    L.divIcon({className: 'pirate-icon sword',   iconSize: [40,40], }),
+    'sabre':    L.divIcon({className: 'pirate-icon sabre',   iconSize: [40,40], }),
+    'compass':  L.divIcon({className: 'pirate-icon compass', iconSize: [50,50], }),
+};
 
-var coinIcon = L.divIcon({
-    className: 'coin-icon',
-    iconSize: [40,40],
-});
-
-var rumIcon = L.divIcon({
-    className: 'rum-icon',
-    iconSize: [40,40],
-});
-
-var whaleIcon = L.divIcon({
-    className: 'whale-icon',
-    iconSize: [120,120],
-});
-
-var krakenIcon = L.divIcon({
-    className: 'kraken-icon',
-    iconSize: [120,120],
-});
 
 
 // Stamen Tileset only works for bike routes as it doesn't scale deep enough
@@ -106,11 +103,11 @@ var liteLayer = L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/
 
 // Dark (but not too dark) tileset by thunderforest. Would be 10/10 if labels were optional.
 
-var darkLayer = L.tileLayer('https://{s}.tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
-    maxZoom: 18,
-    attribution: 'Thunderforest',
-    id: 'tf.pioneer',
-});
+// var darkLayer = L.tileLayer('https://{s}.tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
+//     maxZoom: 18,
+//     attribution: 'Thunderforest',
+//     id: 'tf.pioneer',
+// });
 
 // Alternative tileset by thunderforest --> very detailed
 //
@@ -119,14 +116,14 @@ var darkLayer = L.tileLayer('https://{s}.tile.thunderforest.com/transport-dark/{
 //    attribution: 'Thunderforest',
 // });
 
-// Alternative tileset by MapBox
-
-// var liteLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
-//    maxZoom: 19,
-//    attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
-//                 'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-//    id: 'mapbox.streets'
-// });
+// My own custom tileset made with MapBox Studio
+var darkLayer = L.tileLayer('https://api.mapbox.com/styles/v1/stefaang/ciyirbvik00592rmjlg8gjc7n/tiles/256/'+
+    '{z}/{x}/{y}?access_token=pk.eyJ1Ijoic3RlZmFhbmciLCJhIjoiY2l3ZGppeWJtMDA1MDJ5dW1nOGZwcnlyeSJ9.vGapFUQfn2vyM2RZv78-fw', {
+    minZoom: 14, maxZoom: 19,
+    attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
+                 'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+   id: 'stefaang.ciyirbvik00592rmjlg8gjc7n'
+});
 
 
 //////////////////////
@@ -139,7 +136,7 @@ map = L.map('map',
         doubleClickZoom: true,   // zoom on center, wherever you click
         fullscreenControl: true,
         markerZoomAnimation: false,
-        layers: [liteLayer, darkLayer],
+        layers: [darkLayer, liteLayer],
     }
 );
 
@@ -165,16 +162,8 @@ function addRacerMarker(racer, options) {
         draggable: true,
         zIndexOffset: 400
     });
-    // var icon = L.divIcon({
-    //     className: 'ship-icon',
-    //     iconSize: [80,80],
-    //     html: '<div><></div>'
-    //
-    //         racer.name,
-    // });
-    r.setIcon(shipIcon);
+    r.setIcon(icons.ship);
     r.bindTooltip(racer.name, {
-        // permanent : true,
         direction: 'bottom',
         offset: [0,20]
     });
@@ -211,7 +200,6 @@ function addRacerMarker(racer, options) {
         }
     };
     r.on('dragend', r.pushLocation);
-
     r.color = r.options.icon.options.color;
     r.name = r.options.title;
     markers[racer.id] = r.addTo(map);
@@ -241,7 +229,7 @@ function addMainRacerMarker(racer, options)  {
     r.onMove = function (e) {
         this.mainRange.setLatLng(e.latlng);
         this.mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
-        teamScore.update();
+        // distTracker.update();
     };
     // this circle needs to follow the main marker at all time
     r.on('move', r.onMove);
@@ -476,24 +464,30 @@ socket.on('marker removed', function(data) {
 // COINS
 
 function addCoinMarker(coin) {
-    var title = coin.value+'p';
+    var title = coin.icon;
     var marker = L.marker([coin.lat, coin.lng], {
         title: title,
         zIndexOffset: 20
     });
-    marker.bindTooltip(title, {direction:'bottom'});
 
-    marker.setIcon(coinIcon);
-    if (coin.id.slice(-1) === '0'){
-        marker.setIcon(rumIcon);
-        marker.bindPopup('Drink this and go catch a whale!');
-    }
+
+    marker.setIcon(icons.coin);
+    if (coin.icon){
+        marker.bindTooltip(title, {direction:'bottom', offset:[0,20]});
+        if (coin.icon in icons) {
+            marker.setIcon(icons[coin.icon]);
+            // marker.getTooltip().setContent('Drink this and go catch a whale!');
+        } else {
+            console.warn('icon missing!! '+coin.icon);
+        }
+
+            }
     markers[coin.id] = marker.addTo(map);
 }
 
 socket.on('coin added', function(coin) {
     console.log("Inbox received:  Coin Added");
-    console.log("Inbox unpack..: "+coin.id+" - "+coin.value+"points coin");
+    console.log("Inbox unpack..: "+coin.id+" - "+coin.icon+" coin");
     if (!markers) return;
     var marker = markers[coin.id];
     if (marker) {
@@ -556,12 +550,9 @@ function addBeastMarker(beast) {
         zIndexOffset: 990,
         interactive: false,
     });
-    marker.setIcon(whaleIcon);
     marker.species = beast.species;
-    // todo refactor
-    if (beast.species === 'kraken'){
-        marker.setIcon(krakenIcon);
-    }
+
+    marker.setIcon((beast.species in icons)? icons[beast.species] : icons.whale);
     marker.bindTooltip('blub', {direction:'top'});
 
     marker.moveTo = function(newPos) {
@@ -598,7 +589,7 @@ function addBeastMarker(beast) {
 socket.on('beast hit', function(data){
     if (!markers) return;
     var marker = markers[data.beast];
-    if (marker && marker.species){
+    if (marker && marker.species && marker.species in sounds){
         sounds[marker.species].play();
     } else {
         console.log('Play Sound fails for ', data);
@@ -620,11 +611,6 @@ if (mrm.name === 'admin'){
         }
     );
 }
-
-
-
-
-
 
 ////////////////////////
 //  BUTTONS
@@ -878,11 +864,13 @@ console.log("Leafvar location callbacks ready.. setView to main marker");
 
 // A button to Add a Coin to the map (TODO: admin only)
 var helpButton = L.easyButton( 'fa-question',   function() {
-    var helptext = "AARRRRR AHOI!!! " +
+    var helptext = "<p><b>AARRRRR AHOI!!! </b><br/>" +
             "De achterdeur van mijn schip stond open en nu ben ik al mijn centjes verrrloren, verhip!"+ "<br/>" +
-            "RRRRaap jij ze weer op, maatje?";
-    var popup = mrm.unbindPopup();
-    mrm.bindPopup(helptext).openPopup();
+            "Raap jij ze weer op, maatje? <br/>" +
+            "Pas wel op voor de walvissen en zo. Ze bijten ferrrrrm. <br/>" +
+            "Pro-tip: zet de helderheid van je scherm wat zachter en de slaapstand op 30 minuten.. " +
+            "je scherm moet blijven aanstaan! En zet volume op max voor de beste ervaring muahahhaha</p>";
+    mrm.bindPopup(helptext, {maxWidth:200, offset:[0,-20]}).openPopup();
 }).addTo(map);
 
 helpButton._currentState.onClick();
@@ -906,7 +894,7 @@ L.easyButton('fa-bolt', function () {
 console.log("Easy Buttons ready");
 
 // Layers
-var layersControl = L.control.layers({'Light':liteLayer, 'Dark':darkLayer},{});
+var layersControl = L.control.layers({'Dark':darkLayer, 'Light':liteLayer},{});
 layersControl.addTo(map);
 
 
@@ -960,17 +948,24 @@ distanceTracker.onAdd = function() {
     this.update();
     return this._div;
 };
-distanceTracker.update = function (props) {
+distanceTracker.update = function() {
     // calculate total distance travelled
     var track = mrm.mainUserTrack;
     var total = 0;
     for (var i=0; i<track.length-1; i++) {
         total += map.distance(track[i], track[i+1]);
     }
-    var html = Math.round(total)+' m travelled';
-    this._div.innerHTML = html;
+    this._div.innerHTML = Math.round(total)+' m travelled';
 };
 
+
+/////////////////////
+// LOGOFF button
+
+// A button to Add a Coin to the map (TODO: admin only)
+var logoffButton = L.easyButton( 'fa-times',   function() {
+    document.location.href = './logout';
+}).addTo(map, {location: 'bottomleft'});
 
 
 
