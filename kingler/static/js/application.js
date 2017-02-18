@@ -233,11 +233,11 @@ function addMainRacerMarker(racer, options)  {
     };
     // this circle needs to follow the main marker at all time
     r.on('move', r.onMove);
-    
+
     r.on('popupclose', function(p) {
         p.remove();
         this.unbindPopup();
-        this._map.locate({
+        map.locate({
             watch: true,                // keep tracking
             enableHighAccuracy: true,   // enable GPS
             timeout: 30000
