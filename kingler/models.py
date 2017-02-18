@@ -313,6 +313,7 @@ class CopperCoin(MapEntity):
     active = db.BooleanField(default=True)
     team = db.StringField(default='black')
     icon = db.StringField()
+    secret = db.StringField()
 
     def get_info(self):
         d = super(CopperCoin, self).get_info()

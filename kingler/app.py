@@ -191,6 +191,28 @@ def handle_add_beast_stop(data):
     beast.save()
 
 
+@socketio.on('get scores')
+def handle_get_scores():
+    if session.get('username'):
+        app.logger.info('Get scores for %s', session['username'])
+        racers = Racer.objects()    # add party
+        update_scores(racers)
+
+@socketio.on('post secret')
+def handle_post_secret(data):
+    app.logger.info('post secret %s', data)
+    if not 'coin_id' in data or not 'racer_id' in data:
+        return
+    coin = CopperCoin.objects(pk=data.get('coin_id')).first()
+    racer = Racer.objects(pk=data['racer_id']).first()
+
+    if racer and coin and coin.secret == data['secret']:
+        emit('secret correct')
+        racer.modify(inc__score=200)
+        spectators = Racer.objects(pos__near=racer.pos,
+                                   pos__max_distance=GLOBAL_RANGE)
+        update_scores(spectators)
+
 # room support
 @socketio.on('join')
 def on_join(data):

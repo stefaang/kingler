@@ -21,6 +21,12 @@
     background-color: #0072B5;
 }
 
+.secret-input {
+    font: 20px/24px Tahoma, Geneva, sans-serif;
+    line-height: 20px;
+    max-width: 250px;
+}
+
 /* score board */
 .score-board {
     padding: 6px 8px;
@@ -116,6 +122,9 @@
 }
 .pirate-icon.leg {
     background-image: url(../img/flaticons/pirates/wooden-leg.png);
+}
+.pirate-icon.letter {
+    background-image: url(../img/flaticons/pirates/letter-of-marque.png);
 }
 .pirate-icon.map {
     background-image: url(../img/flaticons/pirates/treasure-map.png);

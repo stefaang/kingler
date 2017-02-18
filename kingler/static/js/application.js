@@ -16,7 +16,6 @@ var colormap = {
 };
 
 var socket = null;
-
 var teamScore = null;
 
 //
@@ -62,6 +61,9 @@ var icons = {
     'parrot':   L.divIcon({className: 'pirate-icon parrot',  iconSize: [80,80], }),
     'octopus':  L.divIcon({className: 'pirate-icon octopus', iconSize: [120,120], }),
     'coin':     L.divIcon({className: 'pirate-icon coin',    iconSize: [36,36], }),
+    'chest':    L.divIcon({className: 'pirate-icon chest',   iconSize: [40,40], }),
+    'letter':   L.divIcon({className: 'pirate-icon letter',  iconSize: [40,40], }),
+
     'rum':      L.divIcon({className: 'pirate-icon rum',     iconSize: [40,40], }),
     'bottle':   L.divIcon({className: 'pirate-icon bottle',  iconSize: [50,50], }),
     'spy':      L.divIcon({className: 'pirate-icon spy',     iconSize: [50,50], }),
@@ -70,7 +72,6 @@ var icons = {
     'helm':     L.divIcon({className: 'pirate-icon helm',    iconSize: [40,40], }),
     'map':      L.divIcon({className: 'pirate-icon map',     iconSize: [40,40], }),
     'anchor':   L.divIcon({className: 'pirate-icon anchor',  iconSize: [40,40], }),
-    'chest':    L.divIcon({className: 'pirate-icon chest',   iconSize: [40,40], }),
     'barrel':   L.divIcon({className: 'pirate-icon barrel',  iconSize: [45,45], }),
     'sword':    L.divIcon({className: 'pirate-icon sword',   iconSize: [40,40], }),
     'sabre':    L.divIcon({className: 'pirate-icon sabre',   iconSize: [40,40], }),
@@ -97,7 +98,7 @@ var icons = {
 
 var liteLayer = L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
     maxZoom: 18,
-    attribution: 'Thunderforest',
+    attribution: 'Thunderfirest',
     id: 'tf.pioneer',
 });
 
@@ -202,6 +203,7 @@ function addRacerMarker(racer, options) {
     r.on('dragend', r.pushLocation);
     r.color = r.options.icon.options.color;
     r.name = r.options.title;
+    r.id = racer.id;
     markers[racer.id] = r.addTo(map);
     return r;
 }
@@ -514,9 +516,18 @@ socket.on('coin pickup', function(coin) {
 
     var marker = markers[coin.id];
     if (marker) {
-        if (map.distance(marker.getLatLng(), mrm.getLatLng()) < 40) {
+        if (mrm.id === coin.racer) {
             // play the coin sound
             sounds.coin.play();
+
+            // some coins have a secret bonus code
+            if (coin.secret && secretControl) {
+                secretControl.setSecretCoin(coin.id);
+                secretControl.addTo(map);
+                setTimeout(secretControl.remove, 300000);
+            } else {
+                secretControl.remove();
+            }
 
             // and buzz away
             if (navigator.vibrate) {
@@ -529,6 +540,16 @@ socket.on('coin pickup', function(coin) {
     } else {
         console.log(".. coin not found");
     }
+});
+
+socket.on('secret correct', function(data) {
+    // play 3x ping
+    console.log('SECRET IS CORRECT wooooooohooooo');
+    sounds.coin.loop(1);
+    sounds.coin.play();
+    setTimeout(function() {
+        sounds.coin.loop(0);
+    }, 3000);
 });
 
 if (mrm.name === 'admin'){
@@ -924,10 +945,11 @@ teamScore.onAdd = function () {
     for (var color in this._scores) {
         var panel = L.DomUtil.create('div', 'score-board-panel', this._div);
         L.DomUtil.addClass(panel, color);
-        L.DomUtil.create('div', 'coin-icon', panel);
+        this._coinicon = L.DomUtil.create('div', 'pirate-icon coin', panel);
         this._panels[color] = panel;
     }
     this.update();
+    socket.emit('get scores');
     return this._div;
 };
 
@@ -942,6 +964,42 @@ teamScore.update = function (data) {
     }
 };
 teamScore.addTo(map);
+
+
+//////////////////////////
+// SECRET CODE Control
+// some coins come with a code for bonus points!
+var secretControl = L.control({position: 'bottomright'});
+secretControl.onAdd = function() {
+    this._div = L.DomUtil.create('div', 'score-board');
+    this._answer = L.DomUtil.create('input', 'secret-input', this._div);
+    this._answer.setAttribute('type','text');
+    this._answer.setAttribute('name','secret');
+    this._answer.setAttribute('id', 'secretAnswer');
+    this._answer.setAttribute('value', '');
+    // this._submit = L.DomUtil.create('input', 'secret-submit', this._form);
+    // this._submit.setAttribute('type', 'submit');
+    // this._submit.setAttribute('value', 'OK');
+    this.validateSecret = function(e) {
+        // proper way: send secret to server
+        var input = e.target;
+        console.log('my coin: '+this._coin);
+        if (e.keyCode==13) {
+            console.log('Submitting secret: '+input.value+' key: "'+e.keyCode+'"');
+            let data = {'secret': input.value, 'coin_id': secretControl._coin, 'racer_id': mrm.id, 'kc': e.keyCode};
+            socket.emit('post secret', data);
+            secretControl = secretControl.remove();
+        }
+    };
+    this._answer.addEventListener('keypress', this.validateSecret);
+
+    return this._div;
+};
+
+secretControl.setSecretCoin = function(coin) {
+    // save the coin id of the last coin picked up
+    this._coin = coin;
+};
 
 // the server sends 'new score' event with team and individual scores
 socket.on('new score', function(data) {

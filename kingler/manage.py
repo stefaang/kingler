@@ -79,6 +79,23 @@ def shuffleCoins():
             coin = coins.pop()
             coin.update(icon=item)
 
+def muffleCoins():
+    coins = list(CopperCoin.objects.all())
+
+    items = {'chest': 8, 'letter': 8}
+    secrets = ['bonanza', 'barbossa', 'neeltje jans', 'boccaccio', 'tzalwelzijnaja', 'tuizentfloot',
+               'zoete mosterd', 'tafelpoot']
+
+    random.shuffle(coins)
+    for item, amount in items.iteritems():
+        for i in range(amount):
+            coin = coins.pop()
+            if item == 'letter':
+                coin.update(icon=item, secret=secrets.pop())
+            elif item == 'chest':
+                coin.update(icon=item, value=50)
+            else:
+                coin.update(icon=item)
 
 
 def dumpCoinsToFile(fname='coindump.txt'):

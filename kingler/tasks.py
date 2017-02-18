@@ -193,7 +193,9 @@ def update_racer_pos(data):
                                team__ne=movedracer.color)
     for coin in coins:
         app.logger.info('racer %s picks up a %sp %s coin' % (movedracer.name, coin.value, coin.team))
-        info = {'value': coin.value, 'id': str(coin.id)}
+        info = {'value': coin.value, 'id': str(coin.id), 'racer': str(movedracer.id)}
+        if coin.secret:
+            info.update({'secret': True})
         emit('coin pickup', info, room=mr['name'])
 
         for racer in spectators:
