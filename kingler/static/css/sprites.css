@@ -147,6 +147,9 @@
 .pirate-icon.spy {
     background-image: url(../img/flaticons/pirates/spyglass.png);
 }
+.pirate-icon.star {
+    background-image: url(../img/flaticons/pirates/starfish.png);
+}
 .pirate-icon.ship {
     background-image: url(../img/flaticons/pirates/ship.png);
 }
