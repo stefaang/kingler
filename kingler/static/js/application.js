@@ -228,11 +228,22 @@ function addMainRacerMarker(racer, options)  {
 
     r.onMove = function (e) {
         this.mainRange.setLatLng(e.latlng);
-        this.mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
+        // this.mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
         // distTracker.update();
     };
     // this circle needs to follow the main marker at all time
     r.on('move', r.onMove);
+    
+    r.on('popupclose', function(p) {
+        p.remove();
+        this.unbindPopup();
+        this._map.locate({
+            watch: true,                // keep tracking
+            enableHighAccuracy: true,   // enable GPS
+            timeout: 30000
+        });
+    });
+
 
     // add BombMode support
     // r.activateBombMode = (function(dropBomb, teardown) {
@@ -678,7 +689,7 @@ function onLocationFound(e) {
     map.setView(e.latlng);
 
     // Store this point to the tracker
-    mrm.mainUserTrack.push(e.latlng);
+    // mrm.mainUserTrack.push(e.latlng);
 
     if (e.latlng == mrm.loctracker.prevPos || e.timestamp < mrm.loctracker.prevTime + 1000){
         // do nothing
@@ -864,13 +875,16 @@ console.log("Leafvar location callbacks ready.. setView to main marker");
 
 // A button to Add a Coin to the map (TODO: admin only)
 var helpButton = L.easyButton( 'fa-question',   function() {
+    map.stopLocate();
     var helptext = "<p><b>AARRRRR AHOI!!! </b><br/>" +
             "De achterdeur van mijn schip stond open en nu ben ik al mijn centjes verrrloren, verhip!"+ "<br/>" +
             "Raap jij ze weer op, maatje? <br/>" +
             "Pas wel op voor de walvissen en zo. Ze bijten ferrrrrm. <br/>" +
             "Pro-tip: zet de helderheid van je scherm wat zachter en de slaapstand op 30 minuten.. " +
             "je scherm moet blijven aanstaan! En zet volume op max voor de beste ervaring muahahhaha</p>";
+    if (mrm.getPopup()) mrm.unbindPopup();
     mrm.bindPopup(helptext, {maxWidth:200, offset:[0,-20]}).openPopup();
+
 }).addTo(map);
 
 helpButton._currentState.onClick();
@@ -879,18 +893,18 @@ helpButton._currentState.onClick();
 ///////////////////////////////
 // SHOW TRACK button
 
-L.easyButton('fa-bolt', function () {
-    mrm.mainUserTrackPolyLine.setLatLngs(mrm.mainUserTrack);
-    mrm.bindPopup("What a wild ride!").openPopup();
-    setTimeout(function(){
-        mrm.unbindPopup();
-    }, 3000);
-    if (navigator.vibrate) {
-        // vibration API supported
-        // vibrate twice
-        navigator.vibrate([100, 100, 100]);
-    }
-}).addTo(map);
+// L.easyButton('fa-bolt', function () {
+//     mrm.mainUserTrackPolyLine.setLatLngs(mrm.mainUserTrack);
+//     mrm.bindPopup("What a wild ride!").openPopup();
+//     setTimeout(function(){
+//         mrm.unbindPopup();
+//     }, 3000);
+//     if (navigator.vibrate) {
+//         // vibration API supported
+//         // vibrate twice
+//         navigator.vibrate([100, 100, 100]);
+//     }
+// }).addTo(map);
 console.log("Easy Buttons ready");
 
 // Layers
@@ -942,21 +956,21 @@ socket.on('new score', function(data) {
 /////////////////////
 // DISTANCE TRACKER
 
-var distanceTracker = L.control();
-distanceTracker.onAdd = function() {
-    this._div = L.DomUtil.create('div', 'distance-tracker');
-    this.update();
-    return this._div;
-};
-distanceTracker.update = function() {
-    // calculate total distance travelled
-    var track = mrm.mainUserTrack;
-    var total = 0;
-    for (var i=0; i<track.length-1; i++) {
-        total += map.distance(track[i], track[i+1]);
-    }
-    this._div.innerHTML = Math.round(total)+' m travelled';
-};
+// var distanceTracker = L.control();
+// distanceTracker.onAdd = function() {
+//     this._div = L.DomUtil.create('div', 'distance-tracker');
+//     this.update();
+//     return this._div;
+// };
+// distanceTracker.update = function() {
+//     // calculate total distance travelled
+//     var track = mrm.mainUserTrack;
+//     var total = 0;
+//     for (var i=0; i<track.length-1; i++) {
+//         total += map.distance(track[i], track[i+1]);
+//     }
+//     this._div.innerHTML = Math.round(total)+' m travelled';
+// };
 
 
 /////////////////////
