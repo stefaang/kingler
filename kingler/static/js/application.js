@@ -235,7 +235,6 @@ function addMainRacerMarker(racer, options)  {
     r.on('move', r.onMove);
 
     r.on('popupclose', function(p) {
-        p.remove();
         this.unbindPopup();
         map.locate({
             watch: true,                // keep tracking
