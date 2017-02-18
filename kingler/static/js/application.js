@@ -874,16 +874,19 @@ console.log("Leafvar location callbacks ready.. setView to main marker");
 
 // A button to Add a Coin to the map (TODO: admin only)
 var helpButton = L.easyButton( 'fa-question',   function() {
-    map.stopLocate();
-    var helptext = "<p><b>AARRRRR AHOI!!! </b><br/>" +
-            "De achterdeur van mijn schip stond open en nu ben ik al mijn centjes verrrloren, verhip!"+ "<br/>" +
-            "Raap jij ze weer op, maatje? <br/>" +
-            "Pas wel op voor de walvissen en zo. Ze bijten ferrrrrm. <br/>" +
-            "Pro-tip: zet de helderheid van je scherm wat zachter en de slaapstand op 30 minuten.. " +
-            "je scherm moet blijven aanstaan! En zet volume op max voor de beste ervaring muahahhaha</p>";
-    if (mrm.getPopup()) mrm.unbindPopup();
-    mrm.bindPopup(helptext, {maxWidth:200, offset:[0,-20]}).openPopup();
-
+    if (mrm.getPopup()) {
+        mrm.closePopup();
+        mrm.unbindPopup();
+    } else {
+        map.stopLocate();
+        var helptext = "<p><b>AARRRRR AHOI!!! </b><br/>" +
+                "De achterdeur van mijn schip stond open en nu ben ik al mijn centjes verrrloren, verhip!"+ "<br/>" +
+                "Raap jij ze weer op, maatje? <br/>" +
+                "Pas wel op voor de walvissen en zo. Ze bijten ferrrrrm. <br/>" +
+                "Pro-tip: zet de helderheid van je scherm wat zachter en de slaapstand op 30 minuten.. " +
+                "je scherm moet blijven aanstaan! En zet volume op max voor de beste ervaring muahahhaha</p>";
+        mrm.bindPopup(helptext, {maxWidth:200, offset:[0,-20]}).openPopup();
+    }
 }).addTo(map);
 
 helpButton._currentState.onClick();
