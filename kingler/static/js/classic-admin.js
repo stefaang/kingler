@@ -2,6 +2,8 @@
  * Created by stefaan on 21-2-17.
  */
 
+map.stopLocate();
+map.dragging.enable();
 
 
 for(m in markers) {
@@ -97,5 +99,3 @@ map.on('keypress',  function listenToButtonC(e) {
 // ).addTo(map);
 
 
-
-map.dragging.enable();

@@ -970,12 +970,12 @@ if (mrm.getPopup()) {
     mrm.unbindPopup();
 }
 
-{
-    // force locator for others
-    console.log("Start using Leafvar Location");
-    map.locate({
-        watch: true,                // keep tracking
-        enableHighAccuracy: true,   // enable GPS
-        timeout: 30000
-    });
-}
+
+// force locator for others
+console.log("Start using Leafvar Location");
+map.locate({
+    watch: true,                // keep tracking
+    enableHighAccuracy: true,   // enable GPS
+    timeout: 30000
+});
+

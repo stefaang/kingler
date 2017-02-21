@@ -145,12 +145,11 @@ def handle_addcoin(data):
     lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
     nearbycoins = Flag.objects(pos__near=(lng, lat),
                                pos__max_distance=50)
-    if not list(nearbycoins):
+    if not nearbycoins:
         coin = CopperCoin(pos=(lng, lat)).save()
         app.logger.info('added coin: %s', coin)
     else:
-        app.logger.warn('add coin request denied: too close to existing coin')
-
+        nearbycoins.delete()
 
 @socketio.on('add beast stop')
 def handle_add_beast_stop(data):

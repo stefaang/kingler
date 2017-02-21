@@ -1,6 +1,6 @@
 Play a mix of Pacman and other classics in real life on your mobile device.
 
-![alt screenshot](http://imgur.com/a/nFxHp)
+![pcparty-screen1](https://cloud.githubusercontent.com/assets/974800/23187523/6806561a-f88b-11e6-9453-6d1fc8f6c594.png)
 
 Core components:
 
