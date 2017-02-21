@@ -1,4 +1,7 @@
-A geospatial web app that shows your teammates position in real-time.
+Play a mix of Pacman and other classics in real life on your mobile device.
+
+![alt screenshot](http://imgur.com/a/nFxHp)
+
 Core components:
 
 Backend:

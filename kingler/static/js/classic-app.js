@@ -95,11 +95,11 @@ var icons = {
 //     id: 'carto.dark'
 // });
 
-// Lite Pirate tileset by thunderforest. It's awesome but a bit heavy on data (jpg)
+// Lite Pirate tileset by thunderforest. It's awesome but a bit heavy on data
 
 var liteLayer = L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
-    maxZoom: 18,
-    attribution: 'Thunderfirest',
+    minZoom: 15, maxZoom: 18,
+    attribution: 'Data © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, Maps © <a href="http://www.thunderforest.com">Thunderforest</a>',
     id: 'tf.pioneer',
 });
 
@@ -118,15 +118,14 @@ var liteLayer = L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/
 //    attribution: 'Thunderforest',
 // });
 
-// My own custom tileset made with MapBox Studio
+// My own custom tileset made with MapBox Studio - production only
 var darkLayer = L.tileLayer('https://api.mapbox.com/styles/v1/stefaang/ciyirbvik00592rmjlg8gjc7n/tiles/256/'+
     '{z}/{x}/{y}?access_token=pk.eyJ1Ijoic3RlZmFhbmciLCJhIjoiY2l3ZGppeWJtMDA1MDJ5dW1nOGZwcnlyeSJ9.vGapFUQfn2vyM2RZv78-fw', {
-    minZoom: 14, maxZoom: 19,
+    minZoom: 15, maxZoom: 18,
     attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
                  'Imagery © <a href="http://mapbox.com">Mapbox</a>',
    id: 'stefaang.ciyirbvik00592rmjlg8gjc7n'
 });
-
 
 //////////////////////
 // Create Leafvar map - this is the main object of this whole app... but where do I have to put this :-S
@@ -161,7 +160,7 @@ function addRacerMarker(racer, options) {
     // create the L.marker
     var r = L.marker([racer.lat, racer.lng], {
         title: racer.name,
-        draggable: true,
+        draggable: false,
         zIndexOffset: 400
     });
     r.setIcon(icons.ship);
@@ -201,7 +200,6 @@ function addRacerMarker(racer, options) {
             return null;
         }
     };
-    r.on('dragend', r.pushLocation);
     r.color = r.options.icon.options.color;
     r.name = r.options.title;
     r.id = racer.id;
@@ -553,22 +551,6 @@ socket.on('secret correct', function(data) {
     }, 3000);
 });
 
-if (mrm.name === 'admin'){
-    // A button to Add a Coin to the map (TODO: admin only)
-    var addCoinButton = L.easyButton( 'fa-diamond',   function() {
-            var pos = mrm.getLatLng();
-            var data = {'lat':pos.lat, 'lng':pos.lng};
-            socket.emit('add coin', data);
-        }
-    ).addTo(map);
-
-    map.on('keypress',  function listenToButtonC(e) {
-        if (e.originalEvent.key == 'c')
-            addCoinButton._currentState.onClick();
-        }
-    );
-}
-
 
 
 
@@ -628,76 +610,12 @@ socket.on('beast hit', function(data){
     }
 });
 
-if (mrm.name === 'admin'){
-    // A button to Add a Beast Stop to the map (TODO: admin only)
-    var addBeastStopButton = L.easyButton( 'fa-ship',   function() {
-        var pos = mrm.getLatLng();
-        var data = {'lat':pos.lat, 'lng':pos.lng, 'id': lastBeast};
-        console.log('Add Beast Stop for '+ lastBeast +' at '+pos);
-        socket.emit('add beast stop', data);
-    }).addTo(map);
-
-    map.on('keypress',  function listenToButtonS(e) {
-        if (e.originalEvent.key == 's')
-            addBeastStopButton._currentState.onClick();
-        }
-    );
-}
 
 ////////////////////////
 //  BUTTONS
 
-// A button to Add a Flag to the map (TODO: admin only)
-// L.easyButton( 'fa-flag',   function() {
-//         var pos = mrm.getLatLng();
-//         var data = {'lat':pos.lat, 'lng':pos.lng, 'team': mrmColor};
-//         socket.emit('add flag', data);
-//     }
-// ).addTo(map);
 
 
-
-
-//////////////////////////
-// LOCATION
-//
-//
-
-/////////////////////
-// prepare leafvar map.locate callback functions
-
-// add button that searches your location
-var locateBtn = L.easyButton({
-    position: 'topleft',
-    states : [
-        {
-            stateName: 'locator-disabled',
-            icon: 'fa-crosshairs',
-            onClick: function (btn, map) {
-                // mrm.bindPopup("Enabled Locator").openPopup();
-
-                console.log("Start using Leafvar Location");
-                map.locate({
-                    watch: true,                // keep tracking
-                    enableHighAccuracy: true,   // enable GPS
-                    timeout: 30000
-                });
-                btn.state('locator-enabled');
-            }
-        },
-        {
-            stateName: 'locator-enabled',
-            icon: 'fa-times',
-            onClick: function (btn, map) {
-                // mrm.bindPopup("Disabled Locator").openPopup();
-
-                console.log("Stop using Leafvar Location");
-                map.stopLocate();
-                btn.state('locator-disabled');
-            }
-        }
-    ]
-});
 
 mrm.loctracker = {
     prevPos : 0,
@@ -894,21 +812,21 @@ console.log("Leafvar location callbacks ready.. setView to main marker");
 /////////////////////
 // SHOW HELP button
 
-// A button to Add a Coin to the map (TODO: admin only)
+// The button to show the tutorial again
 var helpButton = L.easyButton( 'fa-question',   function() {
     if (mrm.getPopup()) {
         mrm.closePopup();
         mrm.unbindPopup();
-    } else {
-        map.stopLocate();
-        var helptext = "<p><b>AARRRRR AHOI!!! </b><br/>" +
-                "De achterdeur van mijn schip stond open en nu ben ik al mijn centjes verrrloren, verhip!"+ "<br/>" +
-                "Raap jij ze weer op, maatje? <br/>" +
-                "Pas wel op voor de walvissen en zo. Ze bijten ferrrrrm. <br/>" +
-                "Pro-tip: zet de helderheid van je scherm wat zachter en de slaapstand op 30 minuten.. " +
-                "je scherm moet blijven aanstaan! En zet volume op max voor de beste ervaring muahahhaha</p>";
-        mrm.bindPopup(helptext, {maxWidth:200, offset:[0,-20]}).openPopup();
     }
+    map.stopLocate();
+    var helptext = "<div><i class='pirate-icon coin'><b>AARRRRR AHOI!!! </b><br/>" +
+            "De achterdeur van mijn schip stond open en nu ben ik al mijn centjes verrrloren, verhip!"+ "<br/>" +
+            "Raap jij ze weer op, maatje? <br/>" +
+            "Pas wel op voor de walvissen en zo. Ze bijten ferrrrrm. <br/>" +
+            "Pro-tip: zet de helderheid van je scherm wat zachter en de slaapstand op 30 minuten.. " +
+            "je scherm moet blijven aanstaan! En zet volume op max voor de beste ervaring muahahhaha</div>";
+    mrm.bindPopup(helptext, {maxWidth:200, offset:[0,-20]}).openPopup();
+
 }).addTo(map);
 
 helpButton._currentState.onClick();
@@ -1037,23 +955,22 @@ socket.on('new score', function(data) {
 /////////////////////
 // LOGOFF button
 
-// A button to Add a Coin to the map (TODO: admin only)
-var logoffButton = L.easyButton( 'fa-times',   function() {
+// A button to log out
+var logoutButton = L.easyButton( 'fa-times',   function() {
     document.location.href = './logout';
 }).addTo(map, {location: 'bottomleft'});
-
 
 
 ////////////////
 // FINALIZE INIT
 //
 map.setView(mrm.getLatLng(), 17);
+if (mrm.getPopup()) {
+    mrm.closePopup();
+    mrm.unbindPopup();
+}
 
-
-if (mrm.name === 'admin'){
-    locateBtn.addTo(map);
-    map.dragging.enable();
-} else {
+{
     // force locator for others
     console.log("Start using Leafvar Location");
     map.locate({

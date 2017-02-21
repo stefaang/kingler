@@ -279,7 +279,6 @@ def login():
         r.is_online = True
         r.save()
         # keep track of the racer object in this session
-        session['racer'] = r
         session['racerid'] = str(r.id)
         app.logger.debug('id is %s', session['racerid'])
         if session.get('newstyle'):
@@ -299,6 +298,7 @@ def logout():
 @app.route('/mbmap')
 def newstylemap():
     if 'username' in session:
+        admin = False
         try:
             # get the main Racer.. you need to be logged in
             session['racer'] = Racer.objects(name=session['username']).first()
@@ -321,7 +321,10 @@ def newstylemap():
 
         # prepare dict object
         data = {'racers': racers, 'username': session['username'], 'flags': flags}
-        return render_template('mbmap.html', flaskData=data)
+        if session['username'] == 'Stefaan':    # todo: set party admins
+            app.logger.warn('admin logged in %s', session['username'])
+            admin = True
+        return render_template('mbmap.html', flaskData=data, admin=admin)
     else:
         session['newstyle'] = True
         return redirect(url_for('login'))
@@ -332,6 +335,9 @@ def newstylemap():
 @app.route('/map')
 def oldstylemap():
     if 'username' in session:
+        racers = []
+        flags = []
+        admin = False
         try:
             # get the main Racer.. you need to be logged in
             session['racer'] = Racer.objects(name=session['username']).first()
@@ -352,9 +358,12 @@ def oldstylemap():
             # message to user
             return "Failed to show map"
 
-        # prepare dict object
         data = {'racers': racers, 'username': session['username'], 'flags': flags}
-        return render_template('map.html', flaskData=data)
+        # detect admin access
+        if session['username'] == 'Stefaan':  # todo: set party admins
+            app.logger.warn('admin logged in %s', session['username'])
+            admin = True
+        return render_template('map.html', flaskData=data, admin=admin)
     else:
         session['newstyle'] = False
         return redirect(url_for('login'))
