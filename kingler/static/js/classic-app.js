@@ -137,7 +137,7 @@ map = L.map('map',
         doubleClickZoom: true,   // zoom on center, wherever you click
         fullscreenControl: true,
         markerZoomAnimation: false,
-        layers: [darkLayer, liteLayer],
+        layers: [liteLayer],
     }
 );
 
