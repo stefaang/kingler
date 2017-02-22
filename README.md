@@ -5,14 +5,20 @@ Play a mix of Pacman and other classics in real life on your mobile device.
 Core components:
 
 Backend:
+
  - [Flask](http://flask.pocoo.org/), the python web app framework
  - [MongoDB](https://www.mongodb.com/) for all persistent data ops
  - Celery, distributed task queue, the backend worker
-Frontend Classic:
- - [socketIO](https://flask-socketio.readthedocs.io/en/latest/) for real-time position updates
+
+Frontend - Classic:
+
  - [leaflet](http://leafletjs.com/) for maps
-Frontend Fancy:
- - ES2015 javascript and Vue
+ - [socketIO](https://flask-socketio.readthedocs.io/en/latest/) for real-time position updates
+
+Frontend - Fancy:
+
+ - [MapBoxGL](https://www.mapbox.com/mapbox-gl-js/) iso Leaflet
+ - ES2015 javascript and [Vue](https://vuejs.org/)
 
 
 How to run this?
