@@ -219,14 +219,14 @@ var MainRacerMarker = RacerMarker.extend({
         zIndexOffset: 900,
     },
 
+    DEFAULT_RANGE: 20,
+
     initialize: function(racer) {
-        RacerMarker.prototype.initialize.call(this, [racer.lat, racer.lng]);
+        RacerMarker.prototype.initialize.call(this, racer);
 
         // prepare for tracking
         this.mainUserTrack = [];
         this.styles.default.color = colormap[racer.color];
-
-        var DEFAULT_RANGE = 20;
     },
 
     styles: {
@@ -238,10 +238,10 @@ var MainRacerMarker = RacerMarker.extend({
         RacerMarker.prototype.onAdd.call(this, map);
 
         // add a Circle that shows the action range
-        this.mainRange = L.circle(this._latLng, DEFAULT_RANGE, this.styles.default).addTo(map);
+        this.mainRange = L.circle(this._latlng, this.DEFAULT_RANGE, this.styles.default).addTo(map);
 
         // track all movement of the main racer
-        this.mainUserTrackPolyLine = L.polyline(this._latLng, this.styles.default).addTo(map);
+        this.mainUserTrackPolyLine = L.polyline(this._latlng, this.styles.default).addTo(map);
 
         // this circle needs to follow the main marker at all time
         this.on('move', this.onMove);
@@ -257,7 +257,7 @@ var MainRacerMarker = RacerMarker.extend({
     },
 
     onMove: function (e) {
-        this.mainRange.setLatLng(e.latlng);
+        this.mainRange.setLatLng(this._latlng);
         // this.mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
         if (this._distanceTracker) {
             this._distanceTracker.update();
@@ -291,6 +291,7 @@ for (var i = 0 ; i < flaskData.racers.length; i++) {
     var ismainmarker = racer.name === flaskData.username;
     if (ismainmarker) {
         // setup the main central Racer
+        console.log('Adding '+JSON.stringify(racer))
         markers[racer.id] = mainRacerMarker(racer).addTo(map);
         mrm = markers[racer.id];
         mrmColor = racer.color;
@@ -511,7 +512,7 @@ var CoinMarker = L.Marker.extend({
         this.id = coin.id;
 
         if (coin.icon){
-            this.bindTooltip(title, {direction:'bottom', offset:[0,20]});
+            this.bindTooltip(coin.icon, {direction:'bottom', offset:[0,20]});
             if (coin.icon in icons) {
                 this.setIcon(icons[coin.icon]);
             } else {
@@ -590,7 +591,6 @@ socket.on('secret correct', function(data) {
 // BEASTS
 var BeastMarker = MovingMarker.extend({
     options: {
-        title: title,
         zIndexOffset: 990,
         interactive: false,
         icon: icons.whale,
@@ -869,7 +869,7 @@ layersControl.addTo(map);
 
 /////////////////////////////
 // TEAM SCORE BOARD
-ScoreControl = L.Control.extend({
+var ScoreControl = L.Control.extend({
     options: {position: 'bottomright'},
 
     onAdd: function () {
@@ -951,7 +951,7 @@ var SecretControl = L.Control.extend({
 
 });
 var secretControl = new SecretControl();
-secretControl.addTo(map);
+
 
 
 
