@@ -1,8 +1,6 @@
 'use strict';
 
 // show the setup data provided by the server
-console.log(flaskData);
-console.log(flaskData.racers[0]);
 
 // globals
 var map = null;
@@ -21,22 +19,6 @@ var teamScore = null;
 //
 // WIP: put all this stuff in a module
 //
-
-
-// SocketIO for realtime bidirectional messages between client and server
-if (window.location.protocol == "https:") {
-    var ws_scheme = "wss://";
-} else {
-    var ws_scheme = "ws://"
-};
-
-socket = io();
-socket.on('connect', function() {
-   socket.emit('derp event', {data: 'i am connecting hell yeah'});
-   console.log("Websockets ready - connected");
-});
-console.log("Websockets initialized");
-
 
 // enable vibration support
 navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
@@ -128,7 +110,7 @@ var darkLayer = L.tileLayer('https://api.mapbox.com/styles/v1/stefaang/ciyirbvik
 });
 
 //////////////////////
-// Create Leafvar map - this is the main object of this whole app... but where do I have to put this :-S
+// Create Leaflet map - this is the main object of this whole app... but where do I have to put this :-S
 map = L.map('map',
     {
         dragging: false,
@@ -141,7 +123,17 @@ map = L.map('map',
     }
 );
 
-console.log("Leafvar Map ready");
+// SocketIO for realtime bidirectional messages between client and server
+socket = io();
+socket.on('connect', function() {
+   socket.emit('derp event', {data: 'i am connecting hell yeah'});
+   console.log("Websockets ready - connected");
+});
+console.log("Websockets initialized");
+
+
+
+console.log("Leaflet Map ready");
 
 //////////////////////
 //  MARKERS
@@ -152,40 +144,19 @@ L.ExtraMarkers.Icon.prototype.options.prefix = 'fa';
 // the markers object keeps track of all markers (LOL)
 // it's a dictionary that maps objectID to a marker [except for racers.. they use racer name (todo rework.. or not)]
 
-function addRacerMarker(racer, options) {
-
-    // racer object must contain following properties:
-    //   name, lat, lng, color, icon
-    console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng);
-    // create the L.marker
-    var r = L.marker([racer.lat, racer.lng], {
-        title: racer.name,
-        draggable: false,
-        zIndexOffset: 400
-    });
-    r.setIcon(icons.ship);
-    r.bindTooltip(racer.name, {
-        direction: 'bottom',
-        offset: [0,20]
-    });
-    r.pushLocation = function() {
-        var pos = this.getLatLng();
-        var data = {name: this.name, lat: pos.lat, lng: pos.lng};
-        console.log('Outbox: '+JSON.stringify(data));
-        socket.emit('move marker', data);
-    };
-    r.moveTo = function(newPos) {
-        // Normalize the transition speed from vertex to vertex
-        var speed = Math.min( this._latlng.distanceTo(newPos) * 200, 3000);
-        
+var MovingMarker = L.Marker.extend({
+    moveTo: function(newLatLng) {
         // Only if CSS3 transitions are supported
         if (L.DomUtil.TRANSITION) {
-          if (this._icon) { this._icon.style[L.DomUtil.TRANSITION] = ('all ' + speed + 'ms ease-in-out'); }
-          if (this._shadow) { this._shadow.style[L.DomUtil.TRANSITION] = 'all ' + speed + 'ms ease-in-out'; }
+            // Normalize the transition speed from vertex to vertex
+            var speed = Math.min( this._latlng.distanceTo(newLatLng) * 200, 3000);
+            if (this._icon) { this._icon.style[L.DomUtil.TRANSITION] = ('all ' + speed + 'ms ease-in-out'); }
+            if (this._shadow) { this._shadow.style[L.DomUtil.TRANSITION] = 'all ' + speed + 'ms ease-in-out'; }
         }
-        this.setLatLng(newPos);
-    };
-    r.fadeOut = function() {
+        this.setLatLng(newLatLng);
+    },
+
+    fadeOut: function() {
         if (L.DomUtil.TRANSITION) {
             var speed = 2000;
             if (this._icon) {
@@ -199,74 +170,128 @@ function addRacerMarker(racer, options) {
         } else {
             return null;
         }
-    };
-    r.color = r.options.icon.options.color;
-    r.name = r.options.title;
-    r.id = racer.id;
-    markers[racer.id] = r.addTo(map);
-    return r;
+    }
+});
+
+var RacerMarker = MovingMarker.extend({
+    options: {
+        draggable: false,
+        zIndexOffset: 400,
+        icon: icons.ship,
+    },
+
+    initialize: function(racer) {
+        // racer object must contain following properties:
+        //   id, name, lat, lng, color, icon
+        console.log("Racer - "+racer.name+" "+racer.lat+" "+racer.lng);
+        MovingMarker.prototype.initialize.call(this, [racer.lat, racer.lng]);
+
+        this.options.title = racer.name;
+        this.name = racer.name; // move this to options?
+        this.id = racer.id;
+        this.color = racer.color;
+
+        this.bindTooltip(racer.name, {
+            direction: 'bottom',
+            offset: [0,20]
+        });
+    },
+
+    mtype: 'racer',
+
+    pushLocation: function() {
+        var pos = this.getLatLng();
+        var data = {name: this.name, lat: pos.lat, lng: pos.lng};
+        console.log('Outbox: move marker '+JSON.stringify(data));
+        socket.emit('move marker', data);
+    },
+
+
+});
+
+// racer factory
+function racerMarker(racer) {
+    return new RacerMarker(racer);
 }
 
-function addMainRacerMarker(racer, options)  {
-    var r = addRacerMarker(racer, {shape: 'circle'});
-    // always display the Main User on top
-    r.setZIndexOffset(900);
-    var DEFAULT_RANGE = 20;
+var MainRacerMarker = RacerMarker.extend({
+    options: {
+        zIndexOffset: 900,
+    },
 
-    r.styles = {
-        bombmodeEnabled: { color: '#2E2E2E', weight: 1, stroke: true,},
-        default: { color: colormap[racer.color], weight: 2, stroke: true,},
-    };
+    initialize: function(racer) {
+        RacerMarker.prototype.initialize.call(this, [racer.lat, racer.lng]);
 
-    // track all movement of the main racer
-    r.mainUserTrack = [];
-    r.mainUserTrackPolyLine = L.polyline(r.getLatLng(), r.styles.default).addTo(map);
-    // add a Circle that shows the action range
+        // prepare for tracking
+        this.mainUserTrack = [];
+        this.styles.default.color = colormap[racer.color];
 
-    r.mainRange = L.circle(r.getLatLng(), DEFAULT_RANGE,
-        r.styles.default
-    ).addTo(map);
+        var DEFAULT_RANGE = 20;
+    },
 
-    r.onMove = function (e) {
+    styles: {
+        bombmodeEnabled: {color: '#2E2E2E', weight: 1, stroke: true,},
+        default: {color: 'black', weight: 2, stroke: true,},
+    },
+
+    onAdd: function(map) {
+        RacerMarker.prototype.onAdd.call(this, map);
+
+        // add a Circle that shows the action range
+        this.mainRange = L.circle(this._latLng, DEFAULT_RANGE, this.styles.default).addTo(map);
+
+        // track all movement of the main racer
+        this.mainUserTrackPolyLine = L.polyline(this._latLng, this.styles.default).addTo(map);
+
+        // this circle needs to follow the main marker at all time
+        this.on('move', this.onMove);
+
+        this.on('popupclose', function (p) {
+            this.unbindPopup();
+            map.locate({
+                watch: true,                // keep tracking
+                enableHighAccuracy: true,   // enable GPS
+                timeout: 30000
+            });
+        })
+    },
+
+    onMove: function (e) {
         this.mainRange.setLatLng(e.latlng);
         // this.mainUserTrack.push(e.latlng);    // this might get a bit fat in combination with dragging
-        // distTracker.update();
-    };
-    // this circle needs to follow the main marker at all time
-    r.on('move', r.onMove);
-
-    r.on('popupclose', function(p) {
-        this.unbindPopup();
-        map.locate({
-            watch: true,                // keep tracking
-            enableHighAccuracy: true,   // enable GPS
-            timeout: 30000
-        });
-    });
-
+        if (this._distanceTracker) {
+            this._distanceTracker.update();
+        }
+    },
 
     // add BombMode support
-    // r.activateBombMode = (function(dropBomb, teardown) {
+    // activateBombMode: function(dropBomb, teardown) {
     //     this.mainRange.setRadius(DEFAULT_RANGE);
     //     this.mainRange.setStyle(this.styles.bombmodeEnabled);
     //     this.mainRange.once('click', dropBomb);
-    // });
+    // },
     //
-    // r.deactivateBombMode = (function(){
+    // deactivateBombMode: function(){
     //     this.mainRange.setRadius(35);
     //     this.mainRange.setStyle(this.styles.default);
     //     this.mainRange.off('click');
-    // });
+    // };
+});
 
-    return r;
+// mainracer factory
+function mainRacerMarker(racer) {
+    return new MainRacerMarker(racer);
 }
+
+
+// todo: get mrm from socket
 
 for (var i = 0 ; i < flaskData.racers.length; i++) {
     var racer = flaskData.racers[i];
     var ismainmarker = racer.name === flaskData.username;
     if (ismainmarker) {
         // setup the main central Racer
-        markers[racer.id] = addMainRacerMarker(racer); // .addTo(map);
+        markers[racer.id] = mainRacerMarker(racer).addTo(map);
         mrm = markers[racer.id];
         mrmColor = racer.color;
         // bind to main Racer .. TODO: set this in global module settings
@@ -277,10 +302,10 @@ for (var i = 0 ; i < flaskData.racers.length; i++) {
             'border: 4px solid '+colormap[mrmColor]+';' +
             'background-color: '+colormap[mrmColor]+';' +
             '}', 1);
-        console.log(sheet.cssRules);
+        // console.log(sheet.cssRules);
     } else {
         // setup the other nearby Racers
-        markers[racer.id] = addRacerMarker(racer); //.addTo(map);
+        markers[racer.id] = racerMarker(racer).addTo(map);
     }
 }
 
@@ -307,11 +332,10 @@ socket.on('marker moved', function(data) {
         console.log("but marker not known before.. adding a new marker for "+data.id);
         if ('species' in data) {
             // Beast marker
-            markers[data.id] = addBeastMarker(data);
-
+            markers[data.id] = beastMarker(data).addTo(map);
         } else {
             // normal Racer marker
-            markers[data.id] = addRacerMarker(data); //.addTo(map);
+            markers[data.id] = racerMarker(data).addTo(map);
         }
     }
 });
@@ -325,10 +349,10 @@ socket.on('marker added', function(data) {
     if (!marker){
         if ('species' in data) {
             // Beast marker
-            markers[data.id] = addBeastMarker(data);
+            markers[data.id] = beastMarker(data).addTo(map);
         } else {
             // normal Racer marker
-            markers[data.id] = addRacerMarker(data); //.addTo(map);
+            markers[data.id] = racerMarker(data).addTo(map);
         }
     } else {
         console.log('.. but we already had that marker')
@@ -474,26 +498,34 @@ socket.on('marker removed', function(data) {
 //////////////////////
 // COINS
 
-function addCoinMarker(coin) {
-    var title = coin.icon;
-    var marker = L.marker([coin.lat, coin.lng], {
-        title: title,
-        zIndexOffset: 20
-    });
+var CoinMarker = L.Marker.extend({
+    options: {
+        zIndexOffset: 20,
+        icon: icons.coin,
+    },
 
+    initialize: function(coin) {
+        L.Marker.prototype.initialize.call(this, [coin.lat, coin.lng]);
+        // L.setOptions(this, options);
+        this.options.title = coin.icon;
+        this.id = coin.id;
 
-    marker.setIcon(icons.coin);
-    if (coin.icon){
-        marker.bindTooltip(title, {direction:'bottom', offset:[0,20]});
-        if (coin.icon in icons) {
-            marker.setIcon(icons[coin.icon]);
-            // marker.getTooltip().setContent('Drink this and go catch a whale!');
-        } else {
-            console.warn('icon missing!! '+coin.icon);
-        }
-
+        if (coin.icon){
+            this.bindTooltip(title, {direction:'bottom', offset:[0,20]});
+            if (coin.icon in icons) {
+                this.setIcon(icons[coin.icon]);
+            } else {
+                console.warn('icon missing!! '+coin.icon);
             }
-    markers[coin.id] = marker.addTo(map);
+        }
+    },
+
+    mtype: 'coin',
+});
+
+// coin factory
+function coinMarker(coin) {
+    return new CoinMarker(coin);
 }
 
 socket.on('coin added', function(coin) {
@@ -504,7 +536,7 @@ socket.on('coin added', function(coin) {
     if (marker) {
         console.log(".. coin already existed");
     } else {
-        addCoinMarker(coin);
+        coinMarker(coin).addTo(map);
     }
 });
 
@@ -523,6 +555,7 @@ socket.on('coin pickup', function(coin) {
             if (coin.secret && secretControl) {
                 secretControl.setSecretCoin(coin.id);
                 secretControl.addTo(map);
+                // you have 5 minutes to find the secret
                 setTimeout(secretControl.remove, 300000);
             } else {
                 secretControl.remove();
@@ -555,49 +588,31 @@ socket.on('secret correct', function(data) {
 
 
 // BEASTS
-var lastBeast = '58989eacf8ae2a7051122fca';
-function addBeastMarker(beast) {
-    var title = beast.name;
-    var marker = L.marker([beast.lat, beast.lng], {
-        autoStart: false,
+var BeastMarker = MovingMarker.extend({
+    options: {
         title: title,
         zIndexOffset: 990,
         interactive: false,
-    });
-    marker.species = beast.species;
+        icon: icons.whale,
+    },
 
-    marker.setIcon((beast.species in icons)? icons[beast.species] : icons.whale);
-    marker.bindTooltip('blub', {direction:'top'});
+    initialize: function(beast) {
+        L.Marker.prototype.initialize.call(this, [beast.lat, beast.lng]);
+        // L.setOptions(this, options);
 
-    marker.moveTo = function(newPos) {
-        // Normalize the transition speed from vertex to vertex
-        var speed = Math.min( this._latlng.distanceTo(newPos) * 200, 3000);
-
-        // Only if CSS3 transitions are supported
-        if (L.DomUtil.TRANSITION) {
-          if (this._icon) { this._icon.style[L.DomUtil.TRANSITION] = ('all ' + speed + 'ms ease-in-out'); }
-          if (this._shadow) { this._shadow.style[L.DomUtil.TRANSITION] = 'all ' + speed + 'ms ease-in-out'; }
+        this.species = beast.species;
+        this.id = beast.id;
+        if (beast.species in icons) {
+            this.setIcon(icons[beast.species]);
         }
-        this.setLatLng(newPos);
-    };
-    marker.fadeOut = function() {
-        if (L.DomUtil.TRANSITION) {
-            var speed = 2000;
-            if (this._icon) {
-                this._icon.style[L.DomUtil.TRANSITION] = ('all ' + speed + 'ms linear');
-            }
-            if (this._shadow) {
-                this._shadow.style[L.DomUtil.TRANSITION] = 'all ' + speed + 'ms linear';
-            }
-            this.setOpacity(0);
-            return this;
-        } else {
-            return null;
-        }
-    };
-    markers[beast.id] = marker.addTo(map);
-    lastBeast = beast.id;
-    return marker;
+    },
+
+    mtype: 'beast',
+});
+
+// beast factory
+function beastMarker(beast) {
+    return new BeastMarker(beast);
 }
 
 socket.on('beast hit', function(data){
@@ -612,10 +627,7 @@ socket.on('beast hit', function(data){
 
 
 ////////////////////////
-//  BUTTONS
-
-
-
+//  Location Tracking
 
 mrm.loctracker = {
     prevPos : 0,
@@ -669,7 +681,7 @@ function setFreeGeoIP() {
 map.on('locationfound', onLocationFound);
 map.on('locationerror', onLocationError);
 
-console.log("Leafvar location callbacks ready.. setView to main marker");
+console.log("Leaflet location callbacks ready..");
 
 
 
@@ -773,7 +785,7 @@ console.log("Leafvar location callbacks ready.. setView to main marker");
 //         console.log('Oh... what was that');
 //     }
 //
-//     // use a Leafvar Circle to get the proper size in meters (a marker doesn't follow scale)
+//     // use a Leaflet Circle to get the proper size in meters (a marker doesn't follow scale)
 //     var radius = 10;
 //     var damageRange = L.circle( latlng, radius,
 //             {
@@ -813,12 +825,13 @@ console.log("Leafvar location callbacks ready.. setView to main marker");
 // SHOW HELP button
 
 // The button to show the tutorial again
-var helpButton = L.easyButton( 'fa-question',   function() {
+var helpButton = new L.easyButton( 'fa-question',   function() {
     if (mrm.getPopup()) {
         mrm.closePopup();
         mrm.unbindPopup();
     }
     map.stopLocate();
+    // todo: move this to HTML
     var helptext = "<div><i class='pirate-icon coin'><b>AARRRRR AHOI!!! </b><br/>" +
             "De achterdeur van mijn schip stond open en nu ben ik al mijn centjes verrrloren, verhip!"+ "<br/>" +
             "Raap jij ze weer op, maatje? <br/>" +
@@ -850,75 +863,44 @@ helpButton._currentState.onClick();
 console.log("Easy Buttons ready");
 
 // Layers
-var layersControl = L.control.layers({'Dark':darkLayer, 'Light':liteLayer},{});
+var layersControl = L.control.layers({'Night':darkLayer, 'Day':liteLayer},{});
 layersControl.addTo(map);
 
 
 /////////////////////////////
 // TEAM SCORE BOARD
-teamScore = L.control({position: 'bottomright'});
-teamScore.onAdd = function () {
-    this._div = L.DomUtil.create('div', 'score-board'); // create a div with a class "score-board"
-    this._scores={'red':0, 'green':0, 'blue':0};
-    this._panels = {}
-    for (var color in this._scores) {
-        var panel = L.DomUtil.create('div', 'score-board-panel', this._div);
-        L.DomUtil.addClass(panel, color);
-        this._coinicon = L.DomUtil.create('div', 'pirate-icon coin', panel);
-        this._panels[color] = panel;
-    }
-    this.update();
-    socket.emit('get scores');
-    return this._div;
-};
+ScoreControl = L.Control.extend({
+    options: {position: 'bottomright'},
 
-// fills in the score panels with new data or cached data
-teamScore.update = function (data) {
-    for (var color in this._scores) {
-        // update the score in the tracker
-        if (data && data.team && data.team[color]) {
-            this._scores[color] = data.team[color];
+    onAdd: function () {
+        this._div = L.DomUtil.create('div', 'score-board'); // create a div with a class "score-board"
+        this._scores={'red':0, 'green':0, 'blue':0};
+        this._panels = {};
+        for (var color in this._scores) {
+            var panel = L.DomUtil.create('div', 'score-board-panel', this._div);
+            L.DomUtil.addClass(panel, color);
+            var coin = L.DomUtil.create('div', 'pirate-icon coin', panel);
+            // set coin size?
+            this._panels[color] = panel;
         }
-        this._panels[color].innerHTML = this._scores[color];
+        this.update();
+        socket.emit('get scores');
+        return this._div;
+    },
+
+    // fills in the score panels with new data or cached data
+    update: function (data) {
+        for (var color in this._scores) {
+            // update the score in the tracker
+            if (data && data.team && data.team[color]) {
+                this._scores[color] = data.team[color];
+            }
+            this._panels[color].innerHTML = this._scores[color];
+        }
     }
-};
+});
+var teamScore = new ScoreControl();
 teamScore.addTo(map);
-
-
-//////////////////////////
-// SECRET CODE Control
-// some coins come with a code for bonus points!
-var secretControl = L.control({position: 'bottomright'});
-secretControl.onAdd = function() {
-    this._div = L.DomUtil.create('div', 'score-board');
-    this._answer = L.DomUtil.create('input', 'secret-input', this._div);
-    this._answer.setAttribute('type','text');
-    this._answer.setAttribute('name','secret');
-    this._answer.setAttribute('id', 'secretAnswer');
-    this._answer.setAttribute('value', '');
-    // this._submit = L.DomUtil.create('input', 'secret-submit', this._form);
-    // this._submit.setAttribute('type', 'submit');
-    // this._submit.setAttribute('value', 'OK');
-    this.validateSecret = function(e) {
-        // proper way: send secret to server
-        var input = e.target;
-        console.log('my coin: '+this._coin);
-        if (e.keyCode==13) {
-            console.log('Submitting secret: '+input.value+' key: "'+e.keyCode+'"');
-            let data = {'secret': input.value, 'coin_id': secretControl._coin, 'racer_id': mrm.id, 'kc': e.keyCode};
-            socket.emit('post secret', data);
-            secretControl = secretControl.remove();
-        }
-    };
-    this._answer.addEventListener('keypress', this.validateSecret);
-
-    return this._div;
-};
-
-secretControl.setSecretCoin = function(coin) {
-    // save the coin id of the last coin picked up
-    this._coin = coin;
-};
 
 // the server sends 'new score' event with team and individual scores
 socket.on('new score', function(data) {
@@ -929,6 +911,49 @@ socket.on('new score', function(data) {
         teamScore.update(data);
     }
 });
+
+
+//////////////////////////
+// SECRET CODE Control
+// some coins come with a code for bonus points!
+var SecretControl = L.Control.extend({
+    options: {
+        position: 'bottomright'
+    },
+
+    onAdd : function(map) {
+        this._div = L.DomUtil.create('div', 'score-board');
+        L.DomEvent.disableClickPropagation(this._div);
+        this._answer = L.DomUtil.create('input', 'secret-input', this._div);
+        this._answer.setAttribute('type','text');
+        this._answer.setAttribute('name','secret');
+        this._answer.setAttribute('id', 'secretAnswer');
+        this._answer.setAttribute('value', '');
+        L.DomEvent.addListener(this._answer, 'keypress', this.validateSecret);
+        return this._div;
+    },
+
+    validateSecret: function(e) {
+        // send secret to server and hide this
+        if (e.keyCode==13 && this._coin) {
+            var input = e.target;
+            console.log('Submitting secret: '+input.value+' key: "'+e.keyCode+'"');
+            var data = {'secret': input.value, 'coin_id': secretControl._coin, 'racer_id': mrm.id, 'kc': e.keyCode};
+            socket.emit('post secret', data);
+            secretControl = secretControl.remove();
+        }
+    },
+
+    setSecretCoin: function(coin) {
+        // save the coin id of the last coin picked up
+        this._coin = coin;
+    }
+
+});
+var secretControl = new SecretControl();
+secretControl.addTo(map);
+
+
 
 
 
@@ -969,13 +994,3 @@ if (mrm.getPopup()) {
     mrm.closePopup();
     mrm.unbindPopup();
 }
-
-
-// force locator for others
-console.log("Start using Leafvar Location");
-map.locate({
-    watch: true,                // keep tracking
-    enableHighAccuracy: true,   // enable GPS
-    timeout: 30000
-});
-

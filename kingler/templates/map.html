@@ -32,13 +32,25 @@
             margin: 0;
         }
 
-        html, body, #map {
+        html, body {
             height: 100%;
+        }
+        #map {
+            height: 90%;
+        }
+        #gui {
+            height: 15%;
+        }
+        #help {
+            height: 80%;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <div id="gui"></div>
+    <div id="help"></div>
+
     <!-- icons -->
     <script src="https://use.fontawesome.com/697ebb27cd.js"></script>
     <!-- socketIO for server interaction -->
@@ -57,9 +69,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-color/2.1.2/jquery.color.min.js"></script>
     <!-- custom code -->
-    <script src="static/js/classic-app.js"></script>
+    <script src="static/js/classic/app.js"></script>
 {% if admin %}
-    <script src="static/js/classic-admin.js"></script>
+    <script src="static/js/classic/admin.js"></script>
+{% else %}
+    <script src="static/js/classic/client.js"></script>
 {% endif %}
 </body>
 </html>

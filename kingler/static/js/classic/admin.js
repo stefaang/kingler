@@ -1,18 +1,26 @@
 /**
  * Created by stefaan on 21-2-17.
  */
-
+"use strict";
 map.stopLocate();
 map.dragging.enable();
 
 
-for(m in markers) {
+for(var mid in markers) {
     console.log('ADMIN: add dragging to markers');
-    console.log(m);
-    var r = markers[m];
-    if(r.pushLocation) {
-        r.dragging.enable();
-        r.on('dragend', r.pushLocation);
+    console.log(mid);
+    var marker = markers[mid];
+    if(marker.mtype === 'racer') {
+        marker.dragging.enable();
+        marker.on('dragend', marker.pushLocation);
+    } else if (marker.mtype === 'beast') {
+
+    } else if (marker.mtype === 'coin') {
+        marker.on('click', function(e) {
+            "use strict";
+            // modify coin type / delete coin / set value
+
+        })
     }
 }
 

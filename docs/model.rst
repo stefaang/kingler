@@ -39,7 +39,7 @@ manage.py
 The Client
 ----------
 
-classic-app.js
+app.js
 - reusable modules would be nice
 
 CustomMap
