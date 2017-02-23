@@ -537,7 +537,7 @@ socket.on('coin added', function(coin) {
     if (marker) {
         console.log(".. coin already existed");
     } else {
-        coinMarker(coin).addTo(map);
+        markers[coin.id] = coinMarker(coin).addTo(map);
     }
 });
 
@@ -929,18 +929,19 @@ var SecretControl = L.Control.extend({
         this._answer.setAttribute('name','secret');
         this._answer.setAttribute('id', 'secretAnswer');
         this._answer.setAttribute('value', '');
-        L.DomEvent.addListener(this._answer, 'keypress', this.validateSecret);
+        L.DomEvent.addListener(this._answer, 'keypress', this.validateSecret, this);    // pass this to get access to _coin
         return this._div;
     },
 
     validateSecret: function(e) {
+        console.log('typing...'+this._coin);
         // send secret to server and hide this
         if (e.keyCode==13 && this._coin) {
             var input = e.target;
             console.log('Submitting secret: '+input.value+' key: "'+e.keyCode+'"');
-            var data = {'secret': input.value, 'coin_id': secretControl._coin, 'racer_id': mrm.id, 'kc': e.keyCode};
+            var data = {'secret': input.value, 'coin_id': this._coin, 'racer_id': mrm.id, 'kc': e.keyCode};
             socket.emit('post secret', data);
-            secretControl = secretControl.remove();
+            this.remove();
         }
     },
 
