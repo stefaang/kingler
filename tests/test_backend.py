@@ -12,6 +12,7 @@ import os
 import tempfile
 import unittest
 from kingler.app import app, socketio
+import redis
 
 # import coverage
 #
@@ -53,5 +54,24 @@ class KinglerTestCase(unittest.TestCase):
         client.disconnect()
         self.assertEquals(len(received), 0)
 
-# if __name__ == '__main__':
-#     unittest.main()
+if __name__ == '__main__':
+    # unittest.main()
+
+    # redis scratchpad
+    r = redis.StrictRedis()
+    # r.execute_command("racers, 51.00, 3.75, 'stefaan', 51.00, 3.76, 'karen',
+    #          51.01, 3.74, 'thomas',
+    #          51.02, 3.76, 'dirkjan'")
+    r.geoadd('racers',
+             51.00, 3.75, 'stefaan',
+             51.00, 3.76, 'karen',
+             51.01, 3.74, 'thomas',
+             51.02, 3.76, 'dirkjan')
+    nearby = r.georadius('racers', 51.01, 3.74, 2000, withdist=True)
+
+    print nearby
+    r.geoadd('racers',
+             51.03, 3.75, 'stefaan')
+    nearby = r.georadius('racers', 51.01, 3.74, 2000, withdist=True)
+
+    print nearby

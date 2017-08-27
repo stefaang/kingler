@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import time
+import random
 from app import app, socketio
 from celery import Celery
 from models import *
@@ -200,12 +201,23 @@ def update_racer_pos(data):
 
         for racer in spectators:
             emit('coin pickup', info, room=racer['name'])
-        # change the team of the coin so that this team cannot pick it up now (TODO: improve)
-        coin.modify(team=movedracer.color)
-        # add the points
+
+        # ON COIN PICKUP (TODO: improve)
+        # * When playing this game in a tour, with people doing the tour in 2 ways
+        # Change the team of the coin to prevent this team from taking the coin until another team takes it.
+        # Ensure atomicity by checking for no lock on the coin
+        # Also disable coin for x minutes
+        # if coin.modify({'active':True}, team=movedracer.color, active=False)
+        #   *** task to enable the coin again ***
+        #   revive_coin.apply_async((str(coin.id),), countdown=x)
+
+        # * When it is not a tour, coins are just deleted or disabled on pickup.
+        coin.modify({'active':True}, team=movedracer.color, active=False)
+
+        # The racer scores points
         movedracer.modify(inc__score=coin.value)
 
-        app.logger.info('racer %s scores for coinssss', movedracer.name)
+        app.logger.info('racer %s scores %s points for coin', movedracer.name, coin.value)
         update_scores(spectators)
 
     if movedracer.is_alive:
@@ -285,8 +297,19 @@ def move_beasts():
             socketio.emit('marker removed', b.get_info(), room=racer.name)
 
 
+@celery.task
+def rain_coins():
+    coins = CopperCoin.objects(active=False)
+    app.logger.info('Found %s deactivated coins', coins.count())
+    for c in coins:
+        # TODO: use date_modified to ensure the coin was disabled long enough
+        if random.random() < 0.20:
+            app.logger.info('turn on coin %s', c)
+            c.modify(active=True)
+
 
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(3.0, move_beasts.s(), name='move beasts every 3 seconds')
     # sender.add_periodic_task(4.0, move_racers.s(), name='move racers every 3 seconds')
+    sender.add_periodic_task(15.0, rain_coins.s(), name='rain coins over the map')

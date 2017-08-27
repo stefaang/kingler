@@ -10,17 +10,31 @@
 """
 
 import random
+from math import cos, sin, radians, pi, sqrt
+
 from models import *
+
+
+def distance(hier, daar):
+    lon1, lat1 = hier
+    lon2, lat2 = daar
+    R = 6371 # radius of the earth in km
+    x = (lon2 - lon1) * cos(0.5 * (lat2 + lat1))
+    y = lat2 - lat1
+    return R * sqrt(x * x + y * y)
 
 
 def deleteAllFlags():
     Flag.objects.delete()
 
+
 def deleteAllRacers():
     Racer.objects.delete()
 
+
 def resetRacers():
     Racer.objects.update(score=0)
+
 
 def rainRandomCoins(n):
     # add 100 new coins to the database with random value 5 - 10 - 15 - 20
@@ -29,8 +43,8 @@ def rainRandomCoins(n):
         c = CopperCoin(pos=randpos, value=5*random.randint(1,5))
         c.save()
 
+
 def setBeastAtBottles():
-    from math import cos, sin, radians, pi
     coins = CopperCoin.objects()
     rand = random.random
     for coin in coins:
@@ -62,10 +76,12 @@ def setBeastAtBottles():
 def deleteAllCoins():
     CopperCoin.objects.delete()
 
+
 def resetCoins():
     """Reset the team on all coins back to black"""
     c = CopperCoin.objects()
     c.update(team='black', value=10, icon='')
+
 
 def shuffleCoins():
     coins = list(CopperCoin.objects.all())
@@ -79,12 +95,14 @@ def shuffleCoins():
             coin = coins.pop()
             coin.update(icon=item)
 
-def muffleCoins():
+
+def muffleCoins(secrets=None):
     coins = list(CopperCoin.objects.all())
 
     items = {'chest': 8, 'letter': 8, 'star': 16}
-    secrets = ['bonanza', 'barbossa', 'neeltje jans', 'boccaccio', 'tzalwelzijnaja', 'tuizentfloot',
-               'zoete mosterd', 'tafelpoot']
+    if not secrets:
+        secrets = ['bonanza', 'barbossa', 'neeltje jans', 'boccaccio', 'tzalwelzijnaja', 'tuizentfloot',
+                   'zoete mosterd', 'tafelpoot']
 
     random.shuffle(coins)
     for item, amount in items.iteritems():
@@ -108,6 +126,7 @@ def dumpCoinsToFile(fname='coindump.txt'):
     with open(fname, 'wb') as f:
         f.write(json.dumps(positions))
 
+
 def loadCoinsFromFile(fname='coindump.txt'):
     """Load a bunch of coin positions into the db"""
     import json
@@ -117,6 +136,7 @@ def loadCoinsFromFile(fname='coindump.txt'):
     for pos in positions:
         CopperCoin(pos=pos, value=10).save()
     print CopperCoin.objects.count(), 'coins in database'
+
 
 if __name__ == '__main__':
     deleteAllFlags()

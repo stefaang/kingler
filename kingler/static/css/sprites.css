@@ -103,7 +103,7 @@
     background-image: url(../img/flaticons/pirates/ship-in-a-bottle.png);
 }
 .pirate-icon.coin {
-    background-image: url(../img/flaticons/pirates/coin.png);
+    background-image: url(../img/pins/pin000.jpg);
 }
 .pirate-icon.chest {
     background-image: url(../img/flaticons/pirates/treasure.png);
@@ -151,7 +151,11 @@
     background-image: url(../img/flaticons/pirates/starfish.png);
 }
 .pirate-icon.ship {
-    background-image: url(../img/flaticons/pirates/ship.png);
+    color: #2C2C2C;
+    background-image: url(../img/birgit-spider-head.gif);
+    border: 2px ;
+    border-radius: 2px;
+
 }
 .pirate-icon.tortoise {
     background-image: url(../img/flaticons/pirates/tortoise.png);
@@ -160,7 +164,7 @@
     background-image: url(../img/flaticons/pirates/treasure.png);
 }
 .pirate-icon.whale {
-    background-image: url(../img/flaticons/pirates/whale.png);
+    background-image: url(../img/birgit-spider-head.gif);
 }
 
 

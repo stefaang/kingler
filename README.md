@@ -51,12 +51,12 @@ export CELERY_BROKER="redis://localhost:6379/0"
 
 - Start the webserver (see Procfile for Heroku version)
 ```
-gunicorn app.app --chdir kingler -k eventlet -w 1 -b 0.0.0.0:5000
+gunicorn app:app --chdir kingler -k eventlet -w 1 -b 0.0.0.0:5000
 ```
 
 - Start Celery worker in another terminal (but with the same venv). Enable the beat to run with bots.
 ```
-celery worker -A app.celery --loglevel=info -B
+celery worker -A app:celery --workdir=kingler --loglevel=info -B
 ```
 
 You may want to

@@ -94,8 +94,10 @@ def handle_movemarker(data):
 def handle_addbomb(data):
     # todo: let the server decide when to send updates (ex a task every second?)
     app.logger.debug('add bomb received')
-
-    lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
+    if not 'lng' in data or not 'lat' in data:
+        app.logger.error('add bomb received without coordinates')
+        return
+    lng, lat = float(data['lng']), float(data['lat'])
     # add the bomb to the db
     color = session['racer']['color']
     bomb = Bomb(pos=(lng, lat), team=color, owner=session['racerid'])
@@ -147,9 +149,11 @@ def handle_addcoin(data):
                                pos__max_distance=50)
     if not nearbycoins:
         coin = CopperCoin(pos=(lng, lat)).save()
-        app.logger.info('added coin: %s', coin)
+        app.logger.info('added coin: {}'.format(coin))
     else:
-        nearbycoins.delete()
+        n = nearbycoins.delete()
+        app.logger.debug('deleted {} coins'.format(n))
+
 
 @socketio.on('add beast stop')
 def handle_add_beast_stop(data):
@@ -199,18 +203,22 @@ def handle_get_scores():
 
 @socketio.on('post secret')
 def handle_post_secret(data):
-    app.logger.info('post secret %s', data)
+    app.logger.info("post secret %s", data)
     if not 'coin_id' in data or not 'racer_id' in data:
         return
     coin = CopperCoin.objects(pk=data.get('coin_id')).first()
     racer = Racer.objects(pk=data['racer_id']).first()
-
-    if racer and coin and coin.secret == data['secret']:
-        emit('secret correct')
-        racer.modify(inc__score=200)
-        spectators = Racer.objects(pos__near=racer.pos,
-                                   pos__max_distance=GLOBAL_RANGE)
-        update_scores(spectators)
+    secret = data.get('secret')
+    if racer and coin:
+        if coin.secret == secret:
+            app.logger.info("Secret correct: {}".format(secret))
+            emit("secret correct")
+            racer.modify(inc__score=200)
+            spectators = Racer.objects(pos__near=racer.pos,
+                                       pos__max_distance=GLOBAL_RANGE)
+            update_scores(spectators)
+        else:
+            app.logger.info("Wrong secret: {}".format(secret))
 
 # room support
 @socketio.on('join')
@@ -254,17 +262,11 @@ def login():
 
         if username.startswith('clearall'):
             if username.endswith('bombs'):
-                bombs = Bomb.objects()
-                for b in bombs:
-                    b.delete()
+                Bomb.drop_collection()
             elif username.endswith('coins'):
-                coins = CopperCoin.objects()
-                for c in coins:
-                    c.delete()
+                CopperCoin.drop_collection()
             elif username.endswith('flags'):
-                flags = Flag.objects()
-                for f in flags:
-                    f.delete()
+                Flag.drop_collection()
             return redirect(url_for('logout'))
 
         r = Racer.objects(name=username)

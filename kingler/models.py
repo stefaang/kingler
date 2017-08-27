@@ -17,7 +17,7 @@ from datetime import datetime as dt
 
 
 GLOBAL_RANGE = 10000
-VISION_RANGE = 200
+VISION_RANGE = 300
 PICKUP_RANGE = 20
 
 ALLIED_RANGE = GLOBAL_RANGE
@@ -106,7 +106,6 @@ class Racer(MapEntity):
     color = db.StringField(default='black', max_length=16)
     icon = db.StringField(default='bug', max_length=16)
     teamview_only = db.BooleanField(default=True)
-
 
     party = db.StringField()
 
@@ -326,7 +325,7 @@ class Beast(MapEntity):
     active = db.BooleanField(default=True)
     team = db.StringField(default='black')
     species = db.StringField()
-    track = db.LineStringField()
+    track = db.LineStringField()    # requires at least 2 points!
     trackname = db.StringField()
 
     def get_info(self):

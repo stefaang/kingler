@@ -34,6 +34,9 @@ var sounds = {
     'invincible': new Howl({src: ['static/sound/totally-not-mario.mp3']}),
 };
 
+function playRandomCoinSound() {
+    sounds.coin.play();
+}
 
 // Icon definitions
 var icons = {
@@ -119,7 +122,7 @@ map = L.map('map',
         doubleClickZoom: true,   // zoom on center, wherever you click
         fullscreenControl: true,
         markerZoomAnimation: false,
-        layers: [liteLayer],
+        layers: [darkLayer],
     }
 );
 
@@ -512,12 +515,20 @@ var CoinMarker = L.Marker.extend({
         this.id = coin.id;
 
         if (coin.icon){
-            this.bindTooltip(coin.icon, {direction:'bottom', offset:[0,20]});
-            if (coin.icon in icons) {
-                this.setIcon(icons[coin.icon]);
-            } else {
-                console.warn('icon missing!! '+coin.icon);
+            this.setupIcon(coin.icon)
+        }
+    },
+
+    setupIcon: function(icon) {
+        this.bindTooltip(icon, {direction:'bottom', offset:[0,20]});
+        if (icon in icons) {
+            //
+            if (icon == 'coin') {
+
             }
+            this.setIcon(icons[icon]);
+        } else {
+            console.warn('icon missing!! ' + icon);
         }
     },
 
@@ -529,11 +540,35 @@ function coinMarker(coin) {
     return new CoinMarker(coin);
 }
 
+var BabeMarker = CoinMarker.extend({
+    setupIcon: function(icon) {
+        // TODO: setup random babe
+        this.bindTooltip(icon, {direction:'bottom', offset:[0,20]});
+        if (icon in icons) {
+            //
+            if (icon == 'coin') {
+
+            }
+            this.setIcon(icons[icon]);
+        } else {
+            console.warn('icon missing!! ' + icon);
+        }
+    }
+});
+
+function babeMarker(babe) {
+    return new BabeMarker(babe);
+}
+
 socket.on('coin added', function(coin) {
     console.log("Inbox received:  Coin Added");
     console.log("Inbox unpack..: "+coin.id+" - "+coin.icon+" coin");
     if (!markers) return;
     var marker = markers[coin.id];
+    for ( var v in markers){
+        console.log("DBG - " + marker + " " + marker.icon);
+    }
+
     if (marker) {
         console.log(".. coin already existed");
     } else {
@@ -550,7 +585,7 @@ socket.on('coin pickup', function(coin) {
     if (marker) {
         if (mrm.id === coin.racer) {
             // play the coin sound
-            sounds.coin.play();
+            playRandomCoinSound();
 
             // some coins have a secret bonus code
             if (coin.secret && secretControl) {
@@ -560,6 +595,11 @@ socket.on('coin pickup', function(coin) {
                 setTimeout(secretControl.remove, 300000);
             } else {
                 secretControl.remove();
+            }
+
+            // invincible mode
+            if (coin.invincible) {
+                sounds.invincible.play();
             }
 
             // and buzz away
