@@ -34,8 +34,32 @@ var sounds = {
     'invincible': new Howl({src: ['static/sound/totally-not-mario.mp3']}),
 };
 
+var moanSounds = new Howl({
+    'src': ['static/sound/moans.mp3'],
+    'sprite': {
+        'its_him': [0, 1200],
+        'hes_so_sexy': [1300, 2400],
+        'yes_sir': [3800, 1500],
+        'id_do_anything': [5300, 2000],
+        'i_submit': [7400, 1900],
+        'control_me': [9300, 1400],
+        'please_sir': [11200, 1600],
+        'ow_sir': [12800, 1400],
+        'its_him2': [15700, 3700],
+        'random_moaning1': [33200, 9700],
+        'random_moaning2': [44700, 5400],
+        'fake_laugh': [55300, 2900]
+    }
+});
+// keep track of which sound to play next
+moanSounds.index = 0;
+
 function playRandomCoinSound() {
-    sounds.coin.play();
+    // originally this was just sounds.coin.play();
+    var moan = ['its_him', 'hes_so_sexy', 'yes_sir', 'id_do_anything', 'i_submit', 'control_me', 'please_sir', 'ow_sir',
+            'its_him2', 'random_moaning1', 'random_moaning2', 'fake_laugh'][moanSounds.index];
+    moanSounds.index = (moanSounds.index + 1) % 12;
+    moanSounds.play(moan);
 }
 
 // Icon definitions
@@ -566,7 +590,7 @@ socket.on('coin added', function(coin) {
     if (!markers) return;
     var marker = markers[coin.id];
     for ( var v in markers){
-        console.log("DBG - " + marker + " " + marker.icon);
+        console.log("DBG - " + v);
     }
 
     if (marker) {

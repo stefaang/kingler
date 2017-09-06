@@ -4,7 +4,7 @@
 "use strict";
 map.stopLocate();
 map.dragging.enable();
-
+map.setMinZoom(5);
 
 for(var mid in markers) {
     console.log('ADMIN: add dragging to markers');
@@ -80,6 +80,7 @@ map.on('keypress',  function listenToButtonS(e) {
         addBeastStopButton._currentState.onClick();
     }
 );
+
 
 
 

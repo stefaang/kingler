@@ -197,7 +197,6 @@ def update_racer_pos(data):
         info = {'value': coin.value, 'id': str(coin.id), 'racer': str(movedracer.id)}
         if coin.secret:
             info.update({'secret': True})
-        emit('coin pickup', info, room=mr['name'])
 
         for racer in spectators:
             emit('coin pickup', info, room=racer['name'])
@@ -212,7 +211,7 @@ def update_racer_pos(data):
         #   revive_coin.apply_async((str(coin.id),), countdown=x)
 
         # * When it is not a tour, coins are just deleted or disabled on pickup.
-        coin.modify({'active':True}, team=movedracer.color, active=False)
+        coin.modify({'active':True}, team='black', active=False)
 
         # The racer scores points
         movedracer.modify(inc__score=coin.value)
@@ -303,13 +302,13 @@ def rain_coins():
     app.logger.info('Found %s deactivated coins', coins.count())
     for c in coins:
         # TODO: use date_modified to ensure the coin was disabled long enough
-        if random.random() < 0.20:
+        if random.random() < 0.50:
             app.logger.info('turn on coin %s', c)
             c.modify(active=True)
 
 
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(3.0, move_beasts.s(), name='move beasts every 3 seconds')
+    #sender.add_periodic_task(3.0, move_beasts.s(), name='move beasts every 3 seconds')
     # sender.add_periodic_task(4.0, move_racers.s(), name='move racers every 3 seconds')
-    sender.add_periodic_task(15.0, rain_coins.s(), name='rain coins over the map')
+    sender.add_periodic_task(6.0, rain_coins.s(), name='rain coins over the map')
