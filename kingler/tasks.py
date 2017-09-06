@@ -182,7 +182,7 @@ def update_racer_pos(data):
     #         update_scores(spectators)
 
     # D. Show new coins
-    coins = (o for o in set(after) - set(before) if isinstance(o, CopperCoin) and o.team != movedracer.color)
+    coins = (o for o in set(after) - set(before) if isinstance(o, CopperCoin) and o.active)
     for coin in coins:
         # app.logger.info('%s coin, %s racer' % (coin.team, movedracer.color))
         lng, lat = coin.pos['coordinates']
@@ -302,13 +302,13 @@ def rain_coins():
     app.logger.info('Found %s deactivated coins', coins.count())
     for c in coins:
         # TODO: use date_modified to ensure the coin was disabled long enough
-        if random.random() < 0.50:
+        if random.random() < 0.12:
             app.logger.info('turn on coin %s', c)
             c.modify(active=True)
 
 
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    #sender.add_periodic_task(3.0, move_beasts.s(), name='move beasts every 3 seconds')
+    sender.add_periodic_task(3.0, move_beasts.s(), name='move beasts every 3 seconds')
     # sender.add_periodic_task(4.0, move_racers.s(), name='move racers every 3 seconds')
-    sender.add_periodic_task(6.0, rain_coins.s(), name='rain coins over the map')
+    sender.add_periodic_task(10.0, rain_coins.s(), name='rain coins over the map')

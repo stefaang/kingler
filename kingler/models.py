@@ -163,6 +163,8 @@ class Racer(MapEntity):
                                   _cls__ne='MapEntity.Racer')
 
         newnearby = list(others)+list(items)
+        # TODO: do this properly
+        newnearby = list(i for i in newnearby if not hasattr(i, 'active') or i.active)
         # now finally update the nearby list
         self.nearby = newnearby
         self.is_online = True
