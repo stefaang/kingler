@@ -4,7 +4,8 @@
 "use strict";
 map.stopLocate();
 map.dragging.enable();
-map.setMinZoom(5);
+darkLayer.setMinZoom(5);
+liteLayer.setMinZoom(5);
 
 for(var mid in markers) {
     console.log('ADMIN: add dragging to markers');
