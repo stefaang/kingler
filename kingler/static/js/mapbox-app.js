@@ -50,7 +50,23 @@ let bombSound = new Howl({
 let coinSound = new Howl({
   src: ['static/sound/coin.mp3']
 });
-
+let sexyMoan = new Howl({
+  src: ['static/sound/sexyfemalemoaning.mp3'],
+  sprite: {
+    its_him: [0, 1200],
+    hes_so_sexy: [1300, 3700],
+    yes_sir: [3800, 5300],
+    id_do_anything: [5300, 7300],
+    i_submit: [7400, 9300],
+    control_me: [9300, 10700],
+    please_sir: [11200, 12800],
+    ow_sir: [12800, 14200],
+    its_him: [15700, 19400],
+    random_moaning1: [33200, 42900],
+    random_moaning2: [44700, 50100],
+    fake_laugh: [55300, 58200]
+  }
+});
 
 
 //////////////////////
