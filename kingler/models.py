@@ -112,6 +112,7 @@ class Racer(MapEntity):
     # tracking params
     date_lastseen = db.DateTimeField
     is_online = db.BooleanField(default=False)
+    is_admin = db.BooleanField(default=False)
     nearby = db.ListField(db.ReferenceField('MapEntity'))   # track nearby Racers, Bombs, ...
 
     # stats

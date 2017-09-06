@@ -107,7 +107,6 @@ var icons = {
 // Lite Pirate tileset by thunderforest. It's awesome but a bit heavy on data
 
 var liteLayer = L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/{y}.png?apikey=ca05b2d9cffa483aac7a95fdfb8b7607', {
-    minZoom: 15, maxZoom: 18,
     attribution: 'Data © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, Maps © <a href="http://www.thunderforest.com">Thunderforest</a>',
     id: 'tf.pioneer',
 });
@@ -130,7 +129,6 @@ var liteLayer = L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/
 // My own custom tileset made with MapBox Studio - production only
 var darkLayer = L.tileLayer('https://api.mapbox.com/styles/v1/stefaang/ciyirbvik00592rmjlg8gjc7n/tiles/256/'+
     '{z}/{x}/{y}?access_token=pk.eyJ1Ijoic3RlZmFhbmciLCJhIjoiY2l3ZGppeWJtMDA1MDJ5dW1nOGZwcnlyeSJ9.vGapFUQfn2vyM2RZv78-fw', {
-    minZoom: 15, maxZoom: 18,
     attribution: 'Mapdata © <a href="http://openstreetmap.org">OpenStreetMap</a>, ' +
                  'Imagery © <a href="http://mapbox.com">Mapbox</a>',
    id: 'stefaang.ciyirbvik00592rmjlg8gjc7n'
@@ -147,6 +145,8 @@ map = L.map('map',
         fullscreenControl: true,
         markerZoomAnimation: false,
         layers: [darkLayer],
+        minZoom: 15,
+        maxZoom: 18,
     }
 );
 

@@ -299,11 +299,11 @@ def logout():
 @app.route('/mbmap')
 def newstylemap():
     if 'username' in session:
-        admin = False
         try:
             # get the main Racer.. you need to be logged in
-            session['racer'] = Racer.objects(name=session['username']).first()
-            mainracer = session['racer']
+            mainracer = Racer.objects(name=session['username']).first()
+            session['racer'] = mainracer
+            is_admin = mainracer.is_admin
             mainracer.modify(is_online=True)
             mainracer.clearNearby()   # in case it was not done on logout
             app.logger.info('loaded %s, of type %s', mainracer, type(mainracer))
@@ -322,10 +322,10 @@ def newstylemap():
 
         # prepare dict object
         data = {'racers': racers, 'username': session['username'], 'flags': flags}
-        if session['username'] == 'Stefaan':    # todo: set party admins
+        if mainracer.is_admin:
             app.logger.warn('admin logged in %s', session['username'])
             admin = True
-        return render_template('mbmap.html', flaskData=data, admin=admin)
+        return render_template('mbmap.html', flaskData=data, admin=mainracer.is_admin)
     else:
         session['newstyle'] = True
         return redirect(url_for('login'))
