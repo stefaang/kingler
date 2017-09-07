@@ -60,7 +60,7 @@ def setBeastAtBottles():
             # let the beast circle the bottle, N points at radius R, offset K
             R = 0.002 * rand() + 0.001   # this is about 120m
             # larger radius requires more points. about 50 points for 0.002...
-            N = int(25000 * R)
+            N = int(50000 * R)
             K = rand() * 2*pi
             b.track = []
 

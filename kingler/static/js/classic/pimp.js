@@ -5,9 +5,9 @@ icons.terminator = L.divIcon({className: 'bparty terminator', iconSize: [120, 12
 
 for (var i=1; i<10; i++){
     var pimp = 'pimp' + i;
-    icons[pimp] = L.divIcon({className: 'bparty pimp'+i, iconSize: [100, 100],});
+    icons[pimp] = L.divIcon({className: 'bparty pimp'+i, iconSize: [70, 70], iconAnchor: [35,55],});
     var pros = 'pros' + i;
-    icons[pros] = L.divIcon({className: 'bparty pros'+i, iconSize: [100, 100],});
+    icons[pros] = L.divIcon({className: 'bparty pros'+i, iconSize: [70, 70], iconAnchor: [35,55],});
 }
 
 // reload racers
@@ -22,7 +22,7 @@ for (var markerId in markers) {
 // reload main racer marker
 if (mrm.icon in icons) {
     console.log('Updated mrm PIMP icons');
-    mrm.setIcon(L.divIcon({className: 'bparty ' + mrm.icon, iconSize: [120, 120]}));
+    mrm.setIcon(L.divIcon({className: 'bparty ' + mrm.icon, iconSize: [90, 90], iconAnchor: [45,70],}));
 }
 
 // add moan sounds
