@@ -22,6 +22,9 @@
 
     <!-- pokemon fantasy -->
     <link rel="stylesheet" id="mystyle" href="static/css/sprites.css">
+{% for module in modules %}
+    <link rel="stylesheet" id="mystyle" href="static/css/{{ module }}.css">
+{% endfor %}
 
     <script>
         var flaskData = {{ flaskData|tojson|safe }};
@@ -73,6 +76,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-color/2.1.2/jquery.color.min.js"></script>
     <!-- custom code -->
     <script src="static/js/classic/app.js"></script>
+{% for module in modules %}
+    <script src="static/js/classic/{{ module }}.js"></script>
+{% endfor %}
 {% if admin %}
     <script src="static/js/classic/admin.js"></script>
 {% else %}

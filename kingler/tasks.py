@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import time
+import datetime
 import random
 from app import app, socketio
 from celery import Celery
@@ -301,14 +302,15 @@ def rain_coins():
     coins = CopperCoin.objects(active=False)
     app.logger.info('Found %s deactivated coins', coins.count())
     for c in coins:
-        # TODO: use date_modified to ensure the coin was disabled long enough
-        if random.random() < 0.12:
-            app.logger.info('turn on coin %s', c)
-            c.modify(active=True)
+        # TODO: add debug config
+        if datetime.datetime.now() > c.date_modified + datetime.timedelta(minutes=10):
+            if random.random() < 0.08:
+                app.logger.info('turn on coin %s', c)
+                c.modify(active=True)
 
 
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(3.0, move_beasts.s(), name='move beasts every 3 seconds')
     # sender.add_periodic_task(4.0, move_racers.s(), name='move racers every 3 seconds')
-    sender.add_periodic_task(10.0, rain_coins.s(), name='rain coins over the map')
+    sender.add_periodic_task(15.0, rain_coins.s(), name='rain coins over the map')

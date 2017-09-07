@@ -1,0 +1,38 @@
+.bparty {
+    /*background-size: 100%;*/
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+.bparty.spider {
+    background-image: url(../img/bparty/birgit-spider-head.gif);
+}
+.bparty.terminator {
+    background-image: url(../img/bparty/birgit-terminator3.png);
+}
+.bparty.pimp9 {
+    background-image: url(../img/bparty/pimp1.png);
+}
+.bparty.pimp2 {
+    background-image: url(../img/bparty/pimp2.png);
+}
+.bparty.pimp3 {
+    background-image: url(../img/bparty/pimp3.png);
+}
+.bparty.pimp4 {
+    background-image: url(../img/bparty/pimp4.png);
+}
+.bparty.pimp5 {
+    background-image: url(../img/bparty/pimp5.png);
+}
+.bparty.pimp6 {
+    background-image: url(../img/bparty/pimp6.png);
+}
+.bparty.pimp7 {
+    background-image: url(../img/bparty/pimp7.png);
+}
+.bparty.pimp8 {
+    background-image: url(../img/bparty/pimp8.png);
+}
+.bparty.pimp1 {
+    background-image: url(../img/bparty/pimp9.png);
+}

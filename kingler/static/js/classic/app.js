@@ -34,33 +34,9 @@ var sounds = {
     'invincible': new Howl({src: ['static/sound/totally-not-mario.mp3']}),
 };
 
-var moanSounds = new Howl({
-    'src': ['static/sound/moans.mp3'],
-    'sprite': {
-        'its_him': [0, 1200],
-        'hes_so_sexy': [1300, 2400],
-        'yes_sir': [3800, 1500],
-        'id_do_anything': [5300, 2000],
-        'i_submit': [7400, 1900],
-        'control_me': [9300, 1400],
-        'please_sir': [11200, 1600],
-        'ow_sir': [12800, 1400],
-        'its_him2': [15700, 3700],
-        'random_moaning1': [33200, 9700],
-        'random_moaning2': [44700, 5400],
-        'fake_laugh': [55300, 2900]
-    }
-});
-// keep track of which sound to play next
-moanSounds.index = 0;
-
 function playRandomCoinSound() {
-    // originally this was just sounds.coin.play();
-    var moan = ['its_him', 'hes_so_sexy', 'yes_sir', 'id_do_anything', 'i_submit', 'control_me', 'please_sir', 'ow_sir',
-            'its_him2', 'random_moaning1', 'random_moaning2', 'fake_laugh'][moanSounds.index];
-    moanSounds.index = (moanSounds.index + 1) % 12;
-    moanSounds.play(moan);
-}
+    sounds.coin.play();
+};
 
 // Icon definitions
 var icons = {
@@ -218,6 +194,13 @@ var RacerMarker = MovingMarker.extend({
         this.id = racer.id;
         this.color = racer.color;
 
+        if (racer.icon) {
+            this.icon = racer.icon;
+            if (racer.icon in icons) {
+                this.setIcon(icons[racer.icon]);
+            }
+        }
+
         this.bindTooltip(racer.name, {
             direction: 'bottom',
             offset: [0,20]
@@ -232,8 +215,6 @@ var RacerMarker = MovingMarker.extend({
         console.log('Outbox: move marker '+JSON.stringify(data));
         socket.emit('move marker', data);
     },
-
-
 });
 
 // racer factory
@@ -564,26 +545,6 @@ function coinMarker(coin) {
     return new CoinMarker(coin);
 }
 
-var BabeMarker = CoinMarker.extend({
-    setupIcon: function(icon) {
-        // TODO: setup random babe
-        this.bindTooltip(icon, {direction:'bottom', offset:[0,20]});
-        if (icon in icons) {
-            //
-            if (icon == 'coin') {
-
-            }
-            this.setIcon(icons[icon]);
-        } else {
-            console.warn('icon missing!! ' + icon);
-        }
-    }
-});
-
-function babeMarker(babe) {
-    return new BabeMarker(babe);
-}
-
 socket.on('coin added', function(coin) {
     console.log("Inbox received:  Coin Added");
     console.log("Inbox unpack..: "+coin.id+" - "+coin.icon+" coin");
@@ -735,6 +696,8 @@ function setFreeGeoIP() {
             map.setView(pos, 14);
         }
     );
+    // disable further calls
+    setFreeGeoIP = null;
 }
 
 // connect location events to callback functions
@@ -892,11 +855,11 @@ var helpButton = new L.easyButton( 'fa-question',   function() {
     }
     map.stopLocate();
     // todo: move this to HTML
-    var helptext = "<div><i class='pirate-icon coin'><b>AARRRRR AHOI!!! </b><br/>" +
+    var helptext = "<div><b>AARRRRR AHOI!!! </b><br/>" +
             "De achterdeur van mijn schip stond open en nu ben ik al mijn centjes verrrloren, verhip!"+ "<br/>" +
             "Raap jij ze weer op, maatje? <br/>" +
             "Pas wel op voor de walvissen en zo. Ze bijten ferrrrrm. <br/>" +
-            "Pro-tip: zet de helderheid van je scherm wat zachter en de slaapstand op 30 minuten.. " +
+            "<b>Pro-tip</b>: zet de helderheid van je scherm wat zachter en de slaapstand op 30 minuten.. " +
             "je scherm moet blijven aanstaan! En zet volume op max voor de beste ervaring muahahhaha</div>";
     mrm.bindPopup(helptext, {maxWidth:200, offset:[0,-20]}).openPopup();
 

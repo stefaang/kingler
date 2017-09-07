@@ -67,6 +67,8 @@ class MapEntity(db.Document):
     pos = db.PointField()
     #: the date the entity was added to the database
     date_created = db.DateTimeField(default=dt.now)
+    #: the date the entity was last modified
+    date_modified = db.DateTimeField(default=dt.now)
     #: the team the entity belongs to (could change)
     team = db.StringField(default='black')
     #: is this entity visible to its own team only
@@ -81,6 +83,10 @@ class MapEntity(db.Document):
         else:
             lng, lat = self.pos['coordinates']
         return {'lat': lat, 'lng': lng, 'team': self.team, 'id': str(self.id)}
+
+    def save(self, **kwargs):
+        self.date_modified = dt.now()
+        super(MapEntity, self).save(**kwargs)
 
     def __repr__(self):
         """compact formatter"""
@@ -134,7 +140,7 @@ class Racer(MapEntity):
 
     def get_info(self):
         d = super(Racer, self).get_info()
-        d.update({'name': self.name, 'icon':ICONMAP[self.color], 'color': self.color})
+        d.update({'name': self.name, 'icon': self.icon, 'color': self.color})
         return d
 
     def get_nearby_stuff(self, info_only=True):

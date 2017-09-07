@@ -273,6 +273,11 @@ def login():
         if not r:
             # add a new Racer to the db
             r = Racer(name=username, pos=[3.7, 51], color=color)
+            # add icon!
+            # TODO: add this to POST data
+            if r.name.lower().startswith('pimp'):
+                index = Racer.objects(icon__startswith='pimp').count()
+                r.icon='pimp{}'.format(index % 9 + 1)
         else:
             # update the color attribute to the db
             r = r.first()
@@ -303,7 +308,6 @@ def newstylemap():
             # get the main Racer.. you need to be logged in
             mainracer = Racer.objects(name=session['username']).first()
             session['racer'] = mainracer
-            is_admin = mainracer.is_admin
             mainracer.modify(is_online=True)
             mainracer.clearNearby()   # in case it was not done on logout
             app.logger.info('loaded %s, of type %s', mainracer, type(mainracer))
@@ -323,8 +327,7 @@ def newstylemap():
         # prepare dict object
         data = {'racers': racers, 'username': session['username'], 'flags': flags}
         if mainracer.is_admin:
-            app.logger.warn('admin logged in %s', session['username'])
-            admin = True
+            app.logger.warn('admin logged in: %s', session['username'])
         return render_template('mbmap.html', flaskData=data, admin=mainracer.is_admin)
     else:
         session['newstyle'] = True
@@ -338,7 +341,6 @@ def oldstylemap():
     if 'username' in session:
         racers = []
         flags = []
-        admin = False
         try:
             # get the main Racer.. you need to be logged in
             session['racer'] = Racer.objects(name=session['username']).first()
@@ -361,10 +363,13 @@ def oldstylemap():
 
         data = {'racers': racers, 'username': session['username'], 'flags': flags}
         # detect admin access
-        if session['username'] == 'Stefaan':  # todo: set party admins
-            app.logger.warn('admin logged in %s', session['username'])
-            admin = True
-        return render_template('map.html', flaskData=data, admin=admin)
+        if mainracer.is_admin:
+            app.logger.warn('admin logged in: %s', session['username'])
+        # detect modules
+        modules = []
+        if mainracer.name.lower().startswith('pimp'):
+            modules.append('pimp')
+        return render_template('map.html', flaskData=data, admin=mainracer.is_admin, modules=modules)
     else:
         session['newstyle'] = False
         return redirect(url_for('login'))
