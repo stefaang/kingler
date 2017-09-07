@@ -5,13 +5,24 @@ icons.terminator = L.divIcon({className: 'bparty terminator', iconSize: [120, 12
 
 for (var i=1; i<10; i++){
     var pimp = 'pimp' + i;
-    icons[pimp] = L.divIcon({className: 'bparty pimp'+i, iconSize: [50, 120],});
+    icons[pimp] = L.divIcon({className: 'bparty pimp'+i, iconSize: [100, 100],});
+    var pros = 'pros' + i;
+    icons[pros] = L.divIcon({className: 'bparty pros'+i, iconSize: [100, 100],});
 }
 
+// reload racers
 console.log('Update PIMP icons: ' + mrm.icon);
+for (var markerId in markers) {
+    var racer = markers[markerId];
+    if (racer.icon in icons) {
+        racer.setIcon(icons[racer.icon]);
+    }
+}
+
+// reload main racer marker
 if (mrm.icon in icons) {
     console.log('Updated mrm PIMP icons');
-    mrm.setIcon(icons[mrm.icon]);
+    mrm.setIcon(L.divIcon({className: 'bparty ' + mrm.icon, iconSize: [120, 120]}));
 }
 
 // add moan sounds
@@ -50,9 +61,6 @@ var BabeMarker = CoinMarker.extend({
         this.bindTooltip(icon, {direction:'bottom', offset:[0,20]});
         if (icon in icons) {
             //
-            if (icon == 'coin') {
-
-            }
             this.setIcon(icons[icon]);
         } else {
             console.warn('icon missing!! ' + icon);

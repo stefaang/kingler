@@ -518,7 +518,7 @@ var CoinMarker = L.Marker.extend({
         // L.setOptions(this, options);
         this.options.title = coin.icon;
         this.id = coin.id;
-
+        console.log()
         if (coin.icon){
             this.setupIcon(coin.icon)
         }
