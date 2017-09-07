@@ -151,11 +151,7 @@
     background-image: url(../img/flaticons/pirates/starfish.png);
 }
 .pirate-icon.ship {
-    color: #2C2C2C;
-    background-image: url(../img/birgit-spider-head.gif);
-    border: 2px ;
-    border-radius: 2px;
-
+    background-image: url(../img/flaticons/pirates/ship.png);
 }
 .pirate-icon.tortoise {
     background-image: url(../img/flaticons/pirates/tortoise.png);
@@ -164,9 +160,18 @@
     background-image: url(../img/flaticons/pirates/treasure.png);
 }
 .pirate-icon.whale {
-    background-image: url(../img/birgit-spider-head.gif);
+    background-image: url(../img/flaticons/pirates/whale.png);
 }
 
+.bparty.spider {
+    background-image: url(../img/bparty/birgit-spider-head.gif);
+}
+.bparty.terminator {
+    background-image: url(../img/bparty/birgit-terminator3.png);
+}
+.bparty.dude {
+    background-image: url(../img/bparty/;
+}
 
 
 .flag-icon {

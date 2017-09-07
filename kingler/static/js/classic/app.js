@@ -589,10 +589,6 @@ socket.on('coin added', function(coin) {
     console.log("Inbox unpack..: "+coin.id+" - "+coin.icon+" coin");
     if (!markers) return;
     var marker = markers[coin.id];
-    for ( var v in markers){
-        console.log("DBG - " + v);
-    }
-
     if (marker) {
         console.log(".. coin already existed");
     } else {
