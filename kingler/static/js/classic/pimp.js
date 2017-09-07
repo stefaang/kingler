@@ -10,6 +10,10 @@ for (var i=1; i<10; i++){
     icons[pros] = L.divIcon({className: 'bparty pros'+i, iconSize: [70, 70], iconAnchor: [35,55],});
 }
 
+babeNames = {'pros1':'Tischa', 'pros2':'Anna', 'pros3':'Svetlana', 'pros4':'Kisha', 'pros5':'Vulva', 'pros6':'Natasha',
+ 'pros7': 'Kinky', 'pros8': 'Cindy', 'pros9': 'Lady Thunder'}
+
+
 // reload racers
 console.log('Update PIMP icons: ' + mrm.icon);
 for (var markerId in markers) {
@@ -58,7 +62,7 @@ var BabeMarker = CoinMarker.extend({
     counter: 0,
     setupIcon: function(icon) {
         // TODO: setup random babe
-        this.bindTooltip(icon, {direction:'bottom', offset:[0,20]});
+        this.bindTooltip(babeNames[icon], {direction:'bottom', offset:[0,20]});
         if (icon in icons) {
             //
             this.setIcon(icons[icon]);
