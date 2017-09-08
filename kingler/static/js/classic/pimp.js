@@ -29,6 +29,10 @@ if (mrm.icon in icons) {
     mrm.setIcon(L.divIcon({className: 'bparty ' + mrm.icon, iconSize: [90, 90], iconAnchor: [45,70],}));
 }
 
+// add sounds for spider and terminator
+sounds.terminator = sounds.whale;
+sounds.spider = sounds.kraken;
+
 // add moan sounds
 var moanSounds = new Howl({
     'src': ['static/sound/moans.mp3'],
