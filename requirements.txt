@@ -1,7 +1,7 @@
 flask>=0.12.3
 Flask-SocketIO==2.7.1
 Flask-WTF==0.13.1
-Jinja2==2.10
+Jinja2==2.10.1
 MarkupSafe==0.23
 Shapely==1.5.17
 WTForms==2.1
