@@ -13,7 +13,7 @@ git+https://github.com/stefaang/gunicorn.git@master#egg=gunicorn
 itsdangerous==0.24
 mongoengine==0.10.6
 pymongo==3.3.1
-python-engineio==1.0.3
+python-engineio==3.9.3
 python-socketio==1.6.0
 redis==2.10.5
 six==1.10.0
