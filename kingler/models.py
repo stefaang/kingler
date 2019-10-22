@@ -9,8 +9,8 @@
     :license: BSD, see LICENSE for more details.
 """
 
-import logging
 import sys
+import logging
 from datetime import datetime as dt
 
 #from mongoengine import signals
@@ -37,14 +37,14 @@ BOMB_EXPLOSION_RANGE = 20
 FLAG_PICKUP_RANGE = PICKUP_RANGE
 FLAG_VISION_RANGE = GLOBAL_RANGE
 
-logger = logging.getLogger(__name__)
-
 # in the application context, the db is already defined by flask_mongoengine
 if 'db' in globals():
     logger.info('Database connection in application context')
+    logger = logging.getLogger(__name__)
 # outside of the application, use mongoengine right away
 else:
     import mongoengine
+    logger = logging.getLogger(__name__)
     logger.info('Connecting to database outside of application context')
     mongoengine.connect('kingler')
     db = mongoengine
@@ -55,6 +55,7 @@ ICONMAP = {
     'yellow': 'bolt',
     'red': 'fire'
 }
+
 
 class Cell(db.Document):
     # use this to divide players in global cells
@@ -88,7 +89,7 @@ class MapEntity(db.Document):
 
     def __str__(self):
         """longer string representation"""
-        return '<{} {} at {}>'.format(self._cls, str(self.id), self.pos.get('coordinates') if self.pos else None)
+        return f'<{self._cls} {self.id} at {self.pos or "unknown"}>'
 
 
 class HoldableEntity(MapEntity):
@@ -106,7 +107,6 @@ class Racer(MapEntity):
     color = db.StringField(default='black', max_length=16)
     icon = db.StringField(default='bug', max_length=16)
     teamview_only = db.BooleanField(default=True)
-
 
     party = db.StringField()
 
@@ -129,7 +129,7 @@ class Racer(MapEntity):
     #     logger.debug("Pre Save: %s" % document.name)
     #     logger.debug("Updated - %s", document._delta())
 
-    def clearNearby(self):
+    def clear_nearby(self):
         self.modify(nearby=list())
 
     def get_info(self):
@@ -144,25 +144,26 @@ class Racer(MapEntity):
         logger.info('my type is rather xxxxxx %s', self._cls)
         logger.info('my id is rather xxxxxx %s', self.id)
 
-        others = Racer.objects(pos__near=self.pos,
-                               pos__max_distance=VISION_RANGE,
-                               is_online=True,
-                               id__ne=self.id)
+        near_racers = Racer.objects(pos__near=self.pos,
+                                     pos__max_distance=VISION_RANGE,
+                                     is_online=True,
+                                     id__ne=self.id)
         # add this Racer in the nearby list of the nearby Racers, if it wasn't there yet
-        others.update(add_to_set__nearby=self)
+        near_racers.update(add_to_set__nearby=self)
 
-        outofrange = Racer.objects(pos__near=self.pos,
+        far_racers = Racer.objects(pos__near=self.pos,
                                    pos__min_distance=VISION_RANGE,
                                    is_online=True,
                                    id__ne=self.id)
-        outofrange.update(pull__nearby=self)
+        logger.warning('HOHO %s', type(self))
+        #far_racers.update(pull__nearby=self)
 
         items = MapEntity.objects(pos__near=self.pos,
                                   pos__max_distance=VISION_RANGE,
                                   teamview_only=False,
                                   _cls__ne='MapEntity.Racer')
 
-        newnearby = list(others)+list(items)
+        newnearby = list(near_racers) + list(items)
         # now finally update the nearby list
         self.nearby = newnearby
         self.is_online = True
@@ -179,8 +180,8 @@ class Racer(MapEntity):
         events = []
         """Pickup enemy flag if not carrying one and return own team flags to base"""
         nearbyflags = Flag.objects(pos__near=self.pos,
-                             pos__max_distance=FLAG_PICKUP_RANGE,
-                             state__ne='carried')
+                                   pos__max_distance=FLAG_PICKUP_RANGE,
+                                   state__ne='carried')
 
         for flag in nearbyflags:
             if flag.team == self.color:
@@ -234,7 +235,7 @@ class Bomb(MapEntity):
     meta = {'allow_inheritance': True}
 
     def __init__(self, **kwargs):
-        if 'owner' in kwargs and isinstance(kwargs['owner'], basestring):
+        if 'owner' in kwargs and isinstance(kwargs['owner'], str):
             kwargs['owner'] = Racer.objects.get(id=kwargs['owner'])
         super(Bomb, self).__init__(**kwargs)
 
@@ -250,9 +251,9 @@ class Bomb(MapEntity):
     def explode(self):
         if not self.is_active:
             return None
-        #logger.debug('bomb explodes!')
+        # logger.debug('bomb explodes!')
         """Detonates the bomb and returns a dict with the effects"""
-        d = {}
+        d = dict()
         # get a list of players that see the explosion
         d['spectators'] = Racer.objects(pos__near=self.pos,
                                    pos__max_distance=BOMB_ALLY_VISION)[:100]
