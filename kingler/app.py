@@ -12,6 +12,8 @@
 import os
 import json
 import time
+import eventlet
+eventlet.monkey_patch()
 from flask import Flask, session, redirect, url_for, escape, request, render_template
 from flask_mongoengine import MongoEngine
 
@@ -26,13 +28,15 @@ socketio = SocketIO(app, message_queue=app.config['REDIS_URL'])
 db.init_app(app)
 
 # now import the models and tasks
-from models import *
-from tasks import *
-
+from kingler.models import Racer, Beast, Bomb, Flag, CopperCoin, Position
+from kingler.tasks import update_racer_pos, do_bomb_explode, update_scores
+from kingler.constants import GLOBAL_RANGE
+from kingler.utils import getlnglat
 
 ########################
 #
 # SOCKETIO routes
+
 
 @socketio.on('connect')
 def handle_connect():
@@ -68,14 +72,14 @@ def handle_vue_connect():
 
 
 @socketio.on('move marker')
-def handle_movemarker(data):
+def handle_movemarker(data: dict):
     """
     - update the new marker position in db
     - notify all markers in range of this change [both for old range and new range]
     - update bombs
     - update flags: pickup or return
     """
-    timestamp = time.time()
+    timestamp = time.perf_counter()
     app.logger.info('received move marker: %s', data)
 
     # TODO: check if session user is allowed to move this marker!
@@ -84,18 +88,17 @@ def handle_movemarker(data):
     update_racer_pos(data)
 
     # finalize by checking how long all this took
-
-    duration = time.time() - timestamp
+    duration = time.perf_counter() - timestamp
     app.logger.debug('move marker saved in %s ms', 1000*duration)
     # return "OK"
 
 
 @socketio.on('add bomb')
-def handle_addbomb(data):
+def handle_addbomb(data: dict):
     # todo: let the server decide when to send updates (ex a task every second?)
     app.logger.debug('add bomb received')
 
-    lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
+    lng, lat = getlnglat(data)
     # add the bomb to the db
     color = session['racer']['color']
     bomb = Bomb(pos=(lng, lat), team=color, owner=session['racerid'])
@@ -114,7 +117,7 @@ def handle_addbomb(data):
 
 
 @socketio.on('add flag')
-def handle_addflag(data):
+def handle_addflag(data: dict):
     """The client requests to add a flag
      :param: data : dict with the following keys:
        team
@@ -122,12 +125,12 @@ def handle_addflag(data):
        lng
     """
     app.logger.debug('add flag received')
-    lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
+    lng, lat = getlnglat(data)
     team = data.get('team')
     # don't allow flag within 50 m of an existing flag
     nearbyflags = Flag.objects(pos__near=(lng, lat),
                                pos__max_distance=50)
-    if not list(nearbyflags):
+    if not nearbyflags:
         flag = Flag(pos=(lng, lat), team=team).save()
         app.logger.info('added flag: %s', flag)
     else:
@@ -135,14 +138,14 @@ def handle_addflag(data):
 
 
 @socketio.on('add coin')
-def handle_addcoin(data):
+def handle_addcoin(data: dict):
     """The client requests to add a coin
      :param: data : dict with the following keys:
        lat
        lng
     """
     app.logger.debug('add coin received')
-    lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
+    lng, lat = getlnglat(data)
     nearbycoins = Flag.objects(pos__near=(lng, lat),
                                pos__max_distance=50)
     if not nearbycoins:
@@ -151,38 +154,39 @@ def handle_addcoin(data):
     else:
         nearbycoins.delete()
 
+
 @socketio.on('add beast stop')
-def handle_add_beast_stop(data):
+def handle_add_beast_stop(data: dict):
     from math import cos, sqrt, radians
-    def distance(hier, daar):
-        lon1, lat1 = (radians(degree) for degree in hier)
-        lon2, lat2 = (radians(degree) for degree in daar)
+
+    def distance(aa, bb):
+        lon1, lat1 = (radians(degree) for degree in aa)
+        lon2, lat2 = (radians(degree) for degree in bb)
         R = 6371008  # radius of the earth in m
         x = (lon2 - lon1) * cos(0.5 * (lat2 + lat1))
         y = lat2 - lat1
         return R * sqrt(x * x + y * y)
-
 
     SPD = 10
     app.logger.debug('add beast stop received')
     if 'lng' not in data or 'lat' not in data:
         app.logger.warn('Failed to add beast stop: lat/lng not found in data')
         return
-    lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
+    lng, lat = getlnglat(data)
     beast = Beast.objects.get(pk=data['id'])
     if [lng, lat] not in beast.track['coordinates']:
         app.logger.info('add a point to track')
         track = beast.track['coordinates']
-        hier = track[-1]
-        daar = [lng, lat]
-        d = distance(hier, daar)
+        a, b = track[-1], [lng, lat]
+        d = distance(a, b)
         app.logger.debug('mind the gap of %sm', d)
+        # add points to the track every 10m between a and b
         while d > SPD:
-            a = SPD/d
-            hier = [hier[0]+a*(daar[0]-hier[0]), hier[1]+a*(daar[1]-hier[1])]
-            track.append(hier)
-            d = distance(hier, daar)
-        app.logger.info('final track lenght: %s', len(track))
+            s = SPD / d
+            a = (a[0] + s*(b[0]-a[0]), a[1] + s*(b[1]-a[1]))
+            track.append(a)
+            d = distance(a, b)
+        app.logger.info('final track length: %s', len(track))
         beast.track = track
     else:
         app.logger.info('delete first point!!')
@@ -196,6 +200,7 @@ def handle_get_scores():
         app.logger.info('Get scores for %s', session['username'])
         racers = Racer.objects()    # add party
         update_scores(racers)
+
 
 @socketio.on('post secret')
 def handle_post_secret(data):
@@ -211,6 +216,7 @@ def handle_post_secret(data):
         spectators = Racer.objects(pos__near=racer.pos,
                                    pos__max_distance=GLOBAL_RANGE)
         update_scores(spectators)
+
 
 # room support
 @socketio.on('join')
@@ -253,18 +259,10 @@ def login():
         color = session['color'] = request.form['color']
 
         if username.startswith('clearall'):
-            if username.endswith('bombs'):
-                bombs = Bomb.objects()
-                for b in bombs:
-                    b.delete()
-            elif username.endswith('coins'):
-                coins = CopperCoin.objects()
-                for c in coins:
-                    c.delete()
-            elif username.endswith('flags'):
-                flags = Flag.objects()
-                for f in flags:
-                    f.delete()
+            deletables = [(Bomb, 'bombs'), (CopperCoin, 'coins'), (Flag, 'flags')]
+            for cls, keyw in deletables:
+                if username.endswith(keyw):
+                    cls.objects().delete()
             return redirect(url_for('logout'))
 
         r = Racer.objects(name=username)
@@ -298,30 +296,30 @@ def logout():
 def newstylemap():
     if 'username' in session:
         admin = False
-        try:
-            # get the main Racer.. you need to be logged in
-            session['racer'] = Racer.objects(name=session['username']).first()
-            mainracer = session['racer']
-            mainracer.modify(is_online=True)
-            mainracer.clearNearby()   # in case it was not done on logout
-            app.logger.info('loaded %s, of type %s', mainracer, type(mainracer))
-            _, stuff = mainracer.get_nearby_stuff()
-            racers = [o.get_info() for o in stuff if isinstance(o, Racer)]
-            flags = [o.get_info() for o in stuff if isinstance(o, Flag)]
-            mainracer.clearNearby()  # clear again to load all the stuff that I didn't add here on the next move
-            myself = mainracer.get_info()
-            racers = [myself] + racers
-            app.logger.info('loading... %s', racers)
-        except Exception as e:
-            # message to dev
-            app.logger.error("Failed to show map: %s" % e)
-            # message to user
-            return "Failed to show map"
+
+        # get the main Racer.. you need to be logged in
+        session['racer'] = Racer.objects(name=session['username']).first()
+        mainracer = session['racer']
+        mainracer.modify(is_online=True)
+        mainracer.clear_nearby()   # in case it was not done on logout
+        app.logger.info('loaded %s, of type %s', mainracer, type(mainracer))
+        _, stuff = mainracer.get_nearby_stuff()
+        racers = [o.get_info() for o in stuff if isinstance(o, Racer)]
+        flags = [o.get_info() for o in stuff if isinstance(o, Flag)]
+        mainracer.clear_nearby()  # clear again to load all the stuff that I didn't add here on the next move
+        myself = mainracer.get_info()
+        racers = [myself] + racers
+        app.logger.info('loading... %s', racers)
+        # except Exception as e:
+        #     # message to dev
+        #     app.logger.error("Failed to show map: %s" % e)
+        #     # message to user
+        #     return "Failed to show map"
 
         # prepare dict object
         data = {'racers': racers, 'username': session['username'], 'flags': flags}
         if session['username'] == 'Stefaan':    # todo: set party admins
-            app.logger.warn('admin logged in %s', session['username'])
+            app.logger.info('admin logged in %s', session['username'])
             admin = True
         return render_template('mbmap.html', flaskData=data, admin=admin)
     else:
@@ -334,28 +332,22 @@ def newstylemap():
 @app.route('/map')
 def oldstylemap():
     if 'username' in session:
-        racers = []
-        flags = []
         admin = False
-        try:
-            # get the main Racer.. you need to be logged in
-            session['racer'] = Racer.objects(name=session['username']).first()
-            mainracer = session['racer']
-            mainracer.modify(is_online=True)
-            mainracer.clearNearby()   # in case it was not done on logout
-            app.logger.info('loaded %s, of type %s', mainracer, type(mainracer))
-            _, stuff = mainracer.get_nearby_stuff()
-            racers = [o.get_info() for o in stuff if isinstance(o, Racer)]
-            flags = [o.get_info() for o in stuff if isinstance(o, Flag)]
-            mainracer.clearNearby()  # clear again to load all the stuff that I didn't add here on the next move
-            myself = mainracer.get_info()
-            racers = [myself] + racers
-            app.logger.info('loading... %s', racers)
-        except Exception as e:
-            # message to dev
-            app.logger.error("Failed to show map: %s" % e)
-            # message to user
-            return "Failed to show map"
+        #try:
+        # get the main Racer.. you need to be logged in
+        session['racer'] = Racer.objects(name=session['username']).first()
+        mainracer = session['racer']
+        mainracer.modify(is_online=True)
+        mainracer.clear_nearby()   # in case it was not done on logout
+        app.logger.info('loaded %s, of type %s', mainracer, type(mainracer))
+        _, stuff = mainracer.get_nearby_stuff()
+        racers = [o.get_info() for o in stuff if isinstance(o, Racer)]
+        flags = [o.get_info() for o in stuff if isinstance(o, Flag)]
+        mainracer.clear_nearby()  # clear again to load all the stuff that I didn't add here on the next move
+        myself = mainracer.get_info()
+        racers = [myself] + racers
+        app.logger.info('loading... %s', racers)
+        # #     return "Failed to show map"
 
         data = {'racers': racers, 'username': session['username'], 'flags': flags}
         # detect admin access
@@ -391,7 +383,7 @@ def move_racer():
         return "Post me some JSON plx"
 
 
-@app.route('/addracer', methods=['POST'])
+@app.route('/racer/', methods=['POST'])
 def add_racer():
     """ Post """
     data = json.loads(request.get_json())
@@ -408,20 +400,20 @@ def add_racer():
         return "Failed to add racer"
 
 
-@app.route('/deleteracer', methods=['GET', 'POST'])
-def del_racer():
-    if request.method == 'POST':
+@app.route('/racer/<name>/', methods=['DELETE'])
+def del_racer(name):
+    if session.get('username') == name:
         # TODO stub
+        # delete this racer
         pass
 
 
-@app.route('/addpos', methods=['GET', 'POST'])
+@app.route('/addpos', methods=['POST'])
 def add_position():
     if request.method == 'POST' and 'username' in session:
         try:
             data = request.get_json(force=True)
-            # data = json.dumps(request.get_data())
-            # app.logger.info("addpos %s",data)
+            # app.logger.info("addpos %s", data)
             name = session['username']
             lat = float(data['coords']['latitude'])
             lng = float(data['coords']['longitude'])

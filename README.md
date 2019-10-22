@@ -8,11 +8,11 @@ Backend:
 
  - [Flask](http://flask.pocoo.org/), the python web app framework
  - [MongoDB](https://www.mongodb.com/) for all persistent data ops
- - Celery, distributed task queue, the backend worker
+ - [Celery](https://docs.celeryproject.org/en/latest/), distributed task queue, the backend worker
 
 Frontend - Classic:
 
- - [leaflet](http://leafletjs.com/) for maps
+ - [leaflet](https://leafletjs.com/) for maps
  - [socketIO](https://flask-socketio.readthedocs.io/en/latest/) for real-time position updates
 
 Frontend - Fancy:
@@ -25,7 +25,7 @@ How to run this?
 
 - Get these packages
 ```
-sudo apt-get install python2.7 python-virtualenv python-dev build-essential redis-server libgeos-dev mongodb-server
+sudo apt-get install python3 python3-virtualenv python3-dev build-essential redis-server libgeos-dev mongodb-server
 ```
 
 - Make sure you have MongoDB 2.6+
@@ -36,7 +36,7 @@ mongod --version
 
 - Setup Virtual environment
 ```
-virtualenv env
+virtualenv -p python3 env
 source env/bin/activate
 pip install -r requirements.txt
 ```
@@ -51,7 +51,7 @@ export CELERY_BROKER="redis://localhost:6379/0"
 
 - Start the webserver (see Procfile for Heroku version)
 ```
-gunicorn app.app --chdir kingler -k eventlet -w 1 -b 0.0.0.0:5000
+gunicorn app:app --chdir kingler -k eventlet -w 1 -b 0.0.0.0:5000
 ```
 
 - Start Celery worker in another terminal (but with the same venv). Enable the beat to run with bots.
