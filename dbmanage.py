@@ -69,7 +69,7 @@ def shuffle_coins():
           'bottle': 1, 'sword': 8, 'helm': 5, 'map': 5, 'anchor': 4, 'sabre': 8
     }
     random.shuffle(coins)
-    for item, amount in items.iteritems():
+    for item, amount in items.items():
         for i in range(amount):
             coin = coins.pop()
             coin.update(icon=item)
@@ -83,7 +83,7 @@ def muffle_coins():
                'zoete mosterd', 'tafelpoot']
 
     random.shuffle(coins)
-    for item, amount in items.iteritems():
+    for item, amount in items.items():
         for i in range(amount):
             coin = coins.pop()
             if item == 'letter':

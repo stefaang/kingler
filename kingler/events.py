@@ -37,8 +37,6 @@ def handle_disconnect():
         if r:
             current_app.logger.info('Broadcat %s disconnect', r.name)
             r.modify(is_online=False)
-            lng, lat = r.lnglat
-            update_racer_pos(dict(name=r.name))
     else:
         current_app.logger.warning('Disconnecting but no username in session')
     return 'OK'
