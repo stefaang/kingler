@@ -1,8 +1,11 @@
-Play a mix of Pacman and other classics in real life on your mobile device.
+## Project Kingler
+
+Multiplayer city game engine. Go on a pirate treasure hunt while you steer clear from 
+the killer whales. You may even drop mines for a real-life bomberman experience.
 
 ![pcparty-screen1](https://cloud.githubusercontent.com/assets/974800/23187523/6806561a-f88b-11e6-9453-6d1fc8f6c594.png)
 
-Core components:
+## Core components:
 
 Backend:
 
@@ -21,9 +24,9 @@ Frontend - Fancy:
  - ES2015 javascript and [Vue](https://vuejs.org/)
 
 
-How to run this?
+## Getting started
 
-- Get these packages
+- Install dependencies
 ```
 sudo apt-get install python3 python3-virtualenv python3-dev build-essential redis-server libgeos-dev mongodb-server
 ```
@@ -43,6 +46,7 @@ pip install -r requirements.txt
 
 - Setup some environment vars (add them to env/bin/activate script) - see config.py
 ```
+export KINGLER_CONFIG="development"
 export APP_SETTINGS="config.DevelopmentConfig"
 export REDIS_URL="redis://localhost"
 export SECRET_KEY="whysosecret?"
@@ -71,17 +75,3 @@ TODO:
 - add a tutorial for SSL setup (required on Chrome for GeoLocation)
 - rework database interaction to be compatible both with MongoDB and PostGIS/GeoAlchemy2
 - ...
-
-
-
-In case we ever go back to PostGres (I hope not)
-
-- install PostGres
- - a super user is handy as you need extensions, database and tables for this project
-- install PostGis
- - CREATE EXTENSION postgis;
-- use geoalchemy2 in requirements.txt
- - export DATABASE_URL="postgresql:///kingler" to environment
-- use alembic / flask-migrate to migrate databases
- - edit script.py.mako to include geoalchemy2
- - edit your db migrate versions carefully

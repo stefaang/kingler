@@ -1,10 +1,6 @@
------
 Model Descriptions and other brainfarts will go here...
------
 
-
-The Server
-----------
+## Server
 
 app.py
 - receives client events (both flask/socketio) and creates tasks to process them
@@ -14,12 +10,10 @@ tasks.py
 - handles the socketio events
 - allows to plan cronlike tasks (example: explode bomb after 10 sec)
 - emits socketio events to clients
-- TODO: task replacement for same task, same client? example moveToB replaces moveToA when moveToB didn't start yet
 
 model.py
 - defines the mongo models
 - provides some basic query functions and formatters (get_info)
-
 
 MapEntity
   Racer - moving MapEntity, real life player
@@ -36,8 +30,7 @@ manage.py
 - contains some db cleanup functions to facilitate migration
 
 
-The Client
-----------
+## Web Client
 
 classic-app.js
 - reusable modules would be nice

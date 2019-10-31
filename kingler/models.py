@@ -11,9 +11,7 @@
 
 import sys
 import logging
-from datetime import datetime as dt
-
-#from mongoengine import signals
+from datetime import datetime as dt, datetime
 
 
 GLOBAL_RANGE = 10000
@@ -37,24 +35,22 @@ BOMB_EXPLOSION_RANGE = 20
 FLAG_PICKUP_RANGE = PICKUP_RANGE
 FLAG_VISION_RANGE = GLOBAL_RANGE
 
-# in the application context, the db is already defined by flask_mongoengine
-if 'db' in globals():
-    logger.info('Database connection in application context')
-    logger = logging.getLogger(__name__)
-# outside of the application, use mongoengine right away
-else:
-    import mongoengine
-    logger = logging.getLogger(__name__)
-    logger.info('Connecting to database outside of application context')
-    mongoengine.connect('kingler')
-    db = mongoengine
-
 ICONMAP = {
     'green': 'leaf',
     'blue': 'anchor',
     'yellow': 'bolt',
     'red': 'fire'
 }
+
+
+logger = logging.getLogger(__name__)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+logger.addHandler(ch)
+
+import mongoengine
+mongoengine.connect('kingler')
+db = mongoengine
 
 
 class Cell(db.Document):
@@ -83,9 +79,16 @@ class MapEntity(db.Document):
             lng, lat = self.pos['coordinates']
         return {'lat': lat, 'lng': lng, 'team': self.team, 'id': str(self.id)}
 
+    @property
+    def lnglat(self):
+        if isinstance(self.pos, tuple):
+            return self.pos
+        else:
+            return self.pos['coordinates']
+
     def __repr__(self):
         """compact formatter"""
-        return '<{} {}>'.format(self._cls, str(self.id), )
+        return f'<{self._cls} {self.id}>'
 
     def __str__(self):
         """longer string representation"""
@@ -118,6 +121,7 @@ class Racer(MapEntity):
     # stats
     viewrange = db.IntField(default=300)
     score = db.IntField(default=0)
+    is_admin = db.BooleanField(default=False)
     is_alive = db.BooleanField(default=True)
     deathduration = db.IntField(default=RACER_DEATH_DURATION)
 
@@ -145,9 +149,9 @@ class Racer(MapEntity):
         logger.info('my id is rather xxxxxx %s', self.id)
 
         near_racers = Racer.objects(pos__near=self.pos,
-                                     pos__max_distance=VISION_RANGE,
-                                     is_online=True,
-                                     id__ne=self.id)
+                                    pos__max_distance=VISION_RANGE,
+                                    is_online=True,
+                                    id__ne=self.id)
         # add this Racer in the nearby list of the nearby Racers, if it wasn't there yet
         near_racers.update(add_to_set__nearby=self)
 
@@ -155,17 +159,16 @@ class Racer(MapEntity):
                                    pos__min_distance=VISION_RANGE,
                                    is_online=True,
                                    id__ne=self.id)
-        logger.warning('HOHO %s', type(self))
-        #far_racers.update(pull__nearby=self)
+
+        far_racers.update(pull__nearby=self)
 
         items = MapEntity.objects(pos__near=self.pos,
                                   pos__max_distance=VISION_RANGE,
                                   teamview_only=False,
                                   _cls__ne='MapEntity.Racer')
 
-        newnearby = list(near_racers) + list(items)
         # now finally update the nearby list
-        self.nearby = newnearby
+        self.nearby = list(near_racers) + list(items)
         self.is_online = True
         self.date_lastseen = dt.now()
         self.save()
@@ -242,10 +245,10 @@ class Bomb(MapEntity):
     def get_nearby_racers(self):
         allies = Racer.objects(pos__near=self.pos,
                                pos__max_distance=BOMB_ALLY_VISION,
-                               color=self.team)[:100]
+                               color=self.team)
         enemies = Racer.objects(pos__near=self.pos,
                                 pos__max_distance=BOMB_ENEMY_VISION,
-                                color__ne=self.team)[:100]
+                                color__ne=self.team)
         return [r.name for r in allies], [r.name for r in enemies]
 
     def explode(self):
@@ -256,18 +259,18 @@ class Bomb(MapEntity):
         d = dict()
         # get a list of players that see the explosion
         d['spectators'] = Racer.objects(pos__near=self.pos,
-                                   pos__max_distance=BOMB_ALLY_VISION)[:100]
+                                        pos__max_distance=BOMB_ALLY_VISION)
         # if you stand too close you get hurt..
         # TODO: extend
         d['victims'] = Racer.objects(pos__near=self.pos,
-                                    pos__max_distance=self.explosion_range,
-                                     is_online=True)[:100]
+                                     pos__max_distance=self.explosion_range,
+                                     is_online=True)
         # start a chain reaction of explosions
         d['nearbybombs'] = Bomb.objects(
             pos__near=self.pos,
             pos__max_distance=self.explosion_range,
             id__ne=self.id,
-            is_active=True)[:100]
+            is_active=True)
         logger.debug('bomb explodes! - %s others nearby', len(d['nearbybombs']))
         d['explosionrange'] = self.explosion_range
         self.is_active = False
@@ -352,4 +355,4 @@ class Position(db.Document):
     time = db.DateTimeField(default=dt.now)
 
     def __repr__(self):
-        return '<{} {} {} {}>'.format(self.time, self.name, self.pos, self.accuracy)
+        return f'<{self.time} {self.name} {self.pos} {self.accuracy}>'

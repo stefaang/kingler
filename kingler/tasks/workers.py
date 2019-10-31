@@ -1,25 +1,20 @@
-# -*- coding: utf-8 -*-
-"""
-    kingler.tasks
-    ~~~~~~~~~~~~~~
+from .. import celery as celery_app
+from ..app import socketio
+from celery.utils.log import get_task_logger
+#from flask_security.utils import config_value, send_mail
+#from kingler.bp.users.models.user_models import User
+from ..models import Bomb, Racer, Flag, Beast, CopperCoin, \
+    GLOBAL_RANGE, PICKUP_RANGE, BEAST_EAT_RANGE, VISION_RANGE
+#from kingler.extensions import mail # this is the flask-mail
 
-    Tasks and routines, some of them using Celery, are defined here
+# thanks Bob Jordan in https://stackoverflow.com/questions/16221295/python-flask-with-celery-out-of-application-context
 
-    :copyright: (c) 2017 by Stefaan Ghysels
-    :license: BSD, see LICENSE for more details.
-"""
-import time
-from app import app, socketio
-from celery import Celery
-from models import *
-
-celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-celery.conf.update(app.config)
+logger = get_task_logger(__name__)
 
 
-@celery.task
+@celery_app.task
 def do_bomb_explode(bombid):
-    app.logger.debug('bomb %s is exploding', bombid)
+    logger.debug('bomb %s is exploding', bombid)
     """task to explode a bomb can be planned in advance"""
     bomb = Bomb.objects.get(id=bombid)
 
@@ -46,23 +41,23 @@ def do_bomb_explode(bombid):
     # update scores and alive setting... do this here on in Bomb.explode?
     for victim in explosion['victims']:
         if victim.color == bomb.team:
-            app.logger.debug('set victim %s score', victim.name)
+            logger.debug('set victim %s score', victim.name)
             victim.modify(dec__score=1)
         else:
             if bomb.owner:
                 if not victim.has_hands_free:
                     bomb.owner.modify(inc__score=2)     # increase score by 2
-                    app.logger.debug('%s\'bomb killed a flag carrier, new score %s', bomb.owner.name, bomb.owner.score)
+                    logger.debug('%s\'bomb killed a flag carrier, new score %s', bomb.owner.name, bomb.owner.score)
                 else:
                     bomb.owner.modify(inc__score=1)  # increase score by 1
-                    app.logger.debug('%s\'bomb killed a Racer, new score %s', bomb.owner.name, bomb.owner.score)
+                    logger.debug('%s\'bomb killed a Racer, new score %s', bomb.owner.name, bomb.owner.score)
 
         # the victims are dead for a while, dropping their items (flag)
         victim.modify(is_alive=False)
         if not victim.has_hands_free:
             flag = victim.carried_item
             flag.drop_on_ground(victim.pos)
-            app.logger.info('%s dropped the %s flag!!', victim.name, flag.team)
+            logger.info('%s dropped the %s flag!!', victim.name, flag.team)
             victim.modify(has_hands_free=True, carried_item=None)
             data = {'name': victim.name, 'target': str(flag.id)}
             for racer in spectators:
@@ -76,32 +71,35 @@ def do_bomb_explode(bombid):
     if victims:
         update_scores(spectators)
     else:
-        app.logger.debug('no score changes')
+        logger.debug('no score changes')
 
 
-@celery.task
+@celery_app.task
 def adjust_score(racerid, points):
     Racer.objects.get(id=racerid).modify(inc__score=points)
 
 
-@celery.task
+@celery_app.task
 def revive_racer(racerid):
     Racer.objects.get(id=racerid, is_alive=False).modify(is_alive=True)
 
 
 ########################
 # tasks that do not require celery (yet)
-
-def update_racer_pos(data):
+# TODO: create independent game loop, move logic to client (or make async)
+def update_racer_pos(data: dict):
     """Update Racer position
     Update the vision of the Racer and everybody who sees him
     Trigger nearby bombs, traps, flags, etc..
+    :param data: dict with a racer name, lng and lat value
     """
     emit = socketio.emit
 
     # parse the json data
     name = data.get('name')
     lng, lat = float(data.get('lng', 0)), float(data.get('lat', 0))
+    if lng == lat == 0:
+        logger.warning('Warp %s to ground zero', name)
 
     # lookup the moved racer and update its position
     movedracer = Racer.objects(name=name).first()
@@ -111,7 +109,7 @@ def update_racer_pos(data):
 
     # get all the new nearby stuff for the new position
     before, after = movedracer.get_nearby_stuff()   # todo: move nearby stuff to cache memory?
-    #app.logger.info('NearbyStuff went from %s to %s', before, after)
+    #logger.info('NearbyStuff went from %s to %s', before, after)
     mr = movedracer.get_info()
 
     # A. Communication to both nearby Racers and the Moving Racer
@@ -171,7 +169,7 @@ def update_racer_pos(data):
     # for event in events:
     #     eventtype = event['type']
     #     # let them update their flags (TODO: broadcast in cell)
-    #     app.logger.info('WUP, i have to send %s', event)
+    #     logger.info('WUP, i have to send %s', event)
     #     for racer in spectators:
     #         emit(eventtype, event, room=racer['name'])
     #
@@ -183,7 +181,7 @@ def update_racer_pos(data):
     # D. Show new coins
     coins = (o for o in set(after) - set(before) if isinstance(o, CopperCoin) and o.team != movedracer.color)
     for coin in coins:
-        # app.logger.info('%s coin, %s racer' % (coin.team, movedracer.color))
+        # logger.info('%s coin, %s racer' % (coin.team, movedracer.color))
         lng, lat = coin.pos['coordinates']
         emit('coin added', coin.get_info(), room=mr['name'])
 
@@ -192,7 +190,7 @@ def update_racer_pos(data):
                                pos__max_distance=PICKUP_RANGE,
                                team__ne=movedracer.color)
     for coin in coins:
-        app.logger.info('racer %s picks up a %sp %s coin' % (movedracer.name, coin.value, coin.team))
+        logger.info('racer %s picks up a %sp %s coin' % (movedracer.name, coin.value, coin.team))
         info = {'value': coin.value, 'id': str(coin.id), 'racer': str(movedracer.id)}
         if coin.secret:
             info.update({'secret': True})
@@ -205,7 +203,7 @@ def update_racer_pos(data):
         # add the points
         movedracer.modify(inc__score=coin.value)
 
-        app.logger.info('racer %s scores for coinssss', movedracer.name)
+        logger.info('racer %s scores for coinssss', movedracer.name)
         update_scores(spectators)
 
     if movedracer.is_alive:
@@ -216,7 +214,7 @@ def update_racer_pos(data):
             movedracer.modify(is_alive=False)
             revive_racer.apply_async((str(movedracer.id),), countdown=movedracer.deathduration)
         for beast in beasts:
-            app.logger.info('racer %s hits up a %s beast' % (movedracer.name, beast.species))
+            logger.info('racer %s hits up a %s beast' % (movedracer.name, beast.species))
             info = {'beast': str(beast.id), 'racer': str(movedracer.id)}
             emit('beast hit', info, room=mr['name'])
             # todo: warn others
@@ -225,7 +223,7 @@ def update_racer_pos(data):
 
 
 def update_scores(racers):
-    app.logger.info('calculate new scores for %s', racers)
+    logger.info('calculate new scores for %s', racers)
     data = {'individual': {}, 'team': {}}
     for racer in racers:
         racer.reload('score')
@@ -240,7 +238,7 @@ def update_scores(racers):
 
 
 
-@celery.task
+@celery_app.task
 def move_beasts():
     beasts = Beast.objects(active=True)
     for b in beasts:
@@ -251,10 +249,10 @@ def move_beasts():
             i = track.index(pos)
             n = len(track)
             newpos = track[(i + 1) % n]
-            app.logger.info('move %s to index %s at %s' % (b.name, (i+1)%n, newpos))
+            logger.info('move %s to index %s at %s' % (b.name, (i+1)%n, newpos))
             b.modify(pos=newpos)
         else:
-            app.logger.warn('Beast %s is off the track uggh', b.id)
+            logger.warn('Beast %s is off the track uggh', b.id)
             b.modify(pos=track[0])
             return
 
@@ -269,24 +267,23 @@ def move_beasts():
         # racers that have to add the beast
         racers = set(after) - set(before)
         for racer in racers:
-            app.logger.info('hello racer %s, beast added %s', racer.name, b.get_info())
+            logger.info('hello racer %s, beast added %s', racer.name, b.get_info())
             socketio.emit('marker added', b.get_info(), room=racer.name)
 
         # racers that have to move the beast
         racers = set(after) | set(before)
         for racer in racers:
-            app.logger.info('hello racer %s, beast moved %s', racer.name, b.get_info())
+            logger.info('hello racer %s, beast moved %s', racer.name, b.get_info())
             socketio.emit('marker moved', b.get_info(), room=racer.name)
 
         # racers that have to remove the beast (out of range)
         racers = set(before) - set(after)
         for racer in racers:
-            app.logger.info('hello racer %s, beast removed %s', racer.name, b.get_info())
+            logger.info('hello racer %s, beast removed %s', racer.name, b.get_info())
             socketio.emit('marker removed', b.get_info(), room=racer.name)
 
 
-
-@celery.on_after_configure.connect
+@celery_app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(3.0, move_beasts.s(), name='move beasts every 3 seconds')
     # sender.add_periodic_task(4.0, move_racers.s(), name='move racers every 3 seconds')

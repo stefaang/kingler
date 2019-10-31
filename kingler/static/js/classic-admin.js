@@ -1,5 +1,5 @@
 /**
- * Created by stefaan on 21-2-17.
+ * Copy-right 2017 Stefaan Ghysels
  */
 
 map.stopLocate();

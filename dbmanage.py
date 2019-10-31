@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    kingler.manage
-    ~~~~~~~~~~~~~~
+    manage.py
+    ~~~~~~~~~
 
     Some quick and dirty routines to prepare the database.
 
@@ -10,32 +10,29 @@
 """
 
 import random
-from models import *
+from kingler.models import *
 
-
-def deleteAllFlags():
-    Flag.objects.delete()
-
-def deleteAllRacers():
-    Racer.objects.delete()
 
 def resetRacers():
     Racer.objects.update(score=0)
 
-def rainRandomCoins(n):
+
+def rain_coins(n):
     # add 100 new coins to the database with random value 5 - 10 - 15 - 20
     for i in range(n):
         randpos = [3.72 + .04*random.random(), 51.0 + .025*random.random()]
         c = CopperCoin(pos=randpos, value=5*random.randint(1,5))
         c.save()
 
-def setBeastAtBottles():
+
+def set_beasts_at_bottles():
+    """distribute beasts around the coin track"""
     from math import cos, sin, radians, pi
     coins = CopperCoin.objects()
     rand = random.random
     for coin in coins:
         if str(coin.id).endswith('0'):
-            print coin
+            print(coin)
             lng, lat = coin.pos['coordinates']
             b = Beast(pos=[lng, lat],
                       species='whale' if rand() > .3 else 'kraken',
@@ -59,15 +56,13 @@ def setBeastAtBottles():
             b.save()
 
 
-def deleteAllCoins():
-    CopperCoin.objects.delete()
-
-def resetCoins():
+def reset_coins():
     """Reset the team on all coins back to black"""
     c = CopperCoin.objects()
     c.update(team='black', value=10, icon='')
 
-def shuffleCoins():
+
+def shuffle_coins():
     coins = list(CopperCoin.objects.all())
 
     items = { 'compass': 2, 'hook': 2, 'rum': 15, 'barrel': 8, 'chest': 4, 'leg': 1, 'spy': 1,
@@ -79,7 +74,8 @@ def shuffleCoins():
             coin = coins.pop()
             coin.update(icon=item)
 
-def muffleCoins():
+
+def muffle_coins():
     coins = list(CopperCoin.objects.all())
 
     items = {'chest': 8, 'letter': 8, 'star': 16}
@@ -98,7 +94,7 @@ def muffleCoins():
                 coin.update(icon=item, value=25)
 
 
-def dumpCoinsToFile(fname='coindump.txt'):
+def dump_coins(fname='coindump.txt'):
     """Dump all the coin position to a file"""
     import json
     coins = CopperCoin.objects()
@@ -108,7 +104,8 @@ def dumpCoinsToFile(fname='coindump.txt'):
     with open(fname, 'wb') as f:
         f.write(json.dumps(positions))
 
-def loadCoinsFromFile(fname='coindump.txt'):
+
+def load_coins(fname='coindump.txt'):
     """Load a bunch of coin positions into the db"""
     import json
     with open(fname, 'rb') as f:
@@ -116,12 +113,10 @@ def loadCoinsFromFile(fname='coindump.txt'):
     positions = json.loads(data)
     for pos in positions:
         CopperCoin(pos=pos, value=10).save()
-    print CopperCoin.objects.count(), 'coins in database'
+    print(CopperCoin.objects.count(), 'coins in database')
+
 
 if __name__ == '__main__':
-    deleteAllFlags()
     # reset coins
     c = CopperCoin.objects()
     c.update(team='black', value=10)
-
-    #dumpCoinsToFile()

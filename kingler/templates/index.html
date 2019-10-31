@@ -1,17 +1,15 @@
 {% extends "layout.html" %}
 {% block body %}
     {# https://imgur.com/a/8PP3C #}
-    <div class="img">
-        <img src="static/img/pacman-welcome.gif" id="pacmananim"/>
-    </div>
-    <h3>Welcome to da party!</h3>
+
+    <h3>Arrr, welcome pirates!</h3>
         <p class="bs-component">
-            <a href="{{ url_for('oldstylemap') }}" class="btn btn-primary btn-lg">ARRRIGHT</a>
-{#            <a href="{{ url_for('newstylemap') }}" class="btn btn-primary btn-lg">Fancy</a>#}
+            <a href="{{ url_for('main.oldstylemap') }}" class="btn btn-primary btn-lg">ARRRIGHT</a>
+{#            <a href="{{ url_for('main.newstylemap') }}" class="btn btn-primary btn-lg">Fancy</a>#}
         </p>
     {% if 'username' in session %}
         <p class="bs-component">
-            <a href="{{ url_for('logout') }}" class="btn btn-default btn-lg">Logout</a>
+            <a href="{{ url_for('main.logout') }}" class="btn btn-default btn-lg">Logout</a>
         </p>
     {% endif %}
 {% endblock %}
