@@ -72,7 +72,7 @@ def login():
     r = Racer.objects(name=username)
     if not r:
         # add a new Racer to the db
-        r = Racer(name=username, pos=[3.7, 51], color=color, is_admin=is_admin)
+        r = Racer(name=username, pos=[2.66, 51.073], color=color, is_admin=is_admin)
     else:
         # update the color attribute to the db
         r = r.first()
