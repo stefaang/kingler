@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
     manage.py
@@ -9,12 +10,25 @@
     :license: BSD, see LICENSE for more details.
 """
 
+import click
 import random
 from kingler.models import *
 
+@click.group()
+def cli():
+    pass
 
-def resetRacers():
-    Racer.objects.update(score=0)
+@cli.command()
+@click.argument('model')
+def reset(model):
+    if model == 'racer':
+        Racer.objects.update(score=0)
+    elif model == 'coin':
+        CopperCoin.objects.update(team='black', value=10, icon='')
+    elif model == 'flag':
+        # TODO
+        Flag.objects.count()
+
 
 
 def rain_coins(n):
@@ -115,6 +129,4 @@ def load_coins(fname='coindump.txt'):
 
 
 if __name__ == '__main__':
-    # reset coins
-    c = CopperCoin.objects()
-    c.update(team='black', value=10)
+    cli()
