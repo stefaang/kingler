@@ -58,15 +58,15 @@ def set_beasts_at_bottles():
 
 def reset_coins():
     """Reset the team on all coins back to black"""
-    c = CopperCoin.objects()
-    c.update(team='black', value=10, icon='')
+    CopperCoin.objects.update(team='black', value=10, icon='')
 
 
 def shuffle_coins():
     coins = list(CopperCoin.objects.all())
 
-    items = { 'compass': 2, 'hook': 2, 'rum': 15, 'barrel': 8, 'chest': 4, 'leg': 1, 'spy': 1,
-          'bottle': 1, 'sword': 8, 'helm': 5, 'map': 5, 'anchor': 4, 'sabre': 8
+    items = {
+      'compass': 2, 'hook': 2, 'rum': 15, 'barrel': 8, 'chest': 4, 'leg': 1, 'spy': 1,
+      'bottle': 1, 'sword': 8, 'helm': 5, 'map': 5, 'anchor': 4, 'sabre': 8
     }
     random.shuffle(coins)
     for item, amount in items.items():
@@ -78,20 +78,18 @@ def shuffle_coins():
 def muffle_coins():
     coins = list(CopperCoin.objects.all())
 
-    items = {'chest': 8, 'letter': 8, 'star': 16}
-    secrets = ['bonanza', 'barbossa', 'neeltje jans', 'boccaccio', 'tzalwelzijnaja', 'tuizentfloot',
-               'zoete mosterd', 'tafelpoot']
+    items = {('chest', 8, 50), ('letter', 8, 0), ('star', 16, 25)}
+    secrets = ['bonanza', 'barbossa', 'scheve schuit', 'heyo captain jack', 'duizend bommen en granaten', 'tuizentfloot',
+               'how much is the fish', 'tafelpoot']
 
     random.shuffle(coins)
-    for item, amount in items.items():
+    for item, amount, value in items:
         for i in range(amount):
             coin = coins.pop()
             if item == 'letter':
-                coin.update(icon=item, secret=secrets.pop())
-            elif item == 'chest':
-                coin.update(icon=item, value=50)
-            elif item == 'star':
-                coin.update(icon=item, value=25)
+                coin.update(icon=item, value=value, secret=secrets.pop())
+            else:
+                coin.update(icon=item, value=value)
 
 
 def dump_coins(fname='coindump.txt'):
