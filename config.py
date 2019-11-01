@@ -19,7 +19,7 @@ class Config(object):
     }
     REDIS_URL = os.environ['REDIS_URL']
     REDIS_CHAN = 'chat'
-
+    CORS_ORIGIN = os.getenv('CORS_ORIGIN', '*')
 
 class DevelopmentConfig(Config):
     DEBUG = True

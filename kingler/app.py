@@ -54,12 +54,16 @@ def create_app(config_name=None, main=True):
         # additional processes such as Celery workers wanting to access
         # Socket.IO
         socketio.init_app(app,
+                          #engineio_logger=True,
+                          cors_allowed_origins=app.config['CORS_ORIGIN'],
                           message_queue=app.config['SOCKETIO_MESSAGE_QUEUE'])
     else:
         # Initialize socketio to emit events through through the message queue
         # Note that since Celery does not use eventlet, we have to be explicit
         # in setting the async mode to not use it.
         socketio.init_app(None,
+                          #engineio_logger=True,
+                          cors_allowed_origins=app.config['CORS_ORIGIN'],
                           message_queue=app.config['SOCKETIO_MESSAGE_QUEUE'],
                           async_mode='threading')
     celery.conf.update(config[config_name].CELERY_CONFIG)

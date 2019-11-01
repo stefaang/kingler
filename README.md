@@ -51,6 +51,7 @@ export APP_SETTINGS="config.DevelopmentConfig"
 export REDIS_URL="redis://localhost"
 export SECRET_KEY="whysosecret?"
 export CELERY_BROKER="redis://localhost:6379/0"
+export CORS_ORIGIN="my.domain.com"
 ```
 
 - Start the webserver (see Procfile for Heroku version)
