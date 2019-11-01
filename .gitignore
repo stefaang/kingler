@@ -10,6 +10,7 @@ __pycache__/
 
 # Celery beat
 celerybeat-schedule
+celerybeat.pid
 
 # WIP art
 *.xcf

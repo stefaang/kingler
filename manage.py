@@ -78,10 +78,23 @@ class CeleryWorker(Command):
 
     def run(self, argv):
         ret = subprocess.call(
-            ['celery', 'worker', '-A', 'flack.celery'] + argv)
+            ['celery', 'worker', '-A', 'kingler.celery'] + argv)
         sys.exit(ret)
 
 manager.add_command("celery", CeleryWorker())
+
+
+class CeleryBeat(Command):
+    """Starts the celery beat"""
+    name = 'celery'
+    capture_all_args = True
+
+    def run(self, argv):
+        ret = subprocess.call(
+            ['celery', 'beat', '-A', 'kingler.celery'] + argv)
+        sys.exit(ret)
+
+manager.add_command("beat", CeleryBeat())
 
 
 @manager.command

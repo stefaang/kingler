@@ -1,5 +1,6 @@
 from .. import celery as celery_app
 from ..app import socketio
+from flask_socketio import SocketIO
 from celery.utils.log import get_task_logger
 #from flask_security.utils import config_value, send_mail
 #from kingler.bp.users.models.user_models import User
@@ -33,7 +34,8 @@ def do_bomb_explode(bombid):
         do_bomb_explode.delay(str(b.id))
 
     data = bomb.get_info()
-    data['range'] = explosion['explosionrange']
+    data['range'] = explosion['explosionrange']    
+    socketio = SocketIO(message_queue='redis://')
     # show the bomb explosion
     for racer in explosion['spectators']:
         socketio.emit('bomb exploded', data, room=racer.name)
@@ -240,6 +242,7 @@ def update_scores(racers):
 
 @celery_app.task
 def move_beasts():
+    socketio = SocketIO(message_queue='redis://')
     beasts = Beast.objects(active=True)
     for b in beasts:
         # unpack geojson linestring
