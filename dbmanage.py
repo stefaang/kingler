@@ -72,7 +72,7 @@ def set_beasts_at_bottles():
 
 def reset_coins():
     """Reset the team on all coins back to black"""
-    CopperCoin.objects.update(team='black', value=10, icon='')
+    CopperCoin.objects.update(team='black', value=1, icon='', secret=None)
 
 
 def shuffle_coins():
@@ -92,9 +92,10 @@ def shuffle_coins():
 def muffle_coins():
     coins = list(CopperCoin.objects.all())
 
-    items = {('chest', 8, 50), ('letter', 8, 0), ('star', 16, 25)}
-    secrets = ['bonanza', 'barbossa', 'scheve schuit', 'heyo captain jack', 'duizend bommen en granaten', 'tuizentfloot',
-               'how much is the fish', 'tafelpoot']
+    items = {('chest', 8, 50), ('letter', 4, 0), ('star', 16, 25), ('rum', 8, 25)}
+    #secrets = ['bonanza', 'barbossa', 'scheve schuit', 'heyo captain jack', 'duizend bommen en granaten', 'tuizentfloot',
+    #           'how much is the fish', 'tafelpoot']
+    secrets = 4*['barbossa'] + 4*['jack'] 
 
     random.shuffle(coins)
     for item, amount, value in items:

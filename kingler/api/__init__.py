@@ -1,5 +1,5 @@
-from flask import Blueprint
+from flask import Blueprint, current_app
 
 api = Blueprint('api', __name__)
 
-from . import racer  # noqa
+from . import racer, beast  # noqa

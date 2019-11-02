@@ -96,6 +96,3 @@ def get_status(id):
     if task.state == states.RECEIVED or task.state == states.STARTED:
         return '', 202, {'Location': url_for('tasks.get_status', id=id)}
     return task.info
-
-
-

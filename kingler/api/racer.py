@@ -6,5 +6,3 @@ from ..models import *
 from ..utils import url_for
 
 from . import api
-
-

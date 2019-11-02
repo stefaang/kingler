@@ -13,7 +13,7 @@ from ..models import Bomb, Racer, Flag, Beast, CopperCoin, \
 logger = get_task_logger(__name__)
 
 
-@celery_app.task
+#@celery_app.task
 def do_bomb_explode(bombid):
     logger.debug('bomb %s is exploding', bombid)
     """task to explode a bomb can be planned in advance"""
@@ -35,7 +35,7 @@ def do_bomb_explode(bombid):
 
     data = bomb.get_info()
     data['range'] = explosion['explosionrange']    
-    socketio = SocketIO(message_queue='redis://')
+    #socketio = SocketIO(message_queue='redis://')
     # show the bomb explosion
     for racer in explosion['spectators']:
         socketio.emit('bomb exploded', data, room=racer.name)
@@ -76,12 +76,10 @@ def do_bomb_explode(bombid):
         logger.debug('no score changes')
 
 
-@celery_app.task
 def adjust_score(racerid, points):
     Racer.objects.get(id=racerid).modify(inc__score=points)
 
 
-@celery_app.task
 def revive_racer(racerid):
     Racer.objects.get(id=racerid, is_alive=False).modify(is_alive=True)
 
@@ -168,6 +166,7 @@ def update_racer_pos(data: dict):
     # # get nearby racers
     spectators = Racer.objects(pos__near=movedracer.pos,
                                pos__max_distance=GLOBAL_RANGE )
+    team_spectators = [s for s in spectators if s.team == movedracer.team]
     # for event in events:
     #     eventtype = event['type']
     #     # let them update their flags (TODO: broadcast in cell)
@@ -198,7 +197,7 @@ def update_racer_pos(data: dict):
             info.update({'secret': True})
         emit('coin pickup', info, room=mr['name'])
 
-        for racer in spectators:
+        for racer in team_spectators:
             emit('coin pickup', info, room=racer['name'])
         # change the team of the coin so that this team cannot pick it up now (TODO: improve)
         coin.modify(team=movedracer.color)
@@ -239,10 +238,7 @@ def update_scores(racers):
         socketio.emit('new score', data, room=racer.name)
 
 
-
-@celery_app.task
 def move_beasts():
-    socketio = SocketIO(message_queue='redis://')
     beasts = Beast.objects(active=True)
     for b in beasts:
         # unpack geojson linestring

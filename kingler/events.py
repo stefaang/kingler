@@ -7,6 +7,7 @@ from .utils import getlnglat
 
 from .tasks.workers import *
 
+
 def push_model(model):
     """Push the model to all connected Socket.IO clients."""
     socketio.emit('updated_model', {'class': model.__class__.__name__,
@@ -186,7 +187,7 @@ def handle_post_secret(data):
     coin = CopperCoin.objects(pk=data.get('coin_id')).first()
     racer = Racer.objects(pk=data['racer_id']).first()
 
-    if racer and coin and coin.secret == data['secret']:
+    if racer and coin and coin.secret == data['secret'].lower():
         emit('secret correct')
         racer.modify(inc__score=200)
         spectators = Racer.objects(pos__near=racer.pos,
