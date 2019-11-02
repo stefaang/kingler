@@ -24,6 +24,6 @@ timezone = "UTC"
 beat_schedule = {
     'move-beasts': {
       'task': 'kingler.tasks.workers.move_beasts',
-      'schedule': 10.0,
+      'schedule': 3.0,
     },
 }
