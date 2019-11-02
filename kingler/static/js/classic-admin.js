@@ -60,18 +60,18 @@ var locateBtn = L.easyButton({
 
 
 // A button to Add a Beast Stop to the map
-var addBeastStopButton = L.easyButton( 'fa-ship',   function() {
-    var pos = mrm.getLatLng();
-    var data = {'lat':pos.lat, 'lng':pos.lng, 'id': lastBeast};
-    console.log('Add Beast Stop for '+ lastBeast +' at '+pos);
-    socket.emit('add beast stop', data);
-}).addTo(map);
-
-map.on('keypress',  function listenToButtonS(e) {
-    if (e.originalEvent.key == 's')
-        addBeastStopButton._currentState.onClick();
-    }
-);
+//var addBeastStopButton = L.easyButton( 'fa-ship',   function() {
+//    var pos = mrm.getLatLng();
+//    var data = {'lat':pos.lat, 'lng':pos.lng, 'id': lastBeast};
+//    console.log('Add Beast Stop for '+ lastBeast +' at '+pos);
+//    socket.emit('add beast stop', data);
+//}).addTo(map);
+//
+//map.on('keypress',  function listenToButtonS(e) {
+//    if (e.originalEvent.key == 's')
+//        addBeastStopButton._currentState.onClick();
+//    }
+//);
 
 
 
