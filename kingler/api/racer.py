@@ -14,7 +14,6 @@ def list_racers():
     racers = Racer.objects()
     data = {r.name: {
         'name': r.name,
-        'id': r.id,
         'is_alive': r.is_alive,
     } for r in racers}
     return jsonify(data)
@@ -26,7 +25,6 @@ def get_racer(name):
     racers = Racer.objects(name=name)
     data = {r.name: {
         'name': r.name,
-        'id': r.id,
         'is_alive': r.is_alive,
     } for r in racers}
     return jsonify(data)
