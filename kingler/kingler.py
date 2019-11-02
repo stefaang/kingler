@@ -157,3 +157,11 @@ def oldstylemap():
     else:
         session['newstyle'] = False
         return redirect(url_for('main.login'))
+
+# TODO: require admin
+@main.route('/reset')
+def resetgame():
+    CopperCoin.objects.update(team='black')
+    Racer.objects.update(score='0')
+    return redirect(url_for('main.logout'))
+
