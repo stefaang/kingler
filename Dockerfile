@@ -4,10 +4,8 @@ FROM phusion/baseimage:0.9.19
 CMD ["/sbin/my_init"]
 
 # Install dependencies via apt
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
-RUN echo "deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.2 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list
-RUN apt-get update
-RUN apt-get install -y python2.7 python-virtualenv python-dev build-essential libgeos-dev redis-server mongodb-org
+RUN apt-get update &&
+    apt-get install -y python3 python3-virtualenv python-dev build-essential libgeos-dev redis-server mongodb-server
 
 # Copy app
 # Also includes get-pip
