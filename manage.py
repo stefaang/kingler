@@ -110,8 +110,8 @@ def lint():
 
 
 if __name__ == '__main__':
-    # if sys.argv[1] == 'test' or sys.argv[1] == 'lint':
-    #     # small hack, to ensure that Flask-Script uses the testing
-    #     # configuration if we are going to run the tests
-    #     os.environ['FLASK_CONFIG'] = 'testing'
+    if sys.argv[1] == 'test' or sys.argv[1] == 'lint':
+        # small hack, to ensure that Flask-Script uses the testing
+        # configuration if we are going to run the tests
+        os.environ['FLASK_CONFIG'] = 'testing'
     manager.run()
