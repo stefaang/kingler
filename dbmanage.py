@@ -50,7 +50,7 @@ def set_beasts_at_bottles():
             lng, lat = coin.pos['coordinates']
             b = Beast(pos=[lng, lat],
                       species='whale' if rand() > .3 else 'kraken',
-                      name=str(coin.id)[:6])
+                      name=str(coin.id)[-6:])
 
             # a LineString needs 2 coordinates!!! OMG. Use MultiPoint next time
 

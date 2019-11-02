@@ -20,6 +20,8 @@ accept_content = ['json', 'application/text']
 result_serializer = 'json'
 timezone = "UTC"
 
+task_time_limit = 2.0
+
 # define periodic tasks / cron here
 beat_schedule = {
     'move-beasts': {
