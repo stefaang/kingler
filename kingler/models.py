@@ -15,7 +15,7 @@ from datetime import datetime as dt, datetime
 
 
 GLOBAL_RANGE = 10000
-VISION_RANGE = 200
+VISION_RANGE = 120
 PICKUP_RANGE = 20
 
 ALLIED_RANGE = GLOBAL_RANGE
@@ -119,7 +119,7 @@ class Racer(MapEntity):
     nearby = db.ListField(db.ReferenceField('MapEntity'))   # track nearby Racers, Bombs, ...
 
     # stats
-    viewrange = db.IntField(default=300)
+    viewrange = db.IntField(default=120)
     score = db.IntField(default=0)
     is_admin = db.BooleanField(default=False)
     is_alive = db.BooleanField(default=True)
