@@ -6,3 +6,33 @@ from ..models import *
 from ..utils import url_for
 
 from . import api
+
+
+@api.route('/racer', methods=['GET'])
+def list_racers():
+    # TODO: filter what the user is allowed to see
+    racers = Racer.objects()
+    data = {r.name: {
+        'name': r.name,
+        'id': r.id,
+        'is_alive': r.is_alive,
+    } for r in racers}
+    return jsonify(data)
+
+
+@api.route('/racer/<name>', methods=['GET'])
+def get_racer(name):
+    # TODO: filter what the user is allowed to see
+    racers = Racer.objects(name=name)
+    data = {r.name: {
+        'name': r.name,
+        'id': r.id,
+        'is_alive': r.is_alive,
+    } for r in racers}
+    return jsonify(data)
+
+
+@api.route('/racer/<name>/revive', methods=['POST'])
+def revive_racer(name):
+    Racer.objects(name=name).update(is_alive=True)
+    return get_racer(name)

@@ -53,7 +53,7 @@ def movebeasts():
             socketio.emit('marker removed', b.get_info(), room=racer.name)
     response_data = {
         "result": Beast.objects.count(),
-        "sucess": True,
+        "success": True,
         "status_code": 200,
     }
     return jsonify(response_data)
