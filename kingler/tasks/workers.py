@@ -45,7 +45,7 @@ def do_bomb_explode(bombid):
             victim.modify(dec__score=1)
         else:
             if bomb.owner:
-                if not victim.has_hands_free:
+                if isinstance(victim.carried_item, Flag):
                     bomb.owner.modify(inc__score=2)     # increase score by 2
                     logger.debug('%s\'bomb killed a flag carrier, new score %s', bomb.owner.name, bomb.owner.score)
                 else:
@@ -54,7 +54,7 @@ def do_bomb_explode(bombid):
 
         # the victims are dead for a while, dropping their items (flag)
         victim.modify(is_alive=False)
-        if not victim.has_hands_free:
+        if isinstance(victim.carried_item, Flag):
             flag = victim.carried_item
             flag.drop_on_ground(victim.pos)
             logger.info('%s dropped the %s flag!!', victim.name, flag.team)
@@ -235,7 +235,6 @@ def update_scores(racers):
 
     for racer in racers:
         socketio.emit('new score', data, room=racer.name)
-
 
 
 @celery_app.task

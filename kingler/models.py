@@ -73,10 +73,7 @@ class MapEntity(db.Document):
 
     def get_info(self):
         """returns a representation as dict"""
-        if isinstance(self.pos, tuple):
-            lng, lat = self.pos
-        else:
-            lng, lat = self.pos['coordinates']
+        lng, lat = self.lnglat
         return {'lat': lat, 'lng': lng, 'team': self.team, 'id': str(self.id)}
 
     @property
@@ -125,7 +122,6 @@ class Racer(MapEntity):
     is_alive = db.BooleanField(default=True)
     deathduration = db.IntField(default=RACER_DEATH_DURATION)
 
-    has_hands_free = db.BooleanField(default=True)
     carried_item = db.ReferenceField(HoldableEntity)
 
     # @classmethod
@@ -195,22 +191,22 @@ class Racer(MapEntity):
                     events.append({'type': 'flag returned', 'name': self.name, 'target': str(flag.id),
                                    'lat': lat, 'lng': lng})
                 elif flag.state == 'home':
-                    if not self.has_hands_free and isinstance(self.carried_item, Flag):
+                    if isinstance(self.carried_item, Flag):
                         # score points... somehow
                         logger.info('%s scores 5 points for TEAM %s!!', self.name, self.color)
                         stolen_flag = self.carried_item
                         stolen_flag.return_to_base()
-                        self.modify(has_hands_free=True, carried_item=None)
+                        self.modify(carried_item=None)
                         lng, lat = stolen_flag.base['coordinates']
                         events.append({'type': 'flag scored', 'name': self.name, 'target':str(stolen_flag.id),
                                        'lat': lat, 'lng': lng})
             else:
                 # don't pickup flags that are already carried
-                if self.has_hands_free and self.is_alive:
+                if self.carried_item is None and self.is_alive:
                     logger.info('%s grabbed the %s flag!!', self.name, flag.team)
                     # TODO: improve atomic update
                     flag.modify({'state__ne':'carried'}, state='carried', carrier=self)
-                    self.modify(has_hands_free=False, carried_item=flag.reload())
+                    self.modify(carried_item=flag.reload())
                     events.append({'type': 'flag grabbed', 'name': self.name, 'target': str(flag.id)})
         return events
 
