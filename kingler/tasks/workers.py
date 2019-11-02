@@ -186,40 +186,41 @@ def update_racer_pos(data: dict):
         lng, lat = coin.pos['coordinates']
         emit('coin added', coin.get_info(), room=mr['name'])
 
-    # D.2 Pickup nearby coins, set the team
-    coins = CopperCoin.objects(pos__near=movedracer.pos,
-                               pos__max_distance=PICKUP_RANGE,
-                               team__ne=movedracer.color)
-    for coin in coins:
-        logger.info('racer %s picks up a %sp %s coin' % (movedracer.name, coin.value, coin.team))
-        info = {'value': coin.value, 'id': str(coin.id), 'racer': str(movedracer.id)}
-        if coin.secret:
-            info.update({'secret': True})
-        emit('coin pickup', info, room=mr['name'])
-
-        for racer in team_spectators:
-            emit('coin pickup', info, room=racer['name'])
-        # change the team of the coin so that this team cannot pick it up now (TODO: improve)
-        coin.modify(team=movedracer.color)
-        # add the points
-        movedracer.modify(inc__score=coin.value)
-
-        logger.info('racer %s scores for coinssss', movedracer.name)
-        update_scores(spectators)
-
     if movedracer.is_alive:
+        # D.2 Pickup nearby coins, set the team
+        coins = CopperCoin.objects(pos__near=movedracer.pos,
+                                   pos__max_distance=PICKUP_RANGE,
+                                   team__ne=movedracer.color)
+        for coin in coins:
+            logger.info('racer %s picks up a %sp %s coin' % (movedracer.name, coin.value, coin.team))
+            info = {'value': coin.value, 'id': str(coin.id), 'racer': str(movedracer.id)}
+            if coin.secret:
+                info.update({'secret': True})
+            emit('coin pickup', info, room=mr['name'])
+
+            for racer in team_spectators:
+                emit('coin pickup', info, room=racer['name'])
+            # change the team of the coin so that this team cannot pick it up now (TODO: improve)
+            coin.modify(team=movedracer.color)
+            # add the points
+            movedracer.modify(inc__score=coin.value)
+
+            logger.info('racer %s scores for coinssss', movedracer.name)
+            update_scores(spectators)
+
         # E. Touch beasts
+        # TODO: move to beast movement... standing still could evade bites...
         beasts = Beast.objects(pos__near=movedracer.pos,
                                pos__max_distance=BEAST_EAT_RANGE)
         if beasts:
             movedracer.modify(is_alive=False)
-            revive_racer.apply_async((str(movedracer.id),), countdown=movedracer.deathduration)
+            #revive_racer.apply_async((str(movedracer.id),), countdown=movedracer.deathduration)
         for beast in beasts:
             logger.info('racer %s hits up a %s beast' % (movedracer.name, beast.species))
             info = {'beast': str(beast.id), 'racer': str(movedracer.id)}
             emit('beast hit', info, room=mr['name'])
             # todo: warn others
-            movedracer.modify(dec__score=50)
+            movedracer.modify(dec__score=20)
             update_scores(spectators)
 
 
