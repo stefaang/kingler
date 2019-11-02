@@ -61,6 +61,7 @@ def login():
     username = session['username'] = escape(request.form['username'])
     color = session['color'] = request.form['color']
 
+    # TODO: move to admin window
     if username.startswith('clearall'):
         deletables = [(Bomb, 'bombs'), (CopperCoin, 'coins'), (Flag, 'flags')]
         for cls, keyw in deletables:
@@ -157,3 +158,10 @@ def oldstylemap():
     else:
         session['newstyle'] = False
         return redirect(url_for('main.login'))
+
+
+@main.route('/reset')
+def resetgame():
+    CopperCoin.objects.update(team='black')
+    Racer.objects.update(score='0')
+    return redirect(url_for('main.login'))
